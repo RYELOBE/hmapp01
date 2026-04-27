@@ -1,0 +1,18 @@
+:root {
+  --portal-bg: #f5f9ff;
+  --portal-card: #ffffff;
+  --portal-border: #d8e6ff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  min-height: 100%;
+  background: var(--portal-bg);
+  font-family: "Segoe UI", "PingFang SC", sans-serif;
+}

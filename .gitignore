@@ -1,0 +1,14 @@
+node_modules
+dist
+.DS_Store
+.idea
+.vscode
+*.log
+apps/*/node_modules
+apps/*/dist
+backend/target
+backend/.mvn
+backend/.idea
+.env
+.env.*
+!.env.example

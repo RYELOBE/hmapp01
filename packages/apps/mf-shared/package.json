@@ -1,0 +1,20 @@
+{
+  "name": "campus-commonprovide",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node ../../../node_modules/vite/bin/vite.js preview --port 7199",
+    "build": "node ../../../node_modules/vite/bin/vite.js build",
+    "dev:build": "node ../../../node_modules/vite/bin/vite.js build && node ../../../node_modules/vite/bin/vite.js preview --port 7199",
+    "preview": "node ../../../node_modules/vite/bin/vite.js preview --port 7199"
+  },
+  "dependencies": {
+    "@campus/common": "workspace:*",
+    "axios": "^1.7.0"
+  },
+  "devDependencies": {
+    "@originjs/vite-plugin-federation": "^1.3.9",
+    "vue": "^3.5.0"
+  }
+}

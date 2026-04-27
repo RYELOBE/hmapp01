@@ -1,0 +1,116 @@
+CREATE TABLE IF NOT EXISTS user_account (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  username VARCHAR(64) NOT NULL UNIQUE,
+  password VARCHAR(128) NOT NULL,
+  nickname VARCHAR(64) NOT NULL,
+  roles VARCHAR(128) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS item (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  title VARCHAR(128) NOT NULL,
+  price INT NOT NULL,
+  description VARCHAR(512) NOT NULL,
+  seller_id BIGINT NOT NULL,
+  seller_name VARCHAR(64) NOT NULL,
+  review_status VARCHAR(16) NOT NULL,
+  reject_reason VARCHAR(255)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS review_log (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  item_id BIGINT NOT NULL,
+  operator_id BIGINT NOT NULL,
+  action VARCHAR(16) NOT NULL,
+  reason VARCHAR(255),
+  created_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS orders (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  item_id BIGINT NOT NULL,
+  item_title VARCHAR(128) NOT NULL,
+  buyer_id BIGINT NOT NULL,
+  seller_id BIGINT NOT NULL,
+  amount INT NOT NULL,
+  status VARCHAR(16) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS knowledge_chunk (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  source_type VARCHAR(32) NOT NULL,
+  title VARCHAR(128) NOT NULL,
+  content TEXT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ai_session (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  session_id VARCHAR(64) NOT NULL UNIQUE,
+  user_id BIGINT NOT NULL,
+  updated_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ai_message (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  session_id VARCHAR(64) NOT NULL,
+  role VARCHAR(16) NOT NULL,
+  content TEXT NOT NULL,
+  references_json TEXT,
+  created_at DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS app_register (
+  app_code VARCHAR(64) PRIMARY KEY,
+  title VARCHAR(128) NOT NULL,
+  entry VARCHAR(512) NOT NULL,
+  path_prefix VARCHAR(128) NOT NULL,
+  roles VARCHAR(512) NOT NULL DEFAULT '',
+  hide_shell_menu TINYINT(1) NOT NULL DEFAULT 0,
+  portal_code VARCHAR(64) NOT NULL DEFAULT ''
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 门户配置表：存储运营端设计的门户主题、布局等
+CREATE TABLE IF NOT EXISTS portal_config (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  portal_code VARCHAR(64) NOT NULL UNIQUE,
+  portal_name VARCHAR(128) NOT NULL,
+  template_type VARCHAR(32) NOT NULL DEFAULT 'backstage',
+  config_json TEXT NOT NULL,
+  login_config_id BIGINT,
+  updated_by VARCHAR(64),
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 资源菜单表：树形菜单资源（页面/按钮）
+CREATE TABLE IF NOT EXISTS resource_menu (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  parent_id BIGINT NOT NULL DEFAULT 0,
+  menu_code VARCHAR(64) NOT NULL UNIQUE,
+  menu_name VARCHAR(128) NOT NULL,
+  menu_type VARCHAR(16) NOT NULL DEFAULT 'MENU',
+  app_code VARCHAR(64) NOT NULL DEFAULT '',
+  path VARCHAR(256) NOT NULL DEFAULT '',
+  icon VARCHAR(128) NOT NULL DEFAULT '',
+  sort_order INT NOT NULL DEFAULT 0,
+  visible TINYINT(1) NOT NULL DEFAULT 1
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 角色-资源关联表
+CREATE TABLE IF NOT EXISTS role_resource (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  role_code VARCHAR(64) NOT NULL,
+  resource_id BIGINT NOT NULL,
+  UNIQUE KEY uk_role_resource (role_code, resource_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS uploaded_file (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  original_name VARCHAR(255) NOT NULL,
+  stored_name VARCHAR(255) NOT NULL,
+  file_path VARCHAR(500) NOT NULL,
+  file_size BIGINT NOT NULL,
+  content_type VARCHAR(100),
+  url VARCHAR(500) NOT NULL,
+  uploader_id BIGINT,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

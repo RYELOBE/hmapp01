@@ -1,0 +1,51 @@
+[INFO] Scanning for projects...
+[INFO] 
+[INFO] ---------------------< com.campus:marketplace-api >---------------------
+[INFO] Building marketplace-api 0.0.1-SNAPSHOT
+[INFO]   from pom.xml
+[INFO] --------------------------------[ jar ]---------------------------------
+[INFO] 
+[INFO] --- resources:3.3.1:resources (default-resources) @ marketplace-api ---
+[INFO] Copying 1 resource from src\main\resources to target\classes
+[INFO] Copying 2 resources from src\main\resources to target\classes
+[INFO] 
+[INFO] --- compiler:3.13.0:compile (default-compile) @ marketplace-api ---
+[INFO] Recompiling the module because of changed source code.
+[INFO] Compiling 36 source files with javac [debug parameters release 17] to target\classes
+[INFO] -------------------------------------------------------------
+[ERROR] COMPILATION ERROR : 
+[INFO] -------------------------------------------------------------
+[ERROR] /c:/Users/Administrator/Documents/New project/backend/src/main/java/com/campus/marketplace/repository/ResourceMenuRepository.java:[76,10] 找不到符号
+  符号:   类 Optional
+  位置: 类 com.campus.marketplace.repository.ResourceMenuRepository
+[ERROR] /c:/Users/Administrator/Documents/New project/backend/src/main/java/com/campus/marketplace/repository/ResourceMenuRepository.java:[79,32] 找不到符号
+  符号:   变量 Optional
+  位置: 类 com.campus.marketplace.repository.ResourceMenuRepository
+[ERROR] /c:/Users/Administrator/Documents/New project/backend/src/main/java/com/campus/marketplace/repository/ResourceMenuRepository.java:[79,51] 找不到符号
+  符号:   变量 Optional
+  位置: 类 com.campus.marketplace.repository.ResourceMenuRepository
+[INFO] 3 errors 
+[INFO] -------------------------------------------------------------
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  2.637 s
+[INFO] Finished at: 2026-04-26T18:52:42+08:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.13.0:compile (default-compile) on project marketplace-api: Compilation failure: Compilation failure: 
+[ERROR] /c:/Users/Administrator/Documents/New project/backend/src/main/java/com/campus/marketplace/repository/ResourceMenuRepository.java:[76,10] 找不到符号
+[ERROR]   符号:   类 Optional
+[ERROR]   位置: 类 com.campus.marketplace.repository.ResourceMenuRepository
+[ERROR] /c:/Users/Administrator/Documents/New project/backend/src/main/java/com/campus/marketplace/repository/ResourceMenuRepository.java:[79,32] 找不到符号
+[ERROR]   符号:   变量 Optional
+[ERROR]   位置: 类 com.campus.marketplace.repository.ResourceMenuRepository
+[ERROR] /c:/Users/Administrator/Documents/New project/backend/src/main/java/com/campus/marketplace/repository/ResourceMenuRepository.java:[79,51] 找不到符号
+[ERROR]   符号:   变量 Optional
+[ERROR]   位置: 类 com.campus.marketplace.repository.ResourceMenuRepository
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException

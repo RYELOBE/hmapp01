@@ -1,0 +1,11 @@
+{
+	"exposes": {
+		"./auth-sdk": "./src/modules/provide-auth/sdk/auth-sdk.js",
+		"./roles": "./src/modules/provide-auth/sdk/roles.js",
+		"./http": "./src/modules/provide-auth/sdk/http.js",
+		"./theme": "./src/modules/provide-auth/sdk/theme.js",
+		"./ai-sdk": "./src/modules/provide-auth/sdk/ai-sdk.js",
+		"./login": "./src/modules/provide-auth/components/Login/index.js",
+		"./status-tag": "./src/modules/provide-auth/components/StatusTag/index.js"
+	}
+}

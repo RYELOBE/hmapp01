@@ -1,0 +1,26 @@
+:root {
+  --campus-primary: #4a90ff;
+  --campus-primary-soft: #eaf3ff;
+  --campus-bg: #ffffff;
+  --campus-bg-soft: #f6f9ff;
+  --campus-text: #1d2a3d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: linear-gradient(180deg, #f7fbff 0%, #ffffff 100%);
+  color: var(--campus-text);
+  font-family: "Segoe UI", "PingFang SC", sans-serif;
+}
+
+.subapp-shell {
+  min-height: calc(100vh - 56px);
+}

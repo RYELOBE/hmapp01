@@ -1,0 +1,16 @@
+{
+	"shared": {
+		"vue": {
+			"singleton": true
+		},
+		"pinia": {
+			"singleton": true
+		},
+		"vue-router": {
+			"singleton": true
+		},
+		"@arco-design/web-vue": {
+			"singleton": false
+		}
+	}
+}

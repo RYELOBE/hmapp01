@@ -1,0 +1,38 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: marketplace-api
+  jackson:
+    default-property-inclusion: non_null
+  servlet:
+    multipart:
+      max-file-size: 2MB
+      max-request-size: 2MB
+  datasource:
+    url: jdbc:mysql://localhost:3306/grand_test?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema.sql
+      data-locations: classpath:data.sql
+      encoding: UTF-8
+logging:
+  level:
+    org.springframework.jdbc: DEBUG
+    org.springframework.boot.autoconfigure.jdbc: DEBUG
+
+sa-token:
+  token-name: Authorization
+  timeout: 2592000
+  is-read-cookie: false
+  is-share: false
+
+ai:
+  base-url: ${AI_BASE_URL:https://open.bigmodel.cn}
+  api-key: ${AI_API_KEY:4b1730b7bef904e7ccd7bc105d8d4ec7.SQis5Gk6cLtj6QQX}
+  model: ${AI_MODEL:glm-4-flash}
