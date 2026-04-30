@@ -7,17 +7,21 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.campus.marketplace.repository.AIMessageRepository;
 import com.campus.marketplace.repository.AISessionRepository;
 import com.campus.marketplace.repository.KnowledgeRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 import java.util.List;
 import java.util.Map;
 
 @Service
 public class AIService {
+  private static final Logger logger = LoggerFactory.getLogger(AIService.class);
+  
   private final AISessionRepository sessionRepository;
   private final AIMessageRepository messageRepository;
   private final KnowledgeRepository knowledgeRepository;
@@ -103,7 +107,8 @@ public class AIService {
           .retrieve()
           .body(String.class);
       answer = extractAssistantResponse(response);
-    } catch (Exception e) {
+    } catch (RestClientException e) {
+      logger.error("AI API call failed: {}", e.getMessage(), e);
       answer = "抱歉，AI 服务暂时不可用，请稍后重试。";
     }
 

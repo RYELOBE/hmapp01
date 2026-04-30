@@ -29,10 +29,18 @@ public class OrderService {
 
   /** 根据角色返回对应订单列表 */
   public List<Map<String, Object>> getMine(Long userId, List<String> roles) {
-    if (roles.contains("SELLER")) {
+    boolean isSeller = roles.contains("SELLER");
+    boolean isBuyer = roles.contains("BUYER");
+    
+    if (isSeller && isBuyer) {
+      List<Map<String, Object>> orders = orderRepository.findBySellerId(userId);
+      orders.addAll(orderRepository.findByBuyerId(userId));
+      return orders;
+    } else if (isSeller) {
       return orderRepository.findBySellerId(userId);
+    } else {
+      return orderRepository.findByBuyerId(userId);
     }
-    return orderRepository.findByBuyerId(userId);
   }
 
   public List<Map<String, Object>> listAllOrders() {

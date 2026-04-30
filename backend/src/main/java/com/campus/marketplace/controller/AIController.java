@@ -6,6 +6,7 @@ import com.campus.marketplace.service.CurrentUserService;
 import java.util.List;
 import java.util.Map;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -49,7 +50,7 @@ public class AIController {
 
   /** 获取某个会话的消息记录 */
   @GetMapping("/sessions/{sessionId}/messages")
-  public Map<String, Object> sessionMessages(String sessionId) {
+  public Map<String, Object> sessionMessages(@PathVariable("sessionId") String sessionId) {
     return Map.of("messages", aiService.getMessages(sessionId));
   }
 }
