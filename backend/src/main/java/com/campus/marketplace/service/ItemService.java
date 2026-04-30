@@ -28,9 +28,14 @@ public class ItemService {
   }
 
   public List<Map<String, Object>> listItems(Boolean approvedOnly, Boolean mine, Long userId) {
-    if (Boolean.TRUE.equals(mine)) {
+    boolean showMine = Boolean.TRUE.equals(mine);
+    boolean showApprovedOnly = Boolean.TRUE.equals(approvedOnly);
+    
+    if (showMine && showApprovedOnly) {
+      return itemRepository.findBySellerIdAndApproved(userId);
+    } else if (showMine) {
       return itemRepository.findBySellerId(userId);
-    } else if (Boolean.TRUE.equals(approvedOnly)) {
+    } else if (showApprovedOnly) {
       return itemRepository.findApproved();
     }
     return itemRepository.findAll();

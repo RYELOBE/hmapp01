@@ -62,6 +62,10 @@ public class ItemRepository {
     return jdbc.query("SELECT * FROM item WHERE seller_id = ? ORDER BY id", ROW_MAPPER, sellerId);
   }
 
+  public List<Map<String, Object>> findBySellerIdAndApproved(Long sellerId) {
+    return jdbc.query("SELECT * FROM item WHERE seller_id = ? AND review_status = 'APPROVED' ORDER BY id", ROW_MAPPER, sellerId);
+  }
+
   public List<Map<String, Object>> findPending() {
     return jdbc.query("SELECT * FROM item WHERE review_status = 'PENDING' ORDER BY id", ROW_MAPPER);
   }
