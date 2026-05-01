@@ -22,12 +22,12 @@ INSERT IGNORE INTO knowledge_chunk (source_type, title, content) VALUES
 
 -- 插入预置子应用注册配置
 INSERT IGNORE INTO app_register (app_code, title, entry, path_prefix, roles) VALUES
-  ('portal', '门户（买家/卖家）', 'http://localhost:7107', '/portal', 'BUYER,SELLER'),
-  ('ops', '运营中心', 'http://localhost:7108', '/ops', 'OPS');
+  ('portal', '门户（买家/卖家）', 'http://localhost:7101', '/portal', 'BUYER,SELLER'),
+  ('ops', '运营中心', 'http://localhost:7102', '/ops', 'OPS');
 
 -- 更新子应用入口URL
-UPDATE app_register SET entry = 'http://localhost:7107' WHERE app_code = 'portal';
-UPDATE app_register SET entry = 'http://localhost:7108' WHERE app_code = 'ops';
+UPDATE app_register SET entry = 'http://localhost:7101' WHERE app_code = 'portal';
+UPDATE app_register SET entry = 'http://localhost:7102' WHERE app_code = 'ops';
 
 -- 插入预置门户配置
 INSERT IGNORE INTO portal_config (portal_code, portal_name, template_type, config_json) VALUES
@@ -36,11 +36,11 @@ INSERT IGNORE INTO portal_config (portal_code, portal_name, template_type, confi
 
 -- 插入预置资源菜单
 INSERT IGNORE INTO resource_menu (id, parent_id, menu_code, menu_name, menu_type, app_code, path, icon, sort_order) VALUES
-  (1, 0, 'buyer_home', '买家首页', 'MENU', 'portal', '/portal/buyer/home', 'icon-home', 1),
+  (1, 0, 'buyer_home', '买家首页', 'MENU', 'portal', '/portal/home', 'icon-home', 1),
   (2, 0, 'buyer_items', '商品浏览', 'MENU', 'portal', '/portal/buyer/items', 'icon-apps', 2),
-  (3, 0, 'buyer_orders', '我的订单', 'MENU', 'portal', '/portal/buyer/orders', 'icon-list', 3),
+  (3, 0, 'buyer_orders', '我的订单', 'MENU', 'portal', '/portal/orders', 'icon-list', 3),
   (4, 0, 'seller_items', '我的商品', 'MENU', 'portal', '/portal/seller/items', 'icon-storage', 4),
-  (5, 0, 'seller_orders', '卖家订单', 'MENU', 'portal', '/portal/seller/orders', 'icon-file', 5),
+  (5, 0, 'seller_orders', '卖家订单', 'MENU', 'portal', '/portal/orders', 'icon-file', 5),
   (10, 0, 'ops_dashboard', '数据概览', 'MENU', 'ops', '/ops/dashboard', 'icon-dashboard', 1),
   (11, 0, 'ops_reviews', '商品审核', 'MENU', 'ops', '/ops/reviews', 'icon-check-circle', 2),
   (12, 0, 'ops_orders', '订单监控', 'MENU', 'ops', '/ops/orders', 'icon-order', 3),

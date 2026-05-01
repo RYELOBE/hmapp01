@@ -2,32 +2,32 @@ import { createRouter, createWebHistory } from "vue-router";
 import Layout from "../views/Layout.vue";
 import Login from "../views/Login.vue";
 import ForbiddenView from "../views/ForbiddenView.vue";
-import BuyerHome from "../views/BuyerHome.vue";
-import ItemList from "../views/ItemList.vue";
-import ItemDetail from "../views/ItemDetail.vue";
-import SellerCenter from "../views/SellerCenter.vue";
-import PublishItem from "../views/PublishItem.vue";
-import MyItems from "../views/MyItems.vue";
-import MyOrders from "../views/MyOrders.vue";
+import Home from "../views/home/index.vue";
+import ItemDetail from "../views/item/index.vue";
+import SellerPublish from "../views/seller/PublishItem.vue";
+import SellerItems from "../views/seller/MyItems.vue";
+import Orders from "../views/orders/index.vue";
 import { getCurrentUser } from "commonprovide/auth-sdk";
 import { hasAnyRole } from "@campus/common/roles";
 
 const routes = [
-  { path: "/", redirect: "/login" },
+  { path: "/", redirect: "/home" },
   { path: "/login", component: Login, meta: { hideMenu: true } },
   { path: "/forbidden", component: ForbiddenView, meta: { hideMenu: true } },
   {
     path: "/",
     component: Layout,
     children: [
-      { path: "buyer/home", component: BuyerHome, meta: { roles: ["BUYER"] } },
-      { path: "buyer/items", component: ItemList, meta: { roles: ["BUYER"] } },
-      { path: "buyer/items/:id", component: ItemDetail, meta: { roles: ["BUYER"] } },
-      { path: "seller/center", component: SellerCenter, meta: { roles: ["SELLER"] } },
-      { path: "seller/publish", component: PublishItem, meta: { roles: ["SELLER"] } },
-      { path: "seller/items", component: MyItems, meta: { roles: ["SELLER"] } },
-      { path: "orders", component: MyOrders, meta: { roles: ["BUYER", "SELLER"] } }
-    ]
+      { path: "home", component: Home },
+      { path: "buyer/home", redirect: "/home", meta: { roles: ["BUYER"] } },
+      { path: "buyer/items", component: Home, meta: { roles: ["BUYER"], title: "淘好物" } },
+      { path: "buyer/orders", component: Orders, meta: { roles: ["BUYER"] } },
+      { path: "item/:id", component: ItemDetail },
+      { path: "seller/publish", component: SellerPublish, meta: { roles: ["SELLER"] } },
+      { path: "seller/items", component: SellerItems, meta: { roles: ["SELLER"] } },
+      { path: "seller/orders", component: Orders, meta: { roles: ["SELLER"] } },
+      { path: "orders", component: Orders, meta: { roles: ["BUYER", "SELLER"] } },
+    ],
   },
 ];
 
@@ -39,14 +39,10 @@ export function createPortalRouter(poweredByQiankun = false) {
   router.beforeEach((to) => {
     const user = getCurrentUser();
     if (to.path === "/login") {
-      if (user) {
-        return "/buyer/home";
-      }
+      if (user) return "/home";
       return true;
     }
-    if (!user) {
-      return "/login";
-    }
+    if (!user) return "/login";
     const roles = user.roles || [];
     if (to.meta.roles && !hasAnyRole(roles, to.meta.roles)) {
       return "/forbidden";

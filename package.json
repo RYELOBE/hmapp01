@@ -11,8 +11,8 @@
     "nohoist": []
   },
   "scripts": {
-    "dev:front": "concurrently -k -n commonprovide,shell,portal,ops \"pnpm --filter campus-commonprovide dev\" \"pnpm --filter campus-shell dev\" \"pnpm --filter campus-portal dev\" \"pnpm --filter campus-ops dev\"",
-    "dev:all": "pnpm --filter campus-shell dev",
+    "dev:front": "pnpm --filter campus-commonprovide build && concurrently -k -n commonprovide,shell,portal,ops \"pnpm --filter campus-commonprovide preview\" \"pnpm --filter campus-shell dev\" \"pnpm --filter campus-portal dev\" \"pnpm --filter campus-ops dev\"",
+    "dev:all": "pnpm dev:front",
     "dev:shell": "pnpm --filter campus-shell dev",
     "dev:portal": "pnpm --filter campus-portal dev",
     "dev:ops": "pnpm --filter campus-ops dev",

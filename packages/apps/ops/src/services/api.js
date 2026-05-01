@@ -1,7 +1,8 @@
 import { http } from "commonprovide/http";
 
-export function getReviewQueue() {
-  return http.get("/ops/reviews");
+// ── 审核 API ──────────────────────────────
+export function getReviewQueue(params = {}) {
+  return http.get("/ops/reviews", { params });
 }
 
 export function approveItem(itemId) {
@@ -16,7 +17,27 @@ export function getItemDetail(itemId) {
   return http.get(`/items/${itemId}`);
 }
 
-// ── 子应用管理 API ──────────────────────────────────
+// ── 运营统计 API ──────────────────────────────
+export function getStatistics() {
+  return http.get("/ops/statistics");
+}
+
+// ── 订单监控 API ──────────────────────────────
+export function getOpsOrders(params = {}) {
+  return http.get("/ops/orders", { params });
+}
+
+// ── 供方管理 API ──────────────────────────────
+export function getVendors(params = {}) {
+  return http.get("/ops/vendors", { params });
+}
+
+// ── 需方管理 API ──────────────────────────────
+export function getBuyers(params = {}) {
+  return http.get("/ops/buyers", { params });
+}
+
+// ── 子应用管理 API ──────────────────────────────
 export function getAppRegisters() {
   return http.get("/frame/registers");
 }
@@ -29,7 +50,7 @@ export function deleteAppRegister(appCode) {
   return http.delete(`/frame/registers/${appCode}`);
 }
 
-// ── 门户配置 API ──────────────────────────────────
+// ── 门户配置 API ──────────────────────────────
 export function getPortalConfigs() {
   return http.get("/portal/configs");
 }
@@ -46,7 +67,7 @@ export function deletePortalConfig(portalCode) {
   return http.delete(`/portal/configs/${portalCode}`);
 }
 
-// ── 资源菜单 API ──────────────────────────────────
+// ── 资源菜单 API ──────────────────────────────
 export function getResourceMenus() {
   return http.get("/resource/menus");
 }
@@ -63,7 +84,7 @@ export function deleteResourceMenu(id) {
   return http.delete(`/resource/menus/${id}`);
 }
 
-// ── 角色管理 API ──────────────────────────────────
+// ── 角色管理 API ──────────────────────────────
 export function getAllRoles() {
   return http.get("/resource/roles");
 }

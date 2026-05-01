@@ -1,151 +1,286 @@
 <template>
-  <div class="portal-main" :class="{ 'portal-main--qiankun': isQiankunMode }">
-    <div v-if="!isQiankunMode" class="portal-main_header">
-      <div class="brand" @click="$router.push('/buyer/home')">Campus Trade</div>
-      <a-space>
-        <a-tag color="arcoblue">{{ currentRole }}</a-tag>
-        <a-button type="text" status="danger" @click="logout">退出</a-button>
-      </a-space>
-    </div>
-    <div class="portal-main_body">
-      <a-menu
-        v-if="showLeftMenu($route)"
-        class="portal-main_body_sider"
-        :selected-keys="[activeKey]"
-        @menu-item-click="navigate"
-      >
-        <a-menu-item
-          v-for="item in filteredMenuConfig"
-          :key="item.path"
-        >
-          <span>{{ item.label }}</span>
-        </a-menu-item>
-      </a-menu>
-      <div class="portal-main_body_content">
-        <router-view></router-view>
+  <div class="portal-layout" :class="{ 'portal-layout--qiankun': isQiankunMode }">
+    <!-- 顶部导航栏 -->
+    <header v-if="!isQiankunMode" class="portal-nav">
+      <div class="portal-nav__inner">
+        <!-- Logo -->
+        <div class="portal-nav__brand" @click="$router.push('/home')">
+          <span class="portal-nav__logo">🎓</span>
+          <span class="portal-nav__title">校园集市</span>
+        </div>
+
+        <!-- 搜索框 -->
+        <div class="portal-nav__search">
+          <a-input-search
+            v-model="searchKeyword"
+            placeholder="搜索你想要的宝贝..."
+            search-button
+            size="large"
+            @search="handleSearch"
+            @press-enter="handleSearch"
+          />
+        </div>
+
+        <!-- 导航链接 -->
+        <nav class="portal-nav__links">
+          <a
+            v-for="link in navLinks"
+            :key="link.path"
+            class="portal-nav__link"
+            :class="{ 'portal-nav__link--active': isActive(link.path) }"
+            @click="navigate(link.path)"
+          >
+            <span class="portal-nav__link-icon">{{ link.iconEmoji }}</span>
+            <span>{{ link.label }}</span>
+          </a>
+        </nav>
+
+        <!-- 用户区 -->
+        <div class="portal-nav__user">
+          <a-dropdown trigger="hover">
+            <div class="portal-nav__avatar">
+              <a-avatar :size="32">{{ currentUser?.username?.[0] || 'U' }}</a-avatar>
+              <span class="portal-nav__username">{{ currentUser?.username || '用户' }}</span>
+            </div>
+            <template #content>
+              <a-doption @click="$router.push('/orders')">
+                <template #icon><icon-list /></template>我的订单
+              </a-doption>
+              <a-doption v-if="isSeller" @click="$router.push('/seller/publish')">
+                <template #icon><icon-plus /></template>发布商品
+              </a-doption>
+              <a-doption @click="logout" class="portal-nav__logout">
+                <template #icon><icon-export /></template>退出登录
+              </a-doption>
+            </template>
+          </a-dropdown>
+        </div>
       </div>
-    </div>
+    </header>
+
+    <!-- 内容区 -->
+    <main class="portal-content">
+      <router-view></router-view>
+    </main>
+
+    <!-- 底部 -->
+    <footer v-if="!isQiankunMode" class="portal-footer">
+      <p>© 2026 校园集市 — 让闲置转起来 ♻️</p>
+    </footer>
   </div>
 </template>
 
 <script setup>
-import { computed, ref, onMounted, onUnmounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import { Message } from '@arco-design/web-vue';
+import { ref, computed, onMounted, onUnmounted } from "vue";
+import { useRouter, useRoute } from "vue-router";
+import { Message } from "@arco-design/web-vue";
 import { getCurrentUser, logout as logoutSdk, onUserChange } from "commonprovide/auth-sdk";
-import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
+import { qiankunWindow } from "vite-plugin-qiankun/dist/helper";
 
 const isQiankunMode = qiankunWindow.__POWERED_BY_QIANKUN__;
-
 const router = useRouter();
 const route = useRoute();
 
 const currentUser = ref(getCurrentUser());
+const searchKeyword = ref("");
 
-// 监听用户登录/登出变化，保持 Layout 与 auth 状态同步
+// 监听用户状态变化
 let unwatch = null;
 onMounted(() => {
-  unwatch = onUserChange((user) => {
-    currentUser.value = user;
-  });
+  unwatch = onUserChange((user) => { currentUser.value = user; });
 });
-onUnmounted(() => {
-  unwatch?.();
-});
+onUnmounted(() => { unwatch?.(); });
 
-const currentRole = computed(() => {
+const isSeller = computed(() => {
   const roles = currentUser.value?.roles || [];
-  if (roles.includes('SELLER')) return '卖家';
-  if (roles.includes('BUYER')) return '买家';
-  return '用户';
+  return roles.includes("SELLER");
 });
 
-const activeKey = computed(() => route.path);
-
-const menuConfig = [
-  { path: '/buyer/home', label: '买家首页', roles: ['BUYER'] },
-  { path: '/buyer/items', label: '商品列表', roles: ['BUYER'] },
-  { path: '/seller/center', label: '卖家中心', roles: ['SELLER'] },
-  { path: '/seller/publish', label: '发布商品', roles: ['SELLER'] },
-  { path: '/seller/items', label: '我的商品', roles: ['SELLER'] },
-  { path: '/orders', label: '我的订单', roles: ['BUYER', 'SELLER'] }
-];
-
-const filteredMenuConfig = computed(() => {
-  const userRoles = currentUser.value?.roles || [];
-  return menuConfig.filter(item => {
-    if (!item.roles || !Array.isArray(item.roles)) return false;
-    return item.roles.some(r => userRoles.includes(r));
-  });
-});
-
-function showLeftMenu(route) {
-  if (route.meta.hideMenu !== undefined) {
-    return !route.meta.hideMenu;
+const navLinks = computed(() => {
+  const roles = currentUser.value?.roles || [];
+  const links = [
+    { path: "/home", label: "首页", iconEmoji: "🏠" },
+  ];
+  if (roles.includes("BUYER")) {
+    links.push({ path: "/buyer/items", label: "淘好物", iconEmoji: "🔍" });
   }
-  return true;
+  if (roles.includes("SELLER")) {
+    links.push({ path: "/seller/items", label: "我的闲置", iconEmoji: "📦" });
+  }
+  links.push({ path: "/orders", label: "订单", iconEmoji: "✅" });
+  return links;
+});
+
+function isActive(path) {
+  return route.path.startsWith(path);
 }
 
 function navigate(path) {
   router.push(path);
 }
 
+function handleSearch(val) {
+  if (val.trim()) {
+    router.push({ path: "/home", query: { keyword: val.trim() } });
+  }
+}
+
 function logout() {
   logoutSdk();
-  router.push('/login');
-  Message.success('已退出登录');
+  router.push("/login");
+  Message.success("已退出登录");
 }
 </script>
 
 <style lang="scss" scoped>
-.portal-main {
-  width: 100%;
-  height: 100vh;
+// ── 门户主题变量 ────────────────────────────
+$portal-primary: #0fc6c2;
+$portal-primary-light: #e8faf9;
+$portal-orange: #f0a838;
+$portal-bg: #f5f5f5;
+$portal-card: #ffffff;
+$portal-text: #1d2129;
+$portal-text-secondary: #4e5969;
+$portal-text-muted: #86909c;
+$portal-nav-height: 64px;
 
-  &--qiankun &_body {
-    height: 100%;
+.portal-layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: $portal-bg;
+
+  &--qiankun .portal-content {
+    min-height: 100%;
   }
+}
 
-  &_header {
-    width: 100%;
-    height: 48px;
-    background: linear-gradient(135deg, #336ad8 0%, #4a7feb 100%);
-    box-sizing: border-box;
+// ── 顶部导航 ────────────────────────────
+.portal-nav {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  background: $portal-card;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+
+  &__inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    height: $portal-nav-height;
+    padding: 0 24px;
     display: flex;
     align-items: center;
-    flex-flow: row nowrap;
-    justify-content: space-between;
-    box-shadow: 0 2px 8px rgba(51, 106, 216, 0.2);
-    position: relative;
-    z-index: 999;
-
-    .brand {
-      padding: 0 20px;
-      font-size: 18px;
-      font-weight: bold;
-      color: #fff;
-      cursor: pointer;
-    }
+    gap: 24px;
   }
 
-  &_body {
+  &__brand {
     display: flex;
-    height: calc(100% - 48px);
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
 
-    &_content {
-      flex: 1;
-      overflow: auto;
-      padding: 20px;
-      background: #f5f8ff;
-    }
+  &__logo {
+    font-size: 28px;
+  }
 
-    &_sider {
-      width: 220px;
-      background-color: #fff;
-      height: 100%;
-      overflow: auto;
-      border-right: 1px solid #e5efff;
+  &__title {
+    font-size: 20px;
+    font-weight: 700;
+    background: linear-gradient(135deg, $portal-primary 0%, $portal-orange 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  &__search {
+    flex: 1;
+    max-width: 480px;
+
+    :deep(.arco-input-search) {
+      border-radius: 24px;
+      border: 2px solid #e5e6eb;
+      transition: border-color 0.2s;
+
+      &:focus-within { border-color: $portal-primary; }
     }
   }
+
+  &__links {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  &__link {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: $portal-text-secondary;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &-icon { font-size: 16px; }
+
+    &:hover {
+      color: $portal-primary;
+      background: $portal-primary-light;
+    }
+
+    &--active {
+      color: $portal-primary;
+      background: $portal-primary-light;
+      font-weight: 600;
+    }
+  }
+
+  &__user {
+    flex-shrink: 0;
+  }
+
+  &__avatar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 20px;
+    transition: background 0.2s;
+
+    &:hover { background: #f2f3f5; }
+  }
+
+  &__username {
+    font-size: 14px;
+    color: $portal-text;
+  }
+
+  &__logout {
+    color: #f53f3f !important;
+  }
+}
+
+// ── 内容区 ────────────────────────────
+.portal-content {
+  flex: 1;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px 24px;
+}
+
+// ── 底部 ────────────────────────────
+.portal-footer {
+  text-align: center;
+  padding: 20px;
+  color: $portal-text-muted;
+  font-size: 13px;
+  border-top: 1px solid #e5e6eb;
+  background: $portal-card;
 }
 </style>

@@ -6,10 +6,13 @@ import cn.dev33.satoken.annotation.SaMode;
 import com.campus.marketplace.service.CurrentUserService;
 import com.campus.marketplace.service.OrderService;
 import java.util.Map;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -31,8 +34,19 @@ public class OrderController {
   }
 
   @GetMapping("/mine")
-  public Map<String, Object> mine() {
-    return Map.of("orders", orderService.getMine(currentUserService.userId(), currentUserService.roles()));
+  public Map<String, Object> mine(
+      @RequestParam(required = false) String status,
+      @RequestParam(defaultValue = "1") int pageNo,
+      @RequestParam(defaultValue = "10") int pageSize
+  ) {
+    return orderService.getMinePaged(currentUserService.userId(), currentUserService.roles(), status, pageNo, pageSize);
+  }
+
+  /** 确认收货 */
+  @PostMapping("/{id}/confirm")
+  public Map<String, Object> confirm(@PathVariable("id") Long orderId) {
+    orderService.confirmOrder(orderId, currentUserService.userId());
+    return Map.of("code", 200, "message", "已确认收货");
   }
 
   public record CreateOrderRequest(Long itemId) {

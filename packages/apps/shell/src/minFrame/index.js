@@ -70,10 +70,24 @@ export function startMinFrame() {
   }
 }
 
+function getMicroAppErrorMessage(event) {
+  return event?.message
+    || event?.reason?.message
+    || event?.error?.message
+    || event?.detail?.message
+    || String(event || "子应用加载失败");
+}
+
 addGlobalUncaughtErrorHandler((event) => {
-  const message = event?.message || "";
-  if (message.includes("qiankun")) {
-    const current = router.currentRoute.value.path;
-    router.push(`/forbidden?redirect=${encodeURIComponent(current)}`);
-  }
+  const current = router.currentRoute.value.fullPath;
+  const reason = getMicroAppErrorMessage(event);
+  console.error("Micro app load failed:", reason, event);
+  router.push({
+    path: "/forbidden",
+    query: {
+      type: "micro-app",
+      redirect: current,
+      reason
+    }
+  }).catch(() => undefined);
 });

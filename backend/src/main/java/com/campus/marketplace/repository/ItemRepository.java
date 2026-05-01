@@ -1,5 +1,6 @@
 package com.campus.marketplace.repository;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,11 @@ public class ItemRepository {
     row.put("sellerName", rs.getString("seller_name"));
     row.put("reviewStatus", rs.getString("review_status"));
     row.put("rejectReason", rs.getString("reject_reason"));
+    row.put("imageUrls", rs.getString("image_urls"));
+    row.put("category", rs.getString("category"));
+    row.put("conditionLevel", rs.getString("condition_level"));
+    row.put("campus", rs.getString("campus"));
+    row.put("createdAt", rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toString() : null);
     return row;
   };
 
@@ -33,41 +39,52 @@ public class ItemRepository {
   }
 
   public Map<String, Object> save(String title, Integer price, String description,
-      Long sellerId, String sellerName) {
+      Long sellerId, String sellerName, String imageUrls, String category,
+      String conditionLevel, String campus) {
     KeyHolder kh = new GeneratedKeyHolder();
     jdbc.update(con -> {
       var ps = con.prepareStatement(
-          "INSERT INTO item (title, price, description, seller_id, seller_name, review_status) VALUES (?, ?, ?, ?, ?, 'PENDING')",
+          "INSERT INTO item (title, price, description, seller_id, seller_name, review_status, image_urls, category, condition_level, campus) VALUES (?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?)",
           Statement.RETURN_GENERATED_KEYS);
       ps.setString(1, title);
       ps.setInt(2, price);
       ps.setString(3, description);
       ps.setLong(4, sellerId);
       ps.setString(5, sellerName);
+      ps.setString(6, imageUrls);
+      ps.setString(7, category);
+      ps.setString(8, conditionLevel);
+      ps.setString(9, campus);
       return ps;
     }, kh);
     Long id = kh.getKey().longValue();
     return findById(id);
   }
 
+  // 向后兼容
+  public Map<String, Object> save(String title, Integer price, String description,
+      Long sellerId, String sellerName) {
+    return save(title, price, description, sellerId, sellerName, null, null, null, null);
+  }
+
   public List<Map<String, Object>> findAll() {
-    return jdbc.query("SELECT * FROM item ORDER BY id", ROW_MAPPER);
+    return jdbc.query("SELECT * FROM item ORDER BY created_at DESC, id DESC", ROW_MAPPER);
   }
 
   public List<Map<String, Object>> findApproved() {
-    return jdbc.query("SELECT * FROM item WHERE review_status = 'APPROVED' ORDER BY id", ROW_MAPPER);
+    return jdbc.query("SELECT * FROM item WHERE review_status = 'APPROVED' ORDER BY created_at DESC, id DESC", ROW_MAPPER);
   }
 
   public List<Map<String, Object>> findBySellerId(Long sellerId) {
-    return jdbc.query("SELECT * FROM item WHERE seller_id = ? ORDER BY id", ROW_MAPPER, sellerId);
+    return jdbc.query("SELECT * FROM item WHERE seller_id = ? ORDER BY created_at DESC, id DESC", ROW_MAPPER, sellerId);
   }
 
   public List<Map<String, Object>> findBySellerIdAndApproved(Long sellerId) {
-    return jdbc.query("SELECT * FROM item WHERE seller_id = ? AND review_status = 'APPROVED' ORDER BY id", ROW_MAPPER, sellerId);
+    return jdbc.query("SELECT * FROM item WHERE seller_id = ? AND review_status = 'APPROVED' ORDER BY created_at DESC, id DESC", ROW_MAPPER, sellerId);
   }
 
   public List<Map<String, Object>> findPending() {
-    return jdbc.query("SELECT * FROM item WHERE review_status = 'PENDING' ORDER BY id", ROW_MAPPER);
+    return jdbc.query("SELECT * FROM item WHERE review_status = 'PENDING' ORDER BY created_at DESC, id DESC", ROW_MAPPER);
   }
 
   public Map<String, Object> findById(Long id) {
@@ -77,5 +94,126 @@ public class ItemRepository {
 
   public void updateReviewStatus(Long id, String status, String reason) {
     jdbc.update("UPDATE item SET review_status = ?, reject_reason = ? WHERE id = ?", status, reason, id);
+  }
+
+  // ── 分页查询（支持筛选） ──────────────────────────
+  public List<Map<String, Object>> findByPage(String status, String keyword, String category,
+      int pageNo, int pageSize) {
+    StringBuilder sql = new StringBuilder("SELECT * FROM item WHERE 1=1");
+    if (status != null && !status.isEmpty()) sql.append(" AND review_status = ?");
+    if (keyword != null && !keyword.isEmpty()) sql.append(" AND title LIKE ?");
+    if (category != null && !category.isEmpty()) sql.append(" AND category = ?");
+    sql.append(" ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?");
+
+    List<Object> params = new ArrayList<>();
+    if (status != null && !status.isEmpty()) params.add(status);
+    if (keyword != null && !keyword.isEmpty()) params.add("%" + keyword + "%");
+    if (category != null && !category.isEmpty()) params.add(category);
+    params.add(pageSize);
+    params.add((pageNo - 1) * pageSize);
+
+    return jdbc.query(sql.toString(), ROW_MAPPER, params.toArray());
+  }
+
+  public int countByFilter(String status, String keyword, String category) {
+    StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM item WHERE 1=1");
+    if (status != null && !status.isEmpty()) sql.append(" AND review_status = ?");
+    if (keyword != null && !keyword.isEmpty()) sql.append(" AND title LIKE ?");
+    if (category != null && !category.isEmpty()) sql.append(" AND category = ?");
+
+    List<Object> params = new ArrayList<>();
+    if (status != null && !status.isEmpty()) params.add(status);
+    if (keyword != null && !keyword.isEmpty()) params.add("%" + keyword + "%");
+    if (category != null && !category.isEmpty()) params.add(category);
+
+    Integer count = jdbc.queryForObject(sql.toString(), Integer.class, params.toArray());
+    return count != null ? count : 0;
+  }
+
+  // ── 统计 ──────────────────────────
+  public int countByStatus(String status) {
+    Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM item WHERE review_status = ?", Integer.class, status);
+    return count != null ? count : 0;
+  }
+
+  public int countAll() {
+    Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM item", Integer.class);
+    return count != null ? count : 0;
+  }
+
+  public int countBySellerId(Long sellerId) {
+    Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM item WHERE seller_id = ?", Integer.class, sellerId);
+    return count != null ? count : 0;
+  }
+
+  public int countBySellerIdAndStatus(Long sellerId, String status) {
+    Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM item WHERE seller_id = ? AND review_status = ?", Integer.class, sellerId, status);
+    return count != null ? count : 0;
+  }
+
+  /** 卖家的商品分页（带状态筛选） */
+  public List<Map<String, Object>> findBySellerIdPaged(Long sellerId, String status,
+      int pageNo, int pageSize) {
+    StringBuilder sql = new StringBuilder("SELECT * FROM item WHERE seller_id = ?");
+    List<Object> params = new ArrayList<>();
+    params.add(sellerId);
+    if (status != null && !status.isEmpty()) {
+      sql.append(" AND review_status = ?");
+      params.add(status);
+    }
+    sql.append(" ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?");
+    params.add(pageSize);
+    params.add((pageNo - 1) * pageSize);
+    return jdbc.query(sql.toString(), ROW_MAPPER, params.toArray());
+  }
+
+  public int countBySellerIdWithFilter(Long sellerId, String status) {
+    if (status != null && !status.isEmpty()) {
+      return countBySellerIdAndStatus(sellerId, status);
+    }
+    return countBySellerId(sellerId);
+  }
+
+  // ── 供方统计 ──────────────────────────
+  public List<Map<String, Object>> findVendorsWithStats(String keyword, int pageNo, int pageSize) {
+    StringBuilder sql = new StringBuilder(
+        "SELECT u.id, u.username, u.nickname, " +
+        "COUNT(i.id) AS totalItems, " +
+        "SUM(CASE WHEN i.review_status = 'APPROVED' THEN 1 ELSE 0 END) AS activeItems, " +
+        "SUM(CASE WHEN i.review_status = 'PENDING' THEN 1 ELSE 0 END) AS pendingItems " +
+        "FROM user_account u LEFT JOIN item i ON u.id = i.seller_id " +
+        "WHERE u.roles LIKE ?");
+    List<Object> params = new ArrayList<>();
+    params.add("%SELLER%");
+
+    if (keyword != null && !keyword.isEmpty()) {
+      sql.append(" AND u.username LIKE ?");
+      params.add("%" + keyword + "%");
+    }
+    sql.append(" GROUP BY u.id, u.username, u.nickname ORDER BY u.id LIMIT ? OFFSET ?");
+    params.add(pageSize);
+    params.add((pageNo - 1) * pageSize);
+    return jdbc.query(sql.toString(), (rs, rowNum) -> {
+      Map<String, Object> row = new HashMap<>();
+      row.put("id", rs.getLong("id"));
+      row.put("username", rs.getString("username"));
+      row.put("nickname", rs.getString("nickname"));
+      row.put("totalItems", rs.getInt("totalItems"));
+      row.put("activeItems", rs.getInt("activeItems"));
+      row.put("pendingItems", rs.getInt("pendingItems"));
+      return row;
+    });
+  }
+
+  public int countVendors(String keyword) {
+    StringBuilder sql = new StringBuilder("SELECT COUNT(DISTINCT u.id) FROM user_account u WHERE u.roles LIKE ?");
+    List<Object> params = new ArrayList<>();
+    params.add("%SELLER%");
+    if (keyword != null && !keyword.isEmpty()) {
+      sql.append(" AND u.username LIKE ?");
+      params.add("%" + keyword + "%");
+    }
+    Integer count = jdbc.queryForObject(sql.toString(), Integer.class, params.toArray());
+    return count != null ? count : 0;
   }
 }

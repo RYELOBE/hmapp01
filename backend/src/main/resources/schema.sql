@@ -14,7 +14,13 @@ CREATE TABLE IF NOT EXISTS item (
   seller_id BIGINT NOT NULL,
   seller_name VARCHAR(64) NOT NULL,
   review_status VARCHAR(16) NOT NULL,
-  reject_reason VARCHAR(255)
+  reject_reason VARCHAR(255),
+  image_urls TEXT,
+  category VARCHAR(32) DEFAULT '',
+  condition_level VARCHAR(16) DEFAULT '',
+  campus VARCHAR(64) DEFAULT '',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS review_log (
@@ -33,7 +39,11 @@ CREATE TABLE IF NOT EXISTS orders (
   buyer_id BIGINT NOT NULL,
   seller_id BIGINT NOT NULL,
   amount INT NOT NULL,
-  status VARCHAR(16) NOT NULL
+  status VARCHAR(16) NOT NULL,
+  item_price INT,
+  buyer_name VARCHAR(64) DEFAULT '',
+  seller_name VARCHAR(64) DEFAULT '',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS knowledge_chunk (

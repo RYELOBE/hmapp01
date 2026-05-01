@@ -49,12 +49,14 @@ pnpm install
 pnpm dev:front
 ```
 
+`pnpm dev:front` builds `mf-shared` first, then starts `commonprovide`, `shell`, `portal`, and `ops`. This keeps `http://localhost:7199/assets/remoteEntry.js` available before the micro apps load it.
+
 Frontend URLs:
 
 - shell: `http://localhost:7100`
 - portal: `http://localhost:7101`
 - ops: `http://localhost:7102`
-- mf-shared: `http://localhost:7199`
+- mf-shared/commonprovide: `http://localhost:7199`
 
 ## Backend Run
 

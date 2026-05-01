@@ -7,6 +7,52 @@ body,
 #app {
   margin: 0;
   min-height: 100%;
-  background: #f6f9ff;
-  font-family: "Segoe UI", "PingFang SC", sans-serif;
+  font-family: "PingFang SC", "Segoe UI", sans-serif;
+}
+
+/* ── Ops 运营后台 CSS 变量主题系统 ──────────────────── */
+:root {
+  /* 主色：暖橙运营 */
+  --ops-primary: #d88c1f;
+  --ops-primary-light: #f0a838;
+  --ops-primary-bg: #fff5e6;
+  --ops-primary-border: #ffe8c9;
+
+  /* 功能色 */
+  --ops-blue: #336ad8;
+  --ops-blue-light: #e8f0ff;
+  --ops-green: #0fc6c2;
+  --ops-green-light: #e8faf9;
+  --ops-red: #f53f3f;
+  --ops-orange: #ff7d00;
+
+  /* 背景 */
+  --ops-bg: #fafafa;
+  --ops-bg-white: #ffffff;
+  --ops-bg-hover: #f7f8fa;
+
+  /* 文字 */
+  --ops-text-1: #1d2129;
+  --ops-text-2: #4e5969;
+  --ops-text-3: #86909c;
+  --ops-text-4: #c9cdd4;
+
+  /* 边框 */
+  --ops-border: #e5e6eb;
+  --ops-border-light: #f0f0f0;
+
+  /* 圆角 */
+  --ops-radius-sm: 6px;
+  --ops-radius-md: 8px;
+  --ops-radius-lg: 12px;
+
+  /* 阴影 */
+  --ops-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.04);
+  --ops-shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
+  --ops-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* 布局 */
+  --ops-header-height: 48px;
+  --ops-sider-width: 220px;
+  --ops-content-padding: 20px;
 }

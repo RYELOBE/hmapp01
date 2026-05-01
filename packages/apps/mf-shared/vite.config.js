@@ -18,6 +18,10 @@ export default defineConfig({
         "./PageHeader": "./src/exposes/PageHeader.js",
         "./ImageUploader": "./src/exposes/ImageUploader.js",
         "./ConfirmDialog": "./src/exposes/ConfirmDialog.js",
+        "./hooks": "./src/exposes/hooks/index.js",
+        "./SearchFilter": "./src/exposes/SearchFilter/index.js",
+        "./ItemCard": "./src/exposes/ItemCard/index.js",
+        "./ImageGallery": "./src/exposes/ImageGallery/index.js",
       },
       shared: {
         vue: { singleton: true },

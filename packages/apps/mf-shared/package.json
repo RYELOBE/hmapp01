@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "node ../../../node_modules/vite/bin/vite.js preview --port 7199",
+    "dev": "node ../../../node_modules/vite/bin/vite.js build && node ../../../node_modules/vite/bin/vite.js preview --port 7199",
     "build": "node ../../../node_modules/vite/bin/vite.js build",
     "dev:build": "node ../../../node_modules/vite/bin/vite.js build && node ../../../node_modules/vite/bin/vite.js preview --port 7199",
     "preview": "node ../../../node_modules/vite/bin/vite.js preview --port 7199"

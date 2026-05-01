@@ -2,10 +2,12 @@ import { createRouter, createWebHistory } from "vue-router";
 import Layout from "../views/Layout.vue";
 import Login from "../views/Login.vue";
 import ForbiddenView from "../views/ForbiddenView.vue";
-import OpsDashboard from "../views/OpsDashboard.vue";
-import ReviewList from "../views/ReviewList.vue";
+import Dashboard from "../views/dashboard/index.vue";
+import Reviews from "../views/reviews/index.vue";
 import ReviewDetail from "../views/ReviewDetail.vue";
-import OrderMonitor from "../views/OrderMonitor.vue";
+import Orders from "../views/orders/index.vue";
+import Vendor from "../views/vendor/index.vue";
+import Buyer from "../views/buyer/index.vue";
 import AppRegisterView from "../views/AppRegisterView.vue";
 import PortalDesign from "../views/PortalDesign.vue";
 import RoleManage from "../views/RoleManage.vue";
@@ -20,33 +22,31 @@ const routes = [
     path: "/",
     component: Layout,
     children: [
-      { path: "ops/dashboard", component: OpsDashboard, meta: { roles: ["OPS"] } },
-      { path: "ops/reviews", component: ReviewList, meta: { roles: ["OPS"] } },
+      { path: "ops/dashboard", component: Dashboard, meta: { roles: ["OPS"] } },
+      { path: "ops/reviews", component: Reviews, meta: { roles: ["OPS"] } },
       { path: "ops/reviews/:id", component: ReviewDetail, meta: { roles: ["OPS"] } },
-      { path: "ops/orders", component: OrderMonitor, meta: { roles: ["OPS"] } },
+      { path: "ops/orders", component: Orders, meta: { roles: ["OPS"] } },
+      { path: "ops/vendor", component: Vendor, meta: { roles: ["OPS"] } },
+      { path: "ops/buyer", component: Buyer, meta: { roles: ["OPS"] } },
       { path: "ops/app-register", component: AppRegisterView, meta: { roles: ["OPS"] } },
       { path: "ops/portal-design", component: PortalDesign, meta: { roles: ["OPS"] } },
-      { path: "ops/role-manage", component: RoleManage, meta: { roles: ["OPS"] } }
-    ]
+      { path: "ops/role-manage", component: RoleManage, meta: { roles: ["OPS"] } },
+    ],
   },
 ];
 
 export function createOpsRouter(poweredByQiankun = false) {
   const router = createRouter({
-    history: createWebHistory(poweredByQiankun ? "/ops" : "/"),
-    routes
+    history: createWebHistory("/"),
+    routes,
   });
   router.beforeEach((to) => {
     const user = getCurrentUser();
     if (to.path === "/login") {
-      if (user) {
-        return "/ops/dashboard";
-      }
+      if (user) return "/ops/dashboard";
       return true;
     }
-    if (!user) {
-      return "/login";
-    }
+    if (!user) return "/login";
     const roles = user.roles || [];
     if (to.meta.roles && !hasAnyRole(roles, to.meta.roles)) {
       return "/forbidden";
