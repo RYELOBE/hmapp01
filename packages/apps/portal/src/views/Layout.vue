@@ -46,8 +46,17 @@
               <a-doption @click="$router.push('/orders')">
                 <template #icon><icon-list /></template>我的订单
               </a-doption>
-              <a-doption v-if="isSeller" @click="$router.push('/seller/publish')">
-                <template #icon><icon-plus /></template>发布商品
+              <a-doption v-if="isSeller" @click="$router.push('/seller/items')">
+                <template #icon><icon-subscription /></template>卖家中心
+              </a-doption>
+              <a-doption v-if="isSeller" @click="$router.push('/seller/stats')">
+                <template #icon><icon-chart /></template>销售统计
+              </a-doption>
+              <a-doption @click="$router.push('/addresses')">
+                <template #icon><icon-location /></template>收货地址
+              </a-doption>
+              <a-doption v-if="isBuyer" @click="$router.push('/favorites')">
+                <template #icon><icon-heart /></template>我的收藏
               </a-doption>
               <a-doption @click="logout" class="portal-nav__logout">
                 <template #icon><icon-export /></template>退出登录
@@ -67,6 +76,9 @@
     <footer v-if="!isQiankunMode" class="portal-footer">
       <p>© 2026 校园集市 — 让闲置转起来 ♻️</p>
     </footer>
+
+    <!-- 迷你购物车 -->
+    <MiniCart v-if="isBuyer" ref="miniCartRef" />
   </div>
 </template>
 
@@ -74,8 +86,18 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Message } from "@arco-design/web-vue";
+import {
+  IconList,
+  IconPlus,
+  IconExport,
+  IconSubscription,
+  IconChart,
+  IconLocation,
+  IconHeart,
+} from "@arco-design/web-vue/es/icon";
 import { getCurrentUser, logout as logoutSdk, onUserChange } from "commonprovide/auth-sdk";
 import { qiankunWindow } from "vite-plugin-qiankun/dist/helper";
+import MiniCart from "../components/MiniCart.vue";
 
 const isQiankunMode = qiankunWindow.__POWERED_BY_QIANKUN__;
 const router = useRouter();
@@ -83,8 +105,8 @@ const route = useRoute();
 
 const currentUser = ref(getCurrentUser());
 const searchKeyword = ref("");
+const miniCartRef = ref(null);
 
-// 监听用户状态变化
 let unwatch = null;
 onMounted(() => {
   unwatch = onUserChange((user) => { currentUser.value = user; });
@@ -96,6 +118,11 @@ const isSeller = computed(() => {
   return roles.includes("SELLER");
 });
 
+const isBuyer = computed(() => {
+  const roles = currentUser.value?.roles || [];
+  return roles.includes("BUYER");
+});
+
 const navLinks = computed(() => {
   const roles = currentUser.value?.roles || [];
   const links = [
@@ -103,6 +130,7 @@ const navLinks = computed(() => {
   ];
   if (roles.includes("BUYER")) {
     links.push({ path: "/buyer/items", label: "淘好物", iconEmoji: "🔍" });
+    links.push({ path: "/cart", label: "购物车", iconEmoji: "🛒" });
   }
   if (roles.includes("SELLER")) {
     links.push({ path: "/seller/items", label: "我的闲置", iconEmoji: "📦" });
@@ -133,7 +161,6 @@ function logout() {
 </script>
 
 <style lang="scss" scoped>
-// ── 门户主题变量 ────────────────────────────
 $portal-primary: #0fc6c2;
 $portal-primary-light: #e8faf9;
 $portal-orange: #f0a838;
@@ -188,7 +215,7 @@ $portal-nav-height: 64px;
   &__title {
     font-size: 20px;
     font-weight: 700;
-    background: linear-gradient(135deg, $portal-primary 0%, $portal-orange 100%);
+    background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -203,7 +230,7 @@ $portal-nav-height: 64px;
       border: 2px solid #e5e6eb;
       transition: border-color 0.2s;
 
-      &:focus-within { border-color: $portal-primary; }
+      &:focus-within { border-color: #7c3aed; }
     }
   }
 
@@ -228,13 +255,13 @@ $portal-nav-height: 64px;
     &-icon { font-size: 16px; }
 
     &:hover {
-      color: $portal-primary;
-      background: $portal-primary-light;
+      color: #7c3aed;
+      background: rgba(124, 58, 237, 0.06);
     }
 
     &--active {
-      color: $portal-primary;
-      background: $portal-primary-light;
+      color: #7c3aed;
+      background: rgba(124, 58, 237, 0.06);
       font-weight: 600;
     }
   }

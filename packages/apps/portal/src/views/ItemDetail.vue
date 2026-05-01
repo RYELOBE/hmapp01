@@ -1,16 +1,14 @@
 <template>
   <div class="item-detail-page">
     <div class="item-detail-container">
-      <!-- 商品信息 -->
       <div v-if="detail" class="item-detail">
-        <!-- 图片轮播 -->
         <div class="item-gallery">
           <div class="item-main-image">
-            <img :src="detail.imageUrls?.[0] || 'https://via.placeholder.com/400x400?text=商品图片'" :alt="detail.title" />
+            <img :src="getMainImage()" :alt="detail.title" />
           </div>
-          <div class="item-thumbs" v-if="detail.imageUrls?.length > 1">
+          <div class="item-thumbs" v-if="imageList.length > 1">
             <div
-              v-for="(img, index) in detail.imageUrls"
+              v-for="(img, index) in imageList"
               :key="index"
               class="item-thumb"
               :class="{ active: activeImageIndex === index }"
@@ -21,44 +19,42 @@
           </div>
         </div>
 
-        <!-- 商品详情 -->
         <div class="item-info">
           <div class="item-status-badge" :class="detail.reviewStatus">
             {{ getStatusText(detail.reviewStatus) }}
           </div>
-          
+
           <h1 class="item-title">{{ detail.title }}</h1>
-          
+
           <div class="item-price">
             <span class="price-current">¥{{ detail.price }}</span>
             <span v-if="detail.originalPrice" class="price-original">¥{{ detail.originalPrice }}</span>
           </div>
 
+          <div class="item-stats">
+            <div class="stat-item">
+              <icon-eye />
+              <span>{{ detail.viewCount || 0 }} 浏览</span>
+            </div>
+            <div class="stat-item" @click="handleFavorite">
+              <icon-heart :class="{ 'is-favorite': isFavorited }" />
+              <span>{{ favoriteCount }} 收藏</span>
+            </div>
+          </div>
+
+          <a-divider />
+
           <div class="item-meta">
             <div class="meta-item">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"></circle>
-                <polyline points="12 6 12 12 16 14"></polyline>
-              </svg>
-              <span>发布于 {{ formatDate(detail.createdAt) }}</span>
-            </div>
-            <div class="meta-item">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                <circle cx="12" cy="12" r="3"></circle>
-              </svg>
+              <icon-environment />
               <span>{{ detail.campus || '未知校区' }}</span>
             </div>
             <div v-if="detail.category" class="meta-item">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
-              </svg>
+              <icon-apps />
               <span>{{ detail.category }}</span>
             </div>
             <div v-if="detail.conditionLevel" class="meta-item">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-              </svg>
+              <icon-star />
               <span>{{ detail.conditionLevel }}</span>
             </div>
           </div>
@@ -68,74 +64,106 @@
             <p>{{ detail.description }}</p>
           </div>
 
-          <!-- 卖家信息 -->
           <div class="seller-info">
             <div class="seller-avatar">
-              <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
-              </svg>
+              <icon-user />
             </div>
             <div class="seller-details">
               <div class="seller-name">{{ detail.sellerName }}</div>
-              <div class="seller-label">卖家</div>
+              <div class="seller-label">卖家 · 发布于 {{ formatDate(detail.createdAt) }}</div>
             </div>
           </div>
 
-          <!-- 操作按钮 -->
           <div class="item-actions">
-            <button class="btn btn-outline" @click="goBack">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M19 12H5M12 19l-7-7 7-7"></path>
-              </svg>
-              返回
-            </button>
-            <button class="btn btn-primary" @click="handleBuy" :disabled="detail.reviewStatus !== 'APPROVED'">
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="9" cy="21" r="1"></circle>
-                <circle cx="20" cy="21" r="1"></circle>
-                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
-              </svg>
+            <a-button class="action-btn action-btn--favorite" @click="handleFavorite">
+              <template #icon>
+                <icon-heart :class="{ 'is-favorite': isFavorited }" />
+              </template>
+              {{ isFavorited ? '已收藏' : '收藏' }}
+            </a-button>
+            <a-button class="action-btn action-btn--cart" @click="handleAddToCart">
+              <template #icon><icon-shopping-cart /></template>
+              加入购物车
+            </a-button>
+            <a-button
+              type="primary"
+              class="action-btn action-btn--buy"
+              @click="handleBuy"
+              :disabled="detail.reviewStatus !== 'APPROVED'"
+            >
+              <template #icon><icon-shopping /></template>
               立即购买
-            </button>
+            </a-button>
           </div>
         </div>
       </div>
 
-      <!-- 加载状态 -->
       <div v-else-if="loading" class="item-detail-loading">
-        <div class="loading-spinner"></div>
+        <a-spin size="large" />
         <p>加载中...</p>
       </div>
 
-      <!-- 空状态 -->
       <div v-else class="item-detail-empty">
-        <svg viewBox="0 0 24 24" width="80" height="80" fill="none" stroke="currentColor" stroke-width="1.5">
-          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-          <line x1="12" y1="22.08" x2="12" y2="12"></line>
-        </svg>
-        <h3>商品不存在</h3>
-        <p>该商品可能已被删除或不存在</p>
-        <button class="btn btn-primary" @click="goBack">返回首页</button>
+        <a-empty description="商品不存在或已被删除">
+          <a-button type="primary" @click="$router.push('/home')">返回首页</a-button>
+        </a-empty>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Message } from '@arco-design/web-vue';
-import { getItemDetail } from '../services/api';
+import {
+  IconHeart,
+  IconEye,
+  IconEnvironment,
+  IconApps,
+  IconStar,
+  IconUser,
+  IconShoppingCart,
+  IconShopping,
+} from '@arco-design/web-vue/es/icon';
+import {
+  getItemDetail,
+  checkFavorite,
+  addFavorite,
+  removeFavorite,
+  addToCart,
+} from '../services/api';
 
 const route = useRoute();
 const router = useRouter();
 const detail = ref(null);
 const loading = ref(true);
 const activeImageIndex = ref(0);
+const isFavorited = ref(false);
+const favoriteCount = ref(0);
 
-// 获取状态文本
+const imageList = computed(() => {
+  if (!detail.value) return [];
+  if (Array.isArray(detail.value.imageUrls)) {
+    return detail.value.imageUrls;
+  }
+  if (typeof detail.value.imageUrls === 'string') {
+    try {
+      return JSON.parse(detail.value.imageUrls);
+    } catch {
+      return [detail.value.imageUrls];
+    }
+  }
+  return [];
+});
+
+function getMainImage() {
+  if (imageList.value.length > 0) {
+    return imageList.value[activeImageIndex.value];
+  }
+  return 'https://via.placeholder.com/400x400?text=商品图片';
+}
+
 function getStatusText(status) {
   const statusMap = {
     'PENDING_REVIEW': '待审核',
@@ -145,7 +173,6 @@ function getStatusText(status) {
   return statusMap[status] || status;
 }
 
-// 格式化日期
 function formatDate(dateStr) {
   if (!dateStr) return '未知';
   const date = new Date(dateStr);
@@ -156,30 +183,61 @@ function formatDate(dateStr) {
   });
 }
 
-// 返回上一页
-function goBack() {
-  router.back();
+async function checkIsFavorite() {
+  try {
+    const res = await checkFavorite(route.params.id);
+    isFavorited.value = res?.data?.isFavorited || false;
+  } catch (e) {
+    console.error('检查收藏状态失败', e);
+  }
 }
 
-// 购买
+async function handleFavorite() {
+  try {
+    if (isFavorited.value) {
+      await removeFavorite(route.params.id);
+      isFavorited.value = false;
+      favoriteCount.value = Math.max(0, favoriteCount.value - 1);
+      Message.success('已取消收藏');
+    } else {
+      await addFavorite(route.params.id);
+      isFavorited.value = true;
+      favoriteCount.value += 1;
+      Message.success('收藏成功');
+    }
+  } catch (e) {
+    Message.error(e.message || '操作失败');
+  }
+}
+
+async function handleAddToCart() {
+  if (detail.value.reviewStatus !== 'APPROVED') {
+    Message.warning('该商品暂不可购买');
+    return;
+  }
+  try {
+    await addToCart(detail.value.id, 1);
+    Message.success('已加入购物车');
+  } catch (e) {
+    Message.error(e.message || '加入购物车失败');
+  }
+}
+
 function handleBuy() {
-  Message.info('购买功能开发中...');
+  if (detail.value.reviewStatus !== 'APPROVED') {
+    Message.warning('该商品暂不可购买');
+    return;
+  }
+  router.push(`/orders/confirm/${detail.value.id}`);
 }
 
-// 加载详情
 async function loadDetail() {
   loading.value = true;
   try {
     const data = await getItemDetail(route.params.id);
-    // 处理图片数据
-    if (data.imageUrls && typeof data.imageUrls === 'string') {
-      try {
-        data.imageUrls = JSON.parse(data.imageUrls);
-      } catch {
-        data.imageUrls = [data.imageUrls];
-      }
-    }
     detail.value = data;
+    favoriteCount.value = data.favoriteCount || 0;
+    await checkIsFavorite();
   } catch (error) {
     console.error('加载详情失败:', error);
     Message.error(error.message || '加载详情失败');
@@ -191,29 +249,28 @@ async function loadDetail() {
 onMounted(loadDetail);
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
 .item-detail-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f5f7fa 0%, #e4e8ec 100%);
-  padding: 40px 20px;
+  background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 100%);
+  padding: 24px;
 }
 
 .item-detail-container {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
 .item-detail {
   display: grid;
-  grid-template-columns: 400px 1fr;
+  grid-template-columns: 420px 1fr;
   gap: 40px;
   background: white;
   border-radius: 16px;
   padding: 32px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.06);
 }
 
-/* 图片区域 */
 .item-gallery {
   display: flex;
   flex-direction: column;
@@ -226,50 +283,51 @@ onMounted(loadDetail);
   border-radius: 12px;
   overflow: hidden;
   background: #f8f9fa;
-}
 
-.item-main-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
 
 .item-thumbs {
   display: flex;
   gap: 12px;
   overflow-x: auto;
+  padding-bottom: 4px;
 }
 
 .item-thumb {
-  width: 70px;
-  height: 70px;
+  width: 72px;
+  height: 72px;
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
   border: 2px solid transparent;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
   flex-shrink: 0;
+
+  &:hover {
+    border-color: #7c3aed;
+  }
+
+  &.active {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.2);
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
 }
 
-.item-thumb:hover {
-  border-color: #667eea;
-}
-
-.item-thumb.active {
-  border-color: #667eea;
-}
-
-.item-thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* 商品信息 */
 .item-info {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 16px;
 }
 
 .item-status-badge {
@@ -279,27 +337,27 @@ onMounted(loadDetail);
   font-size: 13px;
   font-weight: 500;
   width: fit-content;
-}
 
-.item-status-badge.PENDING_REVIEW {
-  background: #fff7e6;
-  color: #fa8c16;
-}
+  &.PENDING_REVIEW {
+    background: #fff7e6;
+    color: #fa8c16;
+  }
 
-.item-status-badge.APPROVED {
-  background: #f6ffed;
-  color: #52c41a;
-}
+  &.APPROVED {
+    background: #f6ffed;
+    color: #52c41a;
+  }
 
-.item-status-badge.REJECTED {
-  background: #fff1f0;
-  color: #ff4d4f;
+  &.REJECTED {
+    background: #fff1f0;
+    color: #ff4d4f;
+  }
 }
 
 .item-title {
-  font-size: 26px;
+  font-size: 24px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: #1f2937;
   line-height: 1.4;
   margin: 0;
 }
@@ -308,136 +366,175 @@ onMounted(loadDetail);
   display: flex;
   align-items: baseline;
   gap: 12px;
+
+  .price-current {
+    font-size: 32px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .price-original {
+    font-size: 18px;
+    color: #9ca3af;
+    text-decoration: line-through;
+  }
 }
 
-.price-current {
-  font-size: 32px;
-  font-weight: 700;
-  color: #667eea;
-}
+.item-stats {
+  display: flex;
+  gap: 24px;
 
-.price-original {
-  font-size: 18px;
-  color: #adb5bd;
-  text-decoration: line-through;
+  .stat-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #6b7280;
+    cursor: pointer;
+
+    &:hover {
+      color: #7c3aed;
+    }
+
+    .is-favorite {
+      color: #ef4444;
+      fill: #ef4444;
+    }
+  }
 }
 
 .item-meta {
   display: flex;
   flex-wrap: wrap;
   gap: 16px;
-  padding: 16px 0;
-  border-top: 1px solid #e9ecef;
-  border-bottom: 1px solid #e9ecef;
+
+  .meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: #6b7280;
+    background: #f3f4f6;
+    padding: 6px 12px;
+    border-radius: 6px;
+  }
 }
 
-.meta-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: #6c757d;
-  font-size: 14px;
+.item-description {
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #374151;
+    margin: 0 0 12px;
+  }
+
+  p {
+    color: #6b7280;
+    line-height: 1.7;
+    margin: 0;
+    font-size: 14px;
+  }
 }
 
-/* 商品描述 */
-.item-description h3 {
-  font-size: 16px;
-  font-weight: 600;
-  color: #212529;
-  margin: 0 0 12px;
-}
-
-.item-description p {
-  color: #495057;
-  line-height: 1.7;
-  margin: 0;
-}
-
-/* 卖家信息 */
 .seller-info {
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 16px;
-  background: #f8f9fa;
-  border-radius: 10px;
+  background: #f9fafb;
+  border-radius: 12px;
+
+  .seller-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+
+  .seller-details {
+    flex: 1;
+
+    .seller-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+
+    .seller-label {
+      font-size: 12px;
+      color: #9ca3af;
+      margin-top: 4px;
+    }
+  }
 }
 
-.seller-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.seller-details {
-  flex: 1;
-}
-
-.seller-name {
-  font-size: 15px;
-  font-weight: 600;
-  color: #212529;
-}
-
-.seller-label {
-  font-size: 12px;
-  color: #adb5bd;
-  margin-top: 2px;
-}
-
-/* 操作按钮 */
 .item-actions {
   display: flex;
   gap: 12px;
   margin-top: auto;
+  padding-top: 16px;
+
+  .action-btn {
+    flex: 1;
+    height: 48px;
+    font-size: 15px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s;
+
+    &--favorite {
+      border: 2px solid #e5e7eb;
+      color: #6b7280;
+
+      &:hover {
+        border-color: #ef4444;
+        color: #ef4444;
+      }
+
+      .is-favorite {
+        color: #ef4444;
+        fill: #ef4444;
+      }
+    }
+
+    &--cart {
+      border: 2px solid #7c3aed;
+      color: #7c3aed;
+
+      &:hover {
+        background: rgba(124, 58, 237, 0.05);
+      }
+    }
+
+    &--buy {
+      background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
+      border: none;
+      color: white;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(124, 58, 237, 0.4);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+  }
 }
 
-.btn {
-  flex: 1;
-  padding: 14px 24px;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: all 0.2s;
-  border: none;
-}
-
-.btn-outline {
-  background: white;
-  color: #667eea;
-  border: 2px solid #667eea;
-}
-
-.btn-outline:hover {
-  background: #f8f9ff;
-}
-
-.btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* 加载和空状态 */
 .item-detail-loading,
 .item-detail-empty {
   display: flex;
@@ -447,48 +544,35 @@ onMounted(loadDetail);
   padding: 80px 20px;
   background: white;
   border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-}
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.06);
 
-.loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 3px solid #e9ecef;
-  border-top-color: #667eea;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
+  p {
+    color: #6b7280;
+    margin-top: 16px;
   }
 }
 
-.item-detail-loading p,
-.item-detail-empty p {
-  color: #6c757d;
-  margin-top: 16px;
-}
-
-.item-detail-empty h3 {
-  color: #212529;
-  margin: 20px 0 8px;
-  font-size: 20px;
-}
-
-.item-detail-empty svg {
-  color: #adb5bd;
+:deep(.arco-divider) {
+  margin: 8px 0;
+  border-color: #f0f0f0;
 }
 
 @media (max-width: 900px) {
   .item-detail {
     grid-template-columns: 1fr;
   }
-  
+
   .item-gallery {
-    max-width: 400px;
+    max-width: 420px;
     margin: 0 auto;
+  }
+
+  .item-actions {
+    flex-wrap: wrap;
+  }
+
+  .action-btn {
+    min-width: calc(50% - 6px);
   }
 }
 </style>
