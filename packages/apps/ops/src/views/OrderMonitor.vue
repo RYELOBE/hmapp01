@@ -216,7 +216,7 @@ import { Message } from "@arco-design/web-vue";
 import { IconClockCircle, IconCheckCircle, IconTruck, IconSafe, IconEye, IconImage, IconList } from "@arco-design/web-vue/es/icon";
 import { StatusTag } from "commonprovide/status-tag";
 import { SearchFilter } from "commonprovide/SearchFilter";
-import { getOrders, getOrderStats } from "../services/api";
+import { getOpsOrders, getStatistics } from "../services/api";
 
 const rows = ref([]);
 const loading = ref(false);
@@ -291,8 +291,14 @@ function formatDate(dateStr) {
 async function loadStats() {
   statsLoading.value = true;
   try {
-    const result = await getOrderStats();
-    stats.value = result || {};
+    const result = await getStatistics();
+    const statsData = result?.statistics || result || {};
+    stats.value = {
+      pendingPayment: statsData.todayPendingPaymentOrders || 0,
+      paid: statsData.todayPaidOrders || 0,
+      shipped: statsData.todayShippedOrders || 0,
+      refunding: statsData.refundingOrders || 0
+    };
   } catch (error) {
     console.error("加载订单统计失败", error);
   } finally {
@@ -309,9 +315,10 @@ async function loadData() {
       keyword: filterParams.keyword || undefined,
       status: filterParams.status || undefined,
     };
-    const result = await getOrders(params);
-    rows.value = result.items || result.rows || result.data || [];
-    paginationConfig.total = result.total || result.totalCount || 0;
+    const result = await getOpsOrders(params);
+    const data = result?.data || result || {};
+    rows.value = data.rows || data.items || [];
+    paginationConfig.total = data.totalCount || data.total || 0;
   } catch (error) {
     Message.error(error.message || "加载订单列表失败");
     rows.value = [];

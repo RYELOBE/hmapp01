@@ -88,6 +88,7 @@ import {
   IconApp,
   IconEdit,
   IconSafe,
+  IconMenu,
 } from '@arco-design/web-vue/es/icon';
 import { getCurrentUser, logout as logoutSdk } from "commonprovide/auth-sdk";
 import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
@@ -144,6 +145,11 @@ const menuConfig = [
     path: '/ops/role-manage', 
     label: '角色管理', 
     iconComponent: IconSafe,
+  },
+  { 
+    path: '/ops/route-manage', 
+    label: '路由配置', 
+    iconComponent: IconMenu,
   },
 ];
 

@@ -1,77 +1,133 @@
 <template>
   <div class="role-manage-page">
+    <!-- 页面头部 -->
     <div class="page-header">
       <div class="page-header__left">
         <h2 class="page-title">角色管理</h2>
         <span class="page-subtitle">管理角色与资源菜单的权限绑定</span>
       </div>
+      <div class="page-header__right">
+        <a-button type="primary" @click="showAddModal = true">
+          <template #icon><icon-plus /></template>
+          新建角色
+        </a-button>
+      </div>
     </div>
 
     <a-spin :loading="loading">
       <!-- 角色列表 -->
-      <div class="role-card-list">
-        <a-card
-          v-for="role in roles"
-          :key="role"
-          hoverable
-          class="role-card"
-          :class="{ 'role-card--active': selectedRole === role }"
-          @click="selectRoleAction(role)"
-        >
-          <div class="role-card__header">
-            <a-tag :color="roleColor(role)" size="large">{{ roleLabel(role) }}</a-tag>
-            <span class="role-card__code">{{ role }}</span>
-          </div>
-          <div class="role-card__info">
-            已授权 <strong>{{ roleResourceCount[role] || 0 }}</strong> 个资源
-          </div>
-        </a-card>
-      </div>
-
-      <!-- 资源树 -->
-      <div v-if="selectedRole" class="resource-panel">
-        <div class="resource-panel__header">
-          <h3>{{ roleLabel(selectedRole) }} — 资源授权</h3>
-          <a-space>
-            <a-button @click="toggleAll(true)">全选</a-button>
-            <a-button @click="toggleAll(false)">全不选</a-button>
-            <a-button type="primary" :loading="saving" @click="savePermissions">保存</a-button>
-          </a-space>
-        </div>
-        <a-tree
-          ref="treeRef"
-          :data="menuTree"
-          :field-names="{ key: 'id', title: 'menuName', children: 'children' }"
-          :checkable="true"
-          :checked-keys="checkedKeys"
-          :check-strictly="true"
-          @check="onCheck"
-          class="resource-tree"
+      <a-card title="角色列表" :bordered="false" class="role-card">
+        <template #extra>
+          <a-input-search
+            v-model="searchKeyword"
+            placeholder="搜索角色名称或编码"
+            style="width: 260px"
+            search-button
+            @search="handleSearch"
+          />
+        </template>
+        <RoleList
+          :roles="filteredRoles"
+          :loading="loading"
+          @edit="handleEdit"
+          @delete="handleDelete"
+          @toggle-status="handleToggleStatus"
+          @permissions="handlePermissions"
         />
-      </div>
+      </a-card>
+
+      <!-- 权限配置抽屉 -->
+      <a-drawer
+        v-model:visible="showPermissionDrawer"
+        title="权限配置"
+        :width="480"
+        :height="800"
+      >
+        <PermissionConfig
+          v-if="selectedRole"
+          :role-code="selectedRole.roleCode"
+          :role-name="selectedRole.roleName"
+          :menu-tree="menuTree"
+          :initial-checked-keys="rolePermissions"
+          @save-success="handlePermissionSave"
+        />
+      </a-drawer>
     </a-spin>
+
+    <!-- 新建/编辑角色弹窗 -->
+    <a-modal
+      v-model:visible="showAddModal"
+      :title="isEdit ? '编辑角色' : '新建角色'"
+      @ok="handleSaveRole"
+      @cancel="handleCancel"
+    >
+      <a-form :model="roleForm" label-align="left" label-width="100px">
+        <a-form-item label="角色名称" required>
+          <a-input v-model="roleForm.roleName" placeholder="请输入角色名称" />
+        </a-form-item>
+        <a-form-item label="角色编码" :required="!isEdit">
+          <a-input
+            v-model="roleForm.roleCode"
+            :disabled="isEdit"
+            placeholder="请输入角色编码（如：CUSTOMER）"
+          />
+        </a-form-item>
+        <a-form-item label="角色描述">
+          <a-textarea v-model="roleForm.description" placeholder="请输入角色描述" :rows="3" />
+        </a-form-item>
+        <a-form-item label="状态">
+          <a-switch
+            v-model="roleForm.status"
+            :checked-value="'ACTIVE'"
+            :unchecked-value="'INACTIVE'"
+          />
+        </a-form-item>
+      </a-form>
+    </a-modal>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { Message } from '@arco-design/web-vue';
-import { getAllRoles, getResourceMenuTree, getRoleResources, saveRoleResources } from '../services/api';
+import { ref, reactive, computed, onMounted } from 'vue';
+import { Message, Modal } from '@arco-design/web-vue';
+import { IconPlus } from '@arco-design/web-vue/es/icon';
+import RoleList from '../components/RoleList.vue';
+import PermissionConfig from '../components/PermissionConfig.vue';
+import {
+  getAllRoles,
+  getResourceMenuTree,
+  getRoleResources,
+  createRole,
+  updateRole,
+  deleteRole,
+  updateRoleStatus
+} from '../services/api';
 
 const loading = ref(false);
-const saving = ref(false);
 const roles = ref([]);
 const menuTree = ref([]);
+const searchKeyword = ref('');
+const showAddModal = ref(false);
+const showPermissionDrawer = ref(false);
+const isEdit = ref(false);
 const selectedRole = ref(null);
-const checkedKeys = ref([]);
-const roleResourceCount = reactive({});
-const treeRef = ref(null);
+const rolePermissions = ref([]);
 
-const ROLE_MAP = { BUYER: '买家', SELLER: '卖家', OPS: '运营' };
-const ROLE_COLORS = { BUYER: 'green', SELLER: 'blue', OPS: 'orange' };
+const roleForm = reactive({
+  roleName: '',
+  roleCode: '',
+  description: '',
+  status: 'ACTIVE'
+});
 
-function roleLabel(r) { return ROLE_MAP[r] || r; }
-function roleColor(r) { return ROLE_COLORS[r] || 'gray'; }
+const filteredRoles = computed(() => {
+  if (!searchKeyword.value) return roles.value;
+  const keyword = searchKeyword.value.toLowerCase();
+  return roles.value.filter(role =>
+    role.roleName.toLowerCase().includes(keyword) ||
+    role.roleCode.toLowerCase().includes(keyword)
+  );
+});
 
 async function loadData() {
   loading.value = true;
@@ -81,12 +137,7 @@ async function loadData() {
       getResourceMenuTree()
     ]);
     roles.value = rolesRes.roles || [];
-    menuTree.value = buildTreeChecked(treeRes.tree || []);
-    // 加载每个角色的资源数量
-    for (const role of roles.value) {
-      const res = await getRoleResources(role);
-      roleResourceCount[role] = (res.resourceIds || []).length;
-    }
+    menuTree.value = treeRes.tree || [];
   } catch (e) {
     Message.error('加载失败：' + e.message);
   } finally {
@@ -94,51 +145,88 @@ async function loadData() {
   }
 }
 
-function buildTreeChecked(tree) {
-  return (tree || []).map(node => ({
-    ...node,
-    children: node.children ? buildTreeChecked(node.children) : [],
-  }));
+function handleSearch() {
 }
 
-async function selectRoleAction(role) {
+function handleEdit(role) {
+  isEdit.value = true;
+  Object.assign(roleForm, role);
+  showAddModal.value = true;
+}
+
+function handleDelete(role) {
+  Modal.confirm({
+    title: '删除角色',
+    content: `确定要删除角色「${role.roleName}」吗？`,
+    onOk: async () => {
+      try {
+        await deleteRole(role.roleCode);
+        roles.value = roles.value.filter(r => r.roleCode !== role.roleCode);
+        Message.success('删除成功');
+      } catch (e) {
+        Message.error('删除失败：' + e.message);
+      }
+    }
+  });
+}
+
+async function handleToggleStatus(role) {
+  const newStatus = role.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+  try {
+    await updateRoleStatus(role.roleCode, newStatus);
+    role.status = newStatus;
+    Message.success(`角色已${newStatus === 'ACTIVE' ? '启用' : '禁用'}`);
+  } catch (e) {
+    Message.error('操作失败：' + e.message);
+  }
+}
+
+async function handlePermissions(role) {
   selectedRole.value = role;
   try {
-    const res = await getRoleResources(role);
-    checkedKeys.value = res.resourceIds || [];
+    const res = await getRoleResources(role.roleCode);
+    rolePermissions.value = res.resourceIds || [];
+    showPermissionDrawer.value = true;
   } catch (e) {
     Message.error('加载权限失败：' + e.message);
   }
 }
 
-function onCheck(checked) {
-  checkedKeys.value = checked;
-}
-
-function toggleAll(checked) {
-  const allIds = [];
-  function collectIds(nodes) {
-    for (const node of nodes) {
-      allIds.push(node.id);
-      if (node.children) collectIds(node.children);
-    }
+function handlePermissionSave({ roleCode, count }) {
+  const role = roles.value.find(r => r.roleCode === roleCode);
+  if (role) {
+    role.resourceCount = count;
   }
-  collectIds(menuTree.value);
-  checkedKeys.value = checked ? allIds : [];
+  showPermissionDrawer.value = false;
 }
 
-async function savePermissions() {
-  if (!selectedRole.value) return;
-  saving.value = true;
-  try {
-    await saveRoleResources(selectedRole.value, checkedKeys.value);
-    roleResourceCount[selectedRole.value] = checkedKeys.value.length;
-    Message.success('权限已保存');
-  } catch (e) {
+function handleSaveRole() {
+  if (!roleForm.roleName) {
+    Message.warning('请输入角色名称');
+    return;
+  }
+  if (!isEdit.value && !roleForm.roleCode) {
+    Message.warning('请输入角色编码');
+    return;
+  }
+
+  const action = isEdit.value ? updateRole(roleForm.roleCode, roleForm) : createRole(roleForm);
+  
+  action.then(() => {
+    Message.success(isEdit.value ? '编辑成功' : '创建成功');
+    showAddModal.value = false;
+    loadData();
+  }).catch(e => {
     Message.error('保存失败：' + e.message);
-  } finally {
-    saving.value = false;
-  }
+  });
+}
+
+function handleCancel() {
+  showAddModal.value = false;
+  Object.keys(roleForm).forEach(key => {
+    roleForm[key] = key === 'status' ? 'ACTIVE' : '';
+  });
+  isEdit.value = false;
 }
 
 onMounted(loadData);
@@ -146,96 +234,42 @@ onMounted(loadData);
 
 <style lang="scss" scoped>
 .role-manage-page {
-  padding: 0;
-}
-
-.page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 24px;
-
-  &__left {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-}
-
-.page-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: #1d2129;
-}
-
-.page-subtitle {
-  font-size: 13px;
-  color: #86909c;
-}
-
-.role-card-list {
-  display: flex;
-  gap: 16px;
-  margin-bottom: 24px;
-  flex-wrap: wrap;
-}
-
-.role-card {
-  width: 200px;
-  cursor: pointer;
-  transition: box-shadow 0.2s, border-color 0.2s;
-
-  &--active {
-    border-color: #336ad8;
-    box-shadow: 0 0 0 1px #336ad8;
-  }
-
-  &__header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-
-  &__code {
-    font-size: 12px;
-    color: #86909c;
-    font-family: monospace;
-  }
-
-  &__info {
-    font-size: 12px;
-    color: #86909c;
-
-    strong {
-      color: #336ad8;
-    }
-  }
-}
-
-.resource-panel {
-  background: #fff;
-  border-radius: 8px;
-  border: 1px solid #e5e6eb;
   padding: 20px;
 
-  &__header {
+  .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
 
-    h3 {
-      margin: 0;
-      font-size: 15px;
-      font-weight: 600;
+    &__left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    &__right {
+      display: flex;
+      gap: 12px;
     }
   }
-}
 
-.resource-tree {
-  max-height: 400px;
-  overflow: auto;
+  .page-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 700;
+    color: #1d2129;
+  }
+
+  .page-subtitle {
+    font-size: 13px;
+    color: #86909c;
+  }
+
+  .role-card {
+    :deep(.arco-card-body) {
+      padding: 0;
+    }
+  }
 }
 </style>

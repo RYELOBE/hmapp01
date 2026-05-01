@@ -59,7 +59,7 @@ export function updateUserStatus(userId, status) {
 }
 
 export function updateUserRole(userId, role) {
-  return http.put(`/ops/users/${userId}/role`, { role });
+  return http.put(`/ops/users/${userId}/roles`, { roles: [role] });
 }
 
 // ── 子应用管理 API ──────────────────────────────
@@ -120,4 +120,57 @@ export function getRoleResources(roleCode) {
 
 export function saveRoleResources(roleCode, resourceIds) {
   return http.post(`/resource/roles/${roleCode}/resources`, { resourceIds });
+}
+
+export function createRole(data) {
+  return http.post("/resource/roles", data);
+}
+
+export function updateRole(roleCode, data) {
+  return http.put(`/resource/roles/${roleCode}`, data);
+}
+
+export function deleteRole(roleCode) {
+  return http.delete(`/resource/roles/${roleCode}`);
+}
+
+export function updateRoleStatus(roleCode, status) {
+  return http.put(`/resource/roles/${roleCode}/status`, { status });
+}
+
+// ── 资源管理 API ──────────────────────────────
+export function getResourceMenus(params = {}) {
+  return http.get("/resource/menus", { params });
+}
+
+export function getResourceMenuTree() {
+  return http.get("/resource/menu-tree");
+}
+
+export function saveResourceMenu(data) {
+  return http.post("/resource/menus", data);
+}
+
+export function deleteResourceMenu(id) {
+  return http.delete(`/resource/menus/${id}`);
+}
+
+export function getResourceDetail(id) {
+  return http.get(`/resource/menus/${id}`);
+}
+
+export function updateResourceMenu(id, data) {
+  return http.put(`/resource/menus/${id}`, data);
+}
+
+export function getResourceFunctions(menuId) {
+  return http.get(`/resource/menus/${menuId}/functions`);
+}
+
+export function saveResourceFunction(data) {
+  return http.post("/resource/functions", data);
+}
+
+export function deleteResourceFunction(id) {
+  return http.delete(`/resource/functions/${id}`);
 }

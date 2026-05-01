@@ -11,6 +11,8 @@ import Buyer from "../views/buyer/index.vue";
 import AppRegisterView from "../views/AppRegisterView.vue";
 import PortalDesign from "../views/PortalDesign.vue";
 import RoleManage from "../views/RoleManage.vue";
+import RouteManage from "../views/RouteManage.vue";
+import ResourceManage from "../views/ResourceManage.vue";
 import UserManage from "../views/UserManage.vue";
 import VendorManage from "../views/VendorManage.vue";
 import BuyerManage from "../views/BuyerManage.vue";
@@ -37,6 +39,7 @@ const routes = [
       { path: "ops/app-register", component: AppRegisterView, meta: { roles: ["OPS"] } },
       { path: "ops/portal-design", component: PortalDesign, meta: { roles: ["OPS"] } },
       { path: "ops/role-manage", component: RoleManage, meta: { roles: ["OPS"] } },
+      { path: "ops/route-manage", component: RouteManage, meta: { roles: ["OPS"] } },
     ],
   },
 ];
