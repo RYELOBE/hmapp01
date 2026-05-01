@@ -32,9 +32,34 @@ export function getVendors(params = {}) {
   return http.get("/ops/vendors", { params });
 }
 
+export function getVendorDetail(vendorId) {
+  return http.get(`/ops/vendors/${vendorId}`);
+}
+
 // ── 需方管理 API ──────────────────────────────
 export function getBuyers(params = {}) {
   return http.get("/ops/buyers", { params });
+}
+
+export function getBuyerDetail(buyerId) {
+  return http.get(`/ops/buyers/${buyerId}`);
+}
+
+// ── 用户管理 API ──────────────────────────────
+export function getUsers(params = {}) {
+  return http.get("/ops/users", { params });
+}
+
+export function getUserDetail(userId) {
+  return http.get(`/ops/users/${userId}`);
+}
+
+export function updateUserStatus(userId, status) {
+  return http.put(`/ops/users/${userId}/status`, { status });
+}
+
+export function updateUserRole(userId, role) {
+  return http.put(`/ops/users/${userId}/role`, { role });
 }
 
 // ── 子应用管理 API ──────────────────────────────

@@ -1,6 +1,9 @@
 <template>
-  <a-tag :color="color || colorMap[status] || 'default'">
-    {{ label || labelMap[status] || status }}
+  <a-tag
+    :color="computedColor"
+    :class="`status-tag status-tag--${status}`"
+  >
+    {{ computedLabel }}
   </a-tag>
 </template>
 
@@ -15,7 +18,7 @@ const props = defineProps({
   },
   type: {
     type: String,
-    default: 'auto', // 'auto' | 'item' | 'order' | 'condition' | 'payment' | 'user' | 'trade'
+    default: 'auto',
   },
   color: {
     type: String,
@@ -27,7 +30,6 @@ const props = defineProps({
   }
 });
 
-// 所有状态映射表
 const allMaps = {
   item: ITEM_STATUS,
   order: ORDER_STATUS,
@@ -37,36 +39,105 @@ const allMaps = {
   trade: TRADE_METHODS,
 };
 
-// 自动检测状态类型
 const detectType = (status) => {
   for (const [type, map] of Object.entries(allMaps)) {
     if (map[status]) return type;
   }
-  return 'item'; // 默认使用 item
+  return 'item';
 };
 
-// 根据 type 获取对应的映射
 const currentMap = computed(() => {
   const type = props.type === 'auto' ? detectType(props.status) : props.type;
   return allMaps[type] || ITEM_STATUS;
 });
 
-// 动态生成 colorMap 和 labelMap
-const colorMap = computed(() => {
-  const map = {};
-  for (const [key, val] of Object.entries(currentMap.value)) {
-    // 适配不同常量的结构：有的有 color 属性，有的没有
-    map[key] = val.color || 'default';
-  }
-  return map;
+const computedColor = computed(() => {
+  if (props.color) return props.color;
+  const statusMap = currentMap.value;
+  const config = statusMap[props.status];
+  return config?.color || 'default';
 });
 
-const labelMap = computed(() => {
-  const map = {};
-  for (const [key, val] of Object.entries(currentMap.value)) {
-    // 适配不同常量的结构：有的有 label 属性，有的有 value 属性
-    map[key] = val.label || val.value || key;
-  }
-  return map;
+const computedLabel = computed(() => {
+  if (props.label) return props.label;
+  const statusMap = currentMap.value;
+  const config = statusMap[props.status];
+  return config?.label || config?.value || props.status;
 });
 </script>
+
+<style lang="scss" scoped>
+.status-tag {
+  border-radius: 4px;
+  font-size: 12px;
+  padding: 0 8px;
+  line-height: 20px;
+
+  &--PENDING,
+  &--PENDING_REVIEW {
+    background-color: #fff7e6;
+    color: #fa8c16;
+    border-color: #ffd591;
+  }
+
+  &--APPROVED {
+    background-color: #f6ffed;
+    color: #52c41a;
+    border-color: #b7eb8f;
+  }
+
+  &--REJECTED {
+    background-color: #fff1f0;
+    color: #ff4d4f;
+    border-color: #ffa39e;
+  }
+
+  &--OFF_SHELF {
+    background-color: #f5f5f5;
+    color: #8c8c8c;
+    border-color: #d9d9d9;
+  }
+
+  &--PENDING_PAYMENT {
+    background-color: #e6f7ff;
+    color: #1890ff;
+    border-color: #91d5ff;
+  }
+
+  &--PAID {
+    background-color: #f9f0ff;
+    color: #722ed1;
+    border-color: #d3adf7;
+  }
+
+  &--SHIPPED {
+    background-color: #f0f5ff;
+    color: #2f54eb;
+    border-color: #adc6ff;
+  }
+
+  &--COMPLETED {
+    background-color: #f6ffed;
+    color: #52c41a;
+    border-color: #b7eb8f;
+  }
+
+  &--CANCELLED {
+    background-color: #f5f5f5;
+    color: #8c8c8c;
+    border-color: #d9d9d9;
+  }
+
+  &--REFUNDING {
+    background-color: #fff7e6;
+    color: #fa8c16;
+    border-color: #ffd591;
+  }
+
+  &--REFUNDED {
+    background-color: #fff1f0;
+    color: #ff4d4f;
+    border-color: #ffa39e;
+  }
+}
+</style>

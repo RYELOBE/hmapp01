@@ -15,7 +15,10 @@ CREATE TABLE IF NOT EXISTS user_account (
   username VARCHAR(64) NOT NULL UNIQUE,
   password VARCHAR(128) NOT NULL,
   nickname VARCHAR(64) NOT NULL,
-  roles VARCHAR(128) NOT NULL
+  roles VARCHAR(128) NOT NULL,
+  INDEX idx_username (username),
+  INDEX idx_created_at (created_at),
+  INDEX idx_roles (roles(32))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS item (
@@ -32,7 +35,14 @@ CREATE TABLE IF NOT EXISTS item (
   condition_level VARCHAR(16) DEFAULT '',
   campus VARCHAR(64) DEFAULT '',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_seller_id (seller_id),
+  INDEX idx_review_status (review_status),
+  INDEX idx_category (category),
+  INDEX idx_created_at (created_at),
+  INDEX idx_updated_at (updated_at),
+  INDEX idx_seller_status (seller_id, review_status),
+  INDEX idx_status_created (review_status, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS review_log (
@@ -41,7 +51,10 @@ CREATE TABLE IF NOT EXISTS review_log (
   operator_id BIGINT NOT NULL,
   action VARCHAR(16) NOT NULL,
   reason VARCHAR(255),
-  created_at DATETIME NOT NULL
+  created_at DATETIME NOT NULL,
+  INDEX idx_item_id (item_id),
+  INDEX idx_operator_id (operator_id),
+  INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS orders (
@@ -64,7 +77,16 @@ CREATE TABLE IF NOT EXISTS orders (
   buyer_name VARCHAR(64) DEFAULT '',
   seller_name VARCHAR(64) DEFAULT '',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_buyer_id (buyer_id),
+  INDEX idx_seller_id (seller_id),
+  INDEX idx_item_id (item_id),
+  INDEX idx_status (status),
+  INDEX idx_created_at (created_at),
+  INDEX idx_updated_at (updated_at),
+  INDEX idx_buyer_status (buyer_id, status),
+  INDEX idx_seller_status (seller_id, status),
+  INDEX idx_status_created (status, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS knowledge_chunk (
@@ -78,7 +100,8 @@ CREATE TABLE IF NOT EXISTS ai_session (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   session_id VARCHAR(64) NOT NULL UNIQUE,
   user_id BIGINT NOT NULL,
-  updated_at DATETIME NOT NULL
+  updated_at DATETIME NOT NULL,
+  INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS ai_message (
@@ -87,7 +110,9 @@ CREATE TABLE IF NOT EXISTS ai_message (
   role VARCHAR(16) NOT NULL,
   content TEXT NOT NULL,
   references_json TEXT,
-  created_at DATETIME NOT NULL
+  created_at DATETIME NOT NULL,
+  INDEX idx_session_id (session_id),
+  INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS app_register (
@@ -100,7 +125,6 @@ CREATE TABLE IF NOT EXISTS app_register (
   portal_code VARCHAR(64) NOT NULL DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 门户配置表：存储运营端设计的门户主题、布局等
 CREATE TABLE IF NOT EXISTS portal_config (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   portal_code VARCHAR(64) NOT NULL UNIQUE,
@@ -109,10 +133,10 @@ CREATE TABLE IF NOT EXISTS portal_config (
   config_json TEXT NOT NULL,
   login_config_id BIGINT,
   updated_by VARCHAR(64),
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_portal_code (portal_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 资源菜单表：树形菜单资源（页面/按钮）
 CREATE TABLE IF NOT EXISTS resource_menu (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   parent_id BIGINT NOT NULL DEFAULT 0,
@@ -123,15 +147,18 @@ CREATE TABLE IF NOT EXISTS resource_menu (
   path VARCHAR(256) NOT NULL DEFAULT '',
   icon VARCHAR(128) NOT NULL DEFAULT '',
   sort_order INT NOT NULL DEFAULT 0,
-  visible TINYINT(1) NOT NULL DEFAULT 1
+  visible TINYINT(1) NOT NULL DEFAULT 1,
+  INDEX idx_parent_id (parent_id),
+  INDEX idx_app_code (app_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 角色-资源关联表
 CREATE TABLE IF NOT EXISTS role_resource (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   role_code VARCHAR(64) NOT NULL,
   resource_id BIGINT NOT NULL,
-  UNIQUE KEY uk_role_resource (role_code, resource_id)
+  UNIQUE KEY uk_role_resource (role_code, resource_id),
+  INDEX idx_role_code (role_code),
+  INDEX idx_resource_id (resource_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS uploaded_file (
@@ -143,7 +170,9 @@ CREATE TABLE IF NOT EXISTS uploaded_file (
   content_type VARCHAR(100),
   url VARCHAR(500) NOT NULL,
   uploader_id BIGINT,
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_uploader_id (uploader_id),
+  INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS address (
@@ -159,7 +188,8 @@ CREATE TABLE IF NOT EXISTS address (
   is_default TINYINT(1) NOT NULL DEFAULT 0,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_user_id (user_id)
+  INDEX idx_user_id (user_id),
+  INDEX idx_user_default (user_id, is_default)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS cart (
@@ -171,7 +201,8 @@ CREATE TABLE IF NOT EXISTS cart (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   UNIQUE KEY uk_user_item (user_id, item_id),
-  INDEX idx_user_id (user_id)
+  INDEX idx_user_id (user_id),
+  INDEX idx_item_id (item_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS favorite (
@@ -180,7 +211,9 @@ CREATE TABLE IF NOT EXISTS favorite (
   item_id BIGINT NOT NULL,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   UNIQUE KEY uk_user_item (user_id, item_id),
-  INDEX idx_user_id (user_id)
+  INDEX idx_user_id (user_id),
+  INDEX idx_item_id (item_id),
+  INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS review (
@@ -196,5 +229,6 @@ CREATE TABLE IF NOT EXISTS review (
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_item_id (item_id),
   INDEX idx_order_id (order_id),
-  INDEX idx_buyer_id (buyer_id)
+  INDEX idx_buyer_id (buyer_id),
+  INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

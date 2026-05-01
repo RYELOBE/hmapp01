@@ -1,23 +1,30 @@
 <template>
-  <div class="wrap">
-    <a-upload
-      list-type="picture-card"
-      accept=".png,.jpg,.jpeg"
-      v-model:file-list="fileList"
-      :limit="limit"
-      image-preview
-      :custom-request="handleUpload"
-      @before-upload="handleBeforeUpload"
-      @remove="handleRemove"
-    >
-      <template #upload-button>
-        <div class="upload-button">
-          <IconPlus />
-          <div class="upload-text">上传图片</div>
-        </div>
-      </template>
-    </a-upload>
-    <div class="arco-upload-tooltip">支持JPG/JPEG/PNG格式，大小不超过2M</div>
+  <div class="image-uploader">
+    <div class="image-uploader__header">
+      <div class="upload-area">
+        <a-upload
+          ref="uploadRef"
+          list-type="picture-card"
+          accept=".png,.jpg,.jpeg"
+          v-model:file-list="fileList"
+          :limit="limit"
+          image-preview
+          :custom-request="handleUpload"
+          @before-upload="handleBeforeUpload"
+          @remove="handleRemove"
+        >
+          <template #upload-button>
+            <div class="upload-button">
+              <icon-plus />
+              <div class="upload-text">上传图片</div>
+            </div>
+          </template>
+        </a-upload>
+      </div>
+    </div>
+    <a-typography-text class="image-uploader__tip">
+      支持 JPG/JPEG/PNG 格式，单张图片不超过 2M，最多上传 {{ limit }} 张
+    </a-typography-text>
   </div>
 </template>
 
@@ -45,18 +52,20 @@ const props = defineProps({
 const emit = defineEmits(['update:modelValue']);
 
 const fileList = ref([]);
+const uploadRef = ref(null);
 
-// 监听 modelValue 变化
 watch(
   () => props.modelValue,
   (value) => {
     if (value) {
       const urls = Array.isArray(value) ? value : [value];
-      fileList.value = urls.map((url, index) => ({
-        uid: Date.now() + index,
-        url,
-        status: 'done',
-      }));
+      fileList.value = urls
+        .filter(url => url)
+        .map((url, index) => ({
+          uid: Date.now() + index,
+          url,
+          status: 'done',
+        }));
     } else {
       fileList.value = [];
     }
@@ -64,7 +73,6 @@ watch(
   { immediate: true }
 );
 
-// 上传前校验
 const handleBeforeUpload = (file) => {
   const isValidType = ['image/png', 'image/jpeg', 'image/jpg'].includes(file.type);
   if (!isValidType) {
@@ -79,7 +87,6 @@ const handleBeforeUpload = (file) => {
   return true;
 };
 
-// 自定义上传
 const handleUpload = async (options) => {
   const { file, onProgress, onSuccess, onError } = options;
   const formData = new FormData();
@@ -103,7 +110,17 @@ const handleUpload = async (options) => {
     const url = result.url || result.data?.url || '';
 
     onSuccess(url);
-    emit('update:modelValue', url);
+    
+    const currentUrls = fileList.value
+      .filter(f => f.status === 'done' && f.url)
+      .map(f => f.url);
+    
+    if (props.limit === 1) {
+      emit('update:modelValue', url);
+    } else {
+      emit('update:modelValue', [...currentUrls, url]);
+    }
+    
     Message.success('上传成功');
   } catch (error) {
     onError(error);
@@ -111,16 +128,54 @@ const handleUpload = async (options) => {
   }
 };
 
-// 移除图片
-const handleRemove = () => {
-  emit('update:modelValue', '');
+const handleRemove = (file) => {
+  const urls = fileList.value
+    .filter(f => f.uid !== file.uid && f.status === 'done' && f.url)
+    .map(f => f.url);
+  
+  if (props.limit === 1) {
+    emit('update:modelValue', '');
+  } else {
+    emit('update:modelValue', urls);
+  }
 };
 </script>
 
-<style scoped>
-.wrap {
+<style lang="scss" scoped>
+.image-uploader {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+
+  &__header {
+    width: 100%;
+  }
+
+  &__tip {
+    font-size: 12px;
+    color: var(--color-text-3, #86909c);
+  }
+}
+
+.upload-area {
+  :deep(.arco-upload-list) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  :deep(.arco-upload-picture-card) {
+    width: 96px;
+    height: 96px;
+    border-radius: 8px;
+    border: 1px dashed var(--color-border, #e5e6eb);
+    background: var(--color-bg-1, #ffffff);
+    transition: all 0.2s;
+
+    &:hover {
+      border-color: #165dff;
+    }
+  }
 }
 
 .upload-button {
@@ -129,16 +184,17 @@ const handleRemove = () => {
   justify-content: center;
   align-items: center;
   color: var(--color-text-3, #86909c);
+  width: 100%;
+  height: 100%;
+
+  :deep(.arco-icon) {
+    font-size: 24px;
+    margin-bottom: 4px;
+  }
 }
 
 .upload-text {
-  margin-top: 8px;
-  font-size: 14px;
-}
-
-.arco-upload-tooltip {
-  margin-top: 4px;
   font-size: 12px;
-  color: var(--color-text-3, #86909c);
+  color: #86909c;
 }
 </style>
