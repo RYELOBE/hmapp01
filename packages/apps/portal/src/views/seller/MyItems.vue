@@ -10,7 +10,7 @@
     <!-- 状态 Tab -->
     <a-tabs v-model:active-key="activeStatus" @change="handleTabChange">
       <a-tab-pane key="" title="全部" />
-      <a-tab-pane key="PENDING" title="审核中" />
+      <a-tab-pane key="PENDING_REVIEW" title="审核中" />
       <a-tab-pane key="APPROVED" title="已上架" />
       <a-tab-pane key="REJECTED" title="已驳回" />
       <a-tab-pane key="OFF_SHELF" title="已下架" />
@@ -73,6 +73,7 @@ const pagination = ref({
 
 const STATUS_MAP = {
   PENDING: { label: "审核中", color: "orange" },
+  PENDING_REVIEW: { label: "审核中", color: "orange" },
   APPROVED: { label: "已上架", color: "green" },
   REJECTED: { label: "已驳回", color: "red" },
   OFF_SHELF: { label: "已下架", color: "gray" },

@@ -102,12 +102,11 @@
       </a-layout-sider>
 
       <!-- 内容区 -->
-      <a-layout-content class="content">
-        <div class="frameapp-main">
-          <router-view v-show="!$route.meta.isMinProject" />
-          <div id="TO_FRAME_WINDOW" />
-        </div>
-      </a-layout-content>
+    <a-layout-content class="content">
+      <div class="frameapp-main">
+        <router-view />
+      </div>
+    </a-layout-content>
     </a-layout>
   </a-layout>
   <AiAssistant v-if="authStore.isLoggedIn" />

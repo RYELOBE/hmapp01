@@ -18,8 +18,10 @@ public class ReviewService {
 
   /** 获取待审核商品队列（分页） */
   public Map<String, Object> getReviewQueuePaged(String status, int pageNo, int pageSize) {
-    List<Map<String, Object>> rows = itemRepository.findByPage(status, null, null, pageNo, pageSize);
-    int total = itemRepository.countByFilter(status, null, null);
+    // 如果 status 为空，默认查询 PENDING_REVIEW
+    String searchStatus = (status == null || status.isEmpty()) ? "PENDING_REVIEW" : status;
+    List<Map<String, Object>> rows = itemRepository.findByPage(searchStatus, null, null, pageNo, pageSize);
+    int total = itemRepository.countByFilter(searchStatus, null, null);
     return Map.of(
       "code", 200,
       "data", Map.of(

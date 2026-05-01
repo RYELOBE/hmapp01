@@ -1,5 +1,8 @@
 <template>
   <router-view></router-view>
+  <AiAssistant />
 </template>
 
-<script setup></script>
+<script setup>
+import AiAssistant from './components/AiAssistant.vue';
+</script>

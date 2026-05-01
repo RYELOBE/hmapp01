@@ -8,36 +8,71 @@ import { createOpsRouter } from "./router";
 import "./style.css";
 
 let appInstance = null;
+let piniaInstance = null;
+
+// 全局保存从主应用传递过来的 props
+window.__FRAME_PROPS__ = null;
 
 function render(props = {}) {
-  const { container } = props;
+  console.log("[ops] rendering with props:", props);
+  const { container, authStore } = props;
   window.__FRAME_PROPS__ = props;
+
   const app = createApp(App);
   const pinia = createPinia();
+  piniaInstance = pinia;
+
+  // 如果有从主应用传递的认证状态，初始化 Pinia store
+  if (authStore) {
+    console.log("[ops] initializing with authStore from shell:", authStore);
+    // 这里可以初始化一个本地的 auth store
+  }
+
   const router = createOpsRouter(qiankunWindow.__POWERED_BY_QIANKUN__);
   app.use(pinia);
   app.use(router);
   app.use(ArcoVue);
-  const mountNode = container ? container.querySelector("#app") : document.querySelector("#app");
+
+  // 确定挂载点
+  let mountNode;
+  if (container) {
+    // 在 qiankun 环境下，在容器内创建 #app
+    mountNode = container.querySelector("#app");
+    if (!mountNode) {
+      mountNode = document.createElement("div");
+      mountNode.id = "app";
+      container.appendChild(mountNode);
+    }
+  } else {
+    // 独立运行时使用全局 #app
+    mountNode = document.querySelector("#app");
+  }
+
   app.mount(mountNode);
   appInstance = app;
 }
 
 renderWithQiankun({
   mount(props) {
+    console.log("[ops] mount lifecycle called");
     render(props);
   },
-  bootstrap() {},
+  bootstrap() {
+    console.log("[ops] bootstrap lifecycle called");
+  },
   async unmount(props) {
+    console.log("[ops] unmount lifecycle called");
     try {
       if (appInstance) {
         await nextTick();
         appInstance.unmount();
         appInstance = null;
+        piniaInstance = null;
       }
     } catch (e) {
       console.warn("[ops] unmount error (safe to ignore):", e.message);
       appInstance = null;
+      piniaInstance = null;
     }
     try {
       const mountNode = props?.container
@@ -49,7 +84,12 @@ renderWithQiankun({
     } catch {
       // mountNode may already be detached
     }
-  }
+  },
+  update(props) {
+    console.log("[ops] update lifecycle called with props:", props);
+    window.__FRAME_PROPS__ = props;
+    // 可以在这里处理 props 更新
+  },
 });
 
 if (!qiankunWindow.__POWERED_BY_QIANKUN__) {

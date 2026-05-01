@@ -101,21 +101,7 @@ async function loadItem() {
 }
 
 function handleBuy() {
-  Modal.confirm({
-    title: "确认下单",
-    content: `确定要以 ¥${item.value.price} 购买「${item.value.title}」吗？`,
-    okText: "确认下单",
-    cancelText: "再想想",
-    onOk: async () => {
-      try {
-        await createOrder(item.value.id);
-        Message.success("下单成功！");
-        router.push("/orders");
-      } catch (e) {
-        Message.error(e.message || "下单失败");
-      }
-    },
-  });
+  router.push(`/orders/confirm/${item.value.id}`);
 }
 
 onMounted(loadItem);

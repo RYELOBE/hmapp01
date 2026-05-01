@@ -7,6 +7,7 @@ import ItemDetail from "../views/item/index.vue";
 import SellerPublish from "../views/seller/PublishItem.vue";
 import SellerItems from "../views/seller/MyItems.vue";
 import Orders from "../views/orders/index.vue";
+import OrderConfirm from "../views/orders/OrderConfirm.vue";
 import { getCurrentUser } from "commonprovide/auth-sdk";
 import { hasAnyRole } from "@campus/common/roles";
 
@@ -23,6 +24,7 @@ const routes = [
       { path: "buyer/items", component: Home, meta: { roles: ["BUYER"], title: "淘好物" } },
       { path: "buyer/orders", component: Orders, meta: { roles: ["BUYER"] } },
       { path: "item/:id", component: ItemDetail },
+      { path: "orders/confirm/:id", component: OrderConfirm, meta: { roles: ["BUYER"] } },
       { path: "seller/publish", component: SellerPublish, meta: { roles: ["SELLER"] } },
       { path: "seller/items", component: SellerItems, meta: { roles: ["SELLER"] } },
       { path: "seller/orders", component: Orders, meta: { roles: ["SELLER"] } },

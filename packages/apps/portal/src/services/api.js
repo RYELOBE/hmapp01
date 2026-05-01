@@ -30,12 +30,40 @@ export function getMyOrders(params = {}) {
   return http.get("/orders/mine", { params });
 }
 
-export function createOrder(itemId) {
-  return http.post("/orders", { itemId });
+export function getOrderDetail(id) {
+  return http.get(`/orders/${id}`);
+}
+
+export function createOrder(data) {
+  return http.post("/orders", data);
+}
+
+export function payOrder(orderId) {
+  return http.post(`/orders/${orderId}/pay`);
 }
 
 export function confirmOrder(orderId) {
   return http.post(`/orders/${orderId}/confirm`);
+}
+
+export function shipOrder(orderId, data) {
+  return http.post(`/orders/${orderId}/ship`, data);
+}
+
+export function cancelOrder(orderId) {
+  return http.post(`/orders/${orderId}/cancel`);
+}
+
+export function requestRefund(orderId) {
+  return http.post(`/orders/${orderId}/refund`);
+}
+
+export function approveRefund(orderId) {
+  return http.post(`/orders/${orderId}/refund/approve`);
+}
+
+export function rejectRefund(orderId) {
+  return http.post(`/orders/${orderId}/refund/reject`);
 }
 
 // ── 文件上传 ──────────────────────────────

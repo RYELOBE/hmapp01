@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { getRegisters, getAuthRoutes, getPortalConfig, getMyMenuTree } from "../../services/frame";
 import { createConfigs, createRoutes } from "../index";
+import { useAuthStore } from "../../stores/auth";
 
 const framePinia = defineStore("framePinia", {
   state: () => ({
@@ -25,7 +26,9 @@ const framePinia = defineStore("framePinia", {
       try {
         const result = await getRegisters();
         const data = result.apps || [];
-        this.registConfigs = createConfigs(data);
+        // 获取 authStore 用于传递认证状态给子应用
+        const authStore = useAuthStore();
+        this.registConfigs = createConfigs(data, authStore);
         this.configsLoaded = true;
       } catch (e) {
         console.error("[framePinia] getRegistConfigs failed:", e);
@@ -90,8 +93,8 @@ const framePinia = defineStore("framePinia", {
     async initFrameWithRoutes() {
       await this.getRegistConfigs();
       await this.getRegistRoutes();
-    }
-  }
+    },
+  },
 });
 
 export default framePinia;
