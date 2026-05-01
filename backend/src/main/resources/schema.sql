@@ -16,6 +16,8 @@ CREATE TABLE IF NOT EXISTS user_account (
   password VARCHAR(128) NOT NULL,
   nickname VARCHAR(64) NOT NULL,
   roles VARCHAR(128) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_username (username),
   INDEX idx_created_at (created_at),
   INDEX idx_roles (roles(32))
@@ -159,6 +161,16 @@ CREATE TABLE IF NOT EXISTS role_resource (
   UNIQUE KEY uk_role_resource (role_code, resource_id),
   INDEX idx_role_code (role_code),
   INDEX idx_resource_id (resource_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS ops_role (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  role_code VARCHAR(64) NOT NULL UNIQUE,
+  role_name VARCHAR(128) NOT NULL,
+  description VARCHAR(512),
+  status VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_role_code (role_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS uploaded_file (

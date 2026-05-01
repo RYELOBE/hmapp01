@@ -4,31 +4,7 @@
       <a-spin :loading="loading" style="width: 100%">
         <div v-if="detail" class="item-detail">
           <div class="item-gallery">
-            <a-image-preview-group infinite>
-              <div class="item-main-image">
-                <a-image
-                  :src="getMainImage()"
-                  :alt="detail.title"
-                  fit="contain"
-                  width="100%"
-                  height="400"
-                />
-              </div>
-              <div class="item-thumbs" v-if="imageList.length > 1">
-                <a-image
-                  v-for="(img, index) in imageList"
-                  :key="index"
-                  :src="img"
-                  :alt="`图片${index + 1}`"
-                  width="72"
-                  height="72"
-                  fit="cover"
-                  class="item-thumb"
-                  :class="{ active: activeImageIndex === index }"
-                  @click="activeImageIndex = index"
-                />
-              </div>
-            </a-image-preview-group>
+            <ImageGallery :images="detail.imageUrls || []" />
           </div>
 
           <div class="item-info">
@@ -138,7 +114,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Message } from '@arco-design/web-vue';
 import {
@@ -149,7 +125,8 @@ import {
   IconShoppingCart,
   IconShopping,
 } from '@arco-design/web-vue/es/icon';
-import { StatusTag } from "commonprovide/status-tag";
+import StatusTag from "commonprovide/status-tag";
+import ImageGallery from "commonprovide/ImageGallery";
 import {
   getItemDetail,
   checkFavorite,
@@ -162,29 +139,8 @@ const route = useRoute();
 const router = useRouter();
 const detail = ref(null);
 const loading = ref(true);
-const activeImageIndex = ref(0);
 const isFavorited = ref(false);
 const favoriteCount = ref(0);
-
-const imageList = computed(() => {
-  if (!detail.value) return [];
-  const urls = detail.value.imageUrls || [];
-  if (typeof urls === 'string') {
-    try {
-      return JSON.parse(urls);
-    } catch {
-      return urls ? [urls] : [];
-    }
-  }
-  return Array.isArray(urls) ? urls : [];
-});
-
-function getMainImage() {
-  if (imageList.value.length > 0) {
-    return imageList.value[activeImageIndex.value];
-  }
-  return '';
-}
 
 function formatDate(dateStr) {
   if (!dateStr) return '未知';
@@ -199,7 +155,7 @@ function formatDate(dateStr) {
 async function checkIsFavorite() {
   try {
     const res = await checkFavorite(route.params.id);
-    isFavorited.value = res?.data?.isFavorited || false;
+    isFavorited.value = res?.isFavorited || false;
   } catch (e) {
     console.error('检查收藏状态失败', e);
   }
@@ -287,37 +243,6 @@ onMounted(loadDetail);
   display: flex;
   flex-direction: column;
   gap: 12px;
-
-  .item-main-image {
-    background: #fff;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  }
-
-  .item-thumbs {
-    display: flex;
-    gap: 8px;
-    overflow-x: auto;
-    padding: 4px 0;
-
-    .item-thumb {
-      border-radius: 8px;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: all 0.2s;
-      flex-shrink: 0;
-
-      &:hover {
-        border-color: #165dff;
-      }
-
-      &.active {
-        border-color: #165dff;
-        box-shadow: 0 0 0 2px rgba(22, 93, 255, 0.2);
-      }
-    }
-  }
 }
 
 .item-info {

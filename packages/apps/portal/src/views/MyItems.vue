@@ -82,7 +82,7 @@ import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Message } from "@arco-design/web-vue";
 import { IconPlus, IconEye, IconEdit } from "@arco-design/web-vue/es/icon";
-import { StatusTag } from "commonprovide/status-tag";
+import StatusTag from "commonprovide/status-tag";
 import { getMyItems } from "../services/api";
 
 const router = useRouter();

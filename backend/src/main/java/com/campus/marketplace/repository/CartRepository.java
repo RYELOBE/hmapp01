@@ -1,5 +1,6 @@
 package com.campus.marketplace.repository;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,12 +80,16 @@ public class CartRepository {
     if (itemIds == null || itemIds.isEmpty()) {
       return;
     }
-    StringBuilder sql = new StringBuilder("UPDATE cart SET selected = ? WHERE user_id = ? AND item_id IN (");
+    StringBuilder sql = new StringBuilder("UPDATE cart SET selected = ? WHERE user_id = ? AND id IN (");
+    List<Object> params = new ArrayList<>();
+    params.add(selected);
+    params.add(userId);
     for (int i = 0; i < itemIds.size(); i++) {
       sql.append(i > 0 ? ",?" : "?");
+      params.add(itemIds.get(i));
     }
     sql.append(")");
-    jdbc.update(sql.toString(), selected, userId, itemIds.toArray());
+    jdbc.update(sql.toString(), params.toArray());
   }
 
   public void delete(Long id) {

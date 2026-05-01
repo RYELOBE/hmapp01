@@ -14,7 +14,7 @@
         <div class="item-section">
           <h3>商品信息</h3>
           <div class="item-card">
-            <img v-if="item.imageUrls" :src="item.imageUrls" class="item-card__img" />
+            <img v-if="item.imageUrls" :src="parseFirstImageUrl(item.imageUrls)" class="item-card__img" />
             <div v-else class="item-card__img item-card__img--empty">📷</div>
             <div class="item-card__info">
               <div class="item-card__title">{{ item.title }}</div>
@@ -66,6 +66,7 @@ import { ref, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Message } from "@arco-design/web-vue";
 import { IconArrowLeft } from "@arco-design/web-vue/es/icon";
+import { parseFirstImageUrl } from "commonprovide/image-utils";
 import { getItemDetail, createOrder } from "../../services/api";
 
 const router = useRouter();

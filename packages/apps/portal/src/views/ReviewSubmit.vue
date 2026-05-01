@@ -48,29 +48,7 @@
 
           <div class="form-item">
             <label class="form-label">上传图片（可选）</label>
-            <div class="image-upload">
-              <div
-                v-for="(img, index) in form.images"
-                :key="index"
-                class="uploaded-image"
-              >
-                <img :src="img" />
-                <div class="remove-btn" @click="removeImage(index)">
-                  <icon-close />
-                </div>
-              </div>
-              <div v-if="form.images.length < 9" class="upload-btn" @click="triggerUpload">
-                <icon-plus />
-                <span>添加图片</span>
-              </div>
-              <input
-                ref="fileInput"
-                type="file"
-                accept="image/*"
-                style="display: none"
-                @change="handleFileChange"
-              />
-            </div>
+            <ImageUploader v-model="form.images" :limit="9" />
           </div>
         </div>
 
@@ -89,7 +67,8 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Message } from "@arco-design/web-vue";
-import { IconArrowLeft, IconPlus, IconClose } from "@arco-design/web-vue/es/icon";
+import { IconArrowLeft } from "@arco-design/web-vue/es/icon";
+import ImageUploader from "commonprovide/ImageUploader";
 import { getOrderDetail, createReview } from "../../services/api";
 
 const router = useRouter();
@@ -98,7 +77,6 @@ const route = useRoute();
 const loading = ref(false);
 const submitting = ref(false);
 const order = ref(null);
-const fileInput = ref(null);
 
 const form = ref({
   rating: 5,
@@ -108,7 +86,7 @@ const form = ref({
 
 const ratingText = computed(() => {
   const texts = ["很差", "较差", "一般", "满意", "非常满意"];
-  return texts[form.value.rating - 1] || "";
+  return texts[Math.floor(form.value.rating) - 1] || "";
 });
 
 async function loadOrder() {
@@ -130,32 +108,6 @@ async function loadOrder() {
   }
 }
 
-function triggerUpload() {
-  fileInput.value?.click();
-}
-
-async function handleFileChange(e) {
-  const file = e.target.files[0];
-  if (!file) return;
-
-  if (file.size > 5 * 1024 * 1024) {
-    Message.error("图片大小不能超过5MB");
-    return;
-  }
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    form.value.images.push(e.target.result);
-  };
-  reader.readAsDataURL(file);
-
-  e.target.value = "";
-}
-
-function removeImage(index) {
-  form.value.images.splice(index, 1);
-}
-
 async function submitReview() {
   if (form.value.rating === 0) {
     Message.error("请选择商品评分");
@@ -169,7 +121,7 @@ async function submitReview() {
       itemId: order.value.itemId,
       rating: form.value.rating,
       content: form.value.content,
-      images: form.value.images.join(","),
+      images: Array.isArray(form.value.images) ? form.value.images.join(",") : form.value.images,
     });
     Message.success("评价提交成功");
     router.push("/orders");
@@ -288,70 +240,6 @@ onMounted(loadOrder);
   .rating-text {
     font-size: 14px;
     color: #f59e0b;
-  }
-}
-
-.image-upload {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-
-  .uploaded-image {
-    position: relative;
-    width: 80px;
-    height: 80px;
-    border-radius: 8px;
-    overflow: hidden;
-
-    img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-
-    .remove-btn {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      width: 20px;
-      height: 20px;
-      background: rgba(0, 0, 0, 0.5);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      cursor: pointer;
-      font-size: 12px;
-
-      &:hover {
-        background: rgba(0, 0, 0, 0.7);
-      }
-    }
-  }
-
-  .upload-btn {
-    width: 80px;
-    height: 80px;
-    border: 2px dashed #d1d5db;
-    border-radius: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    color: #9ca3af;
-    cursor: pointer;
-    transition: all 0.2s;
-
-    &:hover {
-      border-color: #7c3aed;
-      color: #7c3aed;
-    }
-
-    span {
-      font-size: 12px;
-    }
   }
 }
 

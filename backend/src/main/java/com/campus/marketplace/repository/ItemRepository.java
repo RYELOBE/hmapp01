@@ -97,6 +97,18 @@ public class ItemRepository {
     jdbc.update("UPDATE item SET review_status = ?, reject_reason = ? WHERE id = ?", status, reason, id);
   }
 
+  public void update(Long id, String title, Integer price, String description, Object imageUrls,
+      String category, String conditionLevel) {
+    String imageUrlsStr = imageUrls != null ? imageUrls.toString() : null;
+    jdbc.update(
+        "UPDATE item SET title = ?, price = ?, description = ?, image_urls = ?, category = ?, condition_level = ? WHERE id = ?",
+        title, price, description, imageUrlsStr, category, conditionLevel, id);
+  }
+
+  public void delete(Long id) {
+    jdbc.update("DELETE FROM item WHERE id = ?", id);
+  }
+
   // ── 分页查询（支持筛选） ──────────────────────────
   public List<Map<String, Object>> findByPage(String status, String keyword, String category,
       int pageNo, int pageSize) {

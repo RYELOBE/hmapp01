@@ -5,11 +5,13 @@ import com.campus.marketplace.repository.OpsAccountRepository;
 import com.campus.marketplace.repository.OpsAccountRepository.OpsAccount;
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class OpsAuthService {
   private final OpsAccountRepository opsAccountRepository;
+  private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
   public OpsAuthService(OpsAccountRepository opsAccountRepository) {
     this.opsAccountRepository = opsAccountRepository;
@@ -24,7 +26,7 @@ public class OpsAuthService {
     if (!"ACTIVE".equals(account.getStatus())) {
       throw new IllegalArgumentException("账号已被禁用");
     }
-    if (!account.getPassword().equals(password)) {
+    if (!passwordEncoder.matches(password, account.getPassword())) {
       throw new IllegalArgumentException("密码错误");
     }
 
@@ -55,7 +57,7 @@ public class OpsAuthService {
 
   public boolean isOpsLogin() {
     try {
-      return StpUtil.isLogin() && "ops".equals(StpUtil.getTokenName());
+      return StpUtil.isLogin() && "ops".equals(StpUtil.getLoginDevice());
     } catch (Exception e) {
       return false;
     }

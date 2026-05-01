@@ -23,7 +23,7 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { http } from "commonprovide/http";
+import { opsHttp as http } from "commonprovide/http";
 
 const loading = ref(false);
 const stats = ref({});

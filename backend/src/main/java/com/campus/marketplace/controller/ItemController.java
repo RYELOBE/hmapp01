@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -84,6 +85,22 @@ public class ItemController {
   public Map<String, Object> offShelf(@PathVariable("id") Long id) {
     itemService.offShelfItem(id, currentUserService.userId());
     return Map.of("code", 200, "message", "已下架");
+  }
+
+  @PutMapping("/{id}")
+  @SaCheckRole("SELLER")
+  public Map<String, Object> updateItem(@PathVariable("id") Long id, @RequestBody CreateItemRequest request) {
+    return itemService.updateItem(
+        id, currentUserService.userId(),
+        request.title(), request.price(), request.description(),
+        request.imageUrls(), request.category(), request.conditionLevel());
+  }
+
+  @DeleteMapping("/{id}")
+  @SaCheckRole("SELLER")
+  public Map<String, Object> deleteItem(@PathVariable("id") Long id) {
+    itemService.deleteItem(id, currentUserService.userId());
+    return Map.of("code", 200, "message", "已删除");
   }
 
   public record CreateItemRequest(

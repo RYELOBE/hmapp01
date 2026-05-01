@@ -17,7 +17,7 @@ import UserManage from "../views/UserManage.vue";
 import UserManage2 from "../views/UserManage2.vue";
 import VendorManage from "../views/VendorManage.vue";
 import BuyerManage from "../views/BuyerManage.vue";
-import { getCurrentUser } from "commonprovide/auth-sdk";
+import { getOpsCurrentUser as getCurrentUser } from "commonprovide/auth-sdk";
 import { hasAnyRole } from "@campus/common/roles";
 
 const routes = [
@@ -49,7 +49,7 @@ const routes = [
 
 export function createOpsRouter(poweredByQiankun = false) {
   const router = createRouter({
-    history: createWebHistory("/"),
+    history: createWebHistory(poweredByQiankun ? "/ops" : "/"),
     routes,
   });
   router.beforeEach((to) => {

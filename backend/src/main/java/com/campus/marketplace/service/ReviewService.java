@@ -1,8 +1,9 @@
 package com.campus.marketplace.service;
 
+import com.campus.marketplace.repository.ItemRepository;
 import com.campus.marketplace.repository.OrderRepository;
 import com.campus.marketplace.repository.ReviewRepository;
-import com.campus.marketplace.repository.UserAccountRepository;
+import com.campus.marketplace.repository.UserRepository;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -13,13 +14,15 @@ public class ReviewService {
 
   private final ReviewRepository reviewRepository;
   private final OrderRepository orderRepository;
-  private final UserAccountRepository userAccountRepository;
+  private final UserRepository userRepository;
+  private final ItemRepository itemRepository;
 
   public ReviewService(ReviewRepository reviewRepository, OrderRepository orderRepository,
-      UserAccountRepository userAccountRepository) {
+      UserRepository userRepository, ItemRepository itemRepository) {
     this.reviewRepository = reviewRepository;
     this.orderRepository = orderRepository;
-    this.userAccountRepository = userAccountRepository;
+    this.userRepository = userRepository;
+    this.itemRepository = itemRepository;
   }
 
   public Map<String, Object> createReview(Long buyerId, Long orderId, Long itemId, int rating, String content, String images) {
@@ -27,11 +30,13 @@ public class ReviewService {
       throw new IllegalArgumentException("评分必须在1-5之间");
     }
 
-    var orderOpt = orderRepository.findById(orderId);
-    if (orderOpt.isEmpty()) {
+    var order = orderRepository.findById(orderId);
+    if (order == null) {
       throw new IllegalArgumentException("订单不存在");
     }
-    Map<String, Object> order = orderOpt.get();
+    if (!buyerId.equals(((Number) order.get("buyerId")).longValue())) {
+      throw new IllegalArgumentException("只能评价自己的订单");
+    }
 
     if (!"COMPLETED".equals(order.get("status"))) {
       throw new IllegalArgumentException("仅可评价已完成的订单");
@@ -44,7 +49,7 @@ public class ReviewService {
     Map<String, Object> review = reviewRepository.create(orderId, itemId, buyerId, rating, content, images);
 
     Map<String, Object> enrichedReview = new java.util.HashMap<>(review);
-    var userOpt = userAccountRepository.findById(buyerId);
+    var userOpt = userRepository.findById(buyerId);
     userOpt.ifPresent(user -> enrichedReview.put("buyerNickname", user.get("nickname")));
 
     return Map.of("code", 200, "message", "评价成功", "data", enrichedReview);
@@ -61,7 +66,7 @@ public class ReviewService {
       Map<String, Object> review = reviews.get(i);
       Map<String, Object> enriched = new java.util.HashMap<>(review);
       Long buyerId = (Long) review.get("buyerId");
-      userAccountRepository.findById(buyerId).ifPresent(user -> enriched.put("buyerNickname", user.get("nickname")));
+      userRepository.findById(buyerId).ifPresent(user -> enriched.put("buyerNickname", user.get("nickname")));
       pagedReviews.add(enriched);
     }
 
@@ -76,11 +81,10 @@ public class ReviewService {
   }
 
   public Map<String, Object> getReviewByOrder(Long buyerId, Long orderId) {
-    var orderOpt = orderRepository.findById(orderId);
-    if (orderOpt.isEmpty()) {
+    var order = orderRepository.findById(orderId);
+    if (order == null) {
       throw new IllegalArgumentException("订单不存在");
     }
-    Map<String, Object> order = orderOpt.get();
     if (!buyerId.equals(order.get("buyerId"))) {
       throw new IllegalArgumentException("无权查看此订单评价");
     }
@@ -113,5 +117,21 @@ public class ReviewService {
         "averageRating", averageRating,
         "ratingDistribution", reviewRepository.getRatingDistribution(itemId)
     ));
+  }
+
+  public Map<String, Object> getReviewQueuePaged(String status, int pageNo, int pageSize) {
+    List<Map<String, Object>> rows = itemRepository.findPendingByPage(pageNo, pageSize);
+    int total = itemRepository.countPending();
+    return Map.of("code", 200, "data", Map.of("items", rows, "totalCount", total, "pageNo", pageNo, "pageSize", pageSize));
+  }
+
+  public Map<String, Object> approve(Long itemId, Long operatorId) {
+    itemRepository.updateReviewStatus(itemId, "APPROVED", "审核通过");
+    return Map.of("code", 200, "message", "审核已通过");
+  }
+
+  public Map<String, Object> reject(Long itemId, Long operatorId, String reason) {
+    itemRepository.updateReviewStatus(itemId, "REJECTED", reason);
+    return Map.of("code", 200, "message", "已驳回");
   }
 }

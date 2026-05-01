@@ -5,11 +5,13 @@ import com.campus.marketplace.repository.UserRepository;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
   private final UserRepository userRepository;
+  private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
   public AuthService(UserRepository userRepository) {
     this.userRepository = userRepository;
@@ -21,7 +23,7 @@ public class AuthService {
       throw new IllegalArgumentException("账号不存在");
     }
     var user = userOpt.get();
-    if (!String.valueOf(user.get("password")).equals(password)) {
+    if (!passwordEncoder.matches(password, String.valueOf(user.get("password")))) {
       throw new IllegalArgumentException("密码错误");
     }
 
@@ -81,7 +83,7 @@ public class AuthService {
       throw new IllegalArgumentException("用户名已存在");
     }
 
-    var user = userRepository.create(username, password, nickname, roles);
+    var user = userRepository.create(username, passwordEncoder.encode(password), nickname, roles);
 
     Long userId = ((Number) user.get("id")).longValue();
     StpUtil.login(userId);

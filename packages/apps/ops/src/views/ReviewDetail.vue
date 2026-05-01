@@ -46,9 +46,6 @@
             <a-descriptions-item label="商品成色">
               <StatusTag :status="item.conditionLevel" type="condition" />
             </a-descriptions-item>
-            <a-descriptions-item label="商品成色" :span="2">
-              <StatusTag :status="item.conditionLevel" type="condition" />
-            </a-descriptions-item>
           </a-descriptions>
         </a-card>
 
@@ -103,16 +100,17 @@
               />
             </a-form-item>
             <a-form-item label="快速驳回原因">
-              <a-tag-group @click="(tag) => form.rejectReason = tag">
+              <a-space>
                 <a-tag
                   v-for="reason in quickRejectReasons"
                   :key="reason"
                   class="reject-tag"
-                  clickable
+                  style="cursor: pointer"
+                  @click="form.rejectReason = reason"
                 >
                   {{ reason }}
                 </a-tag>
-              </a-tag-group>
+              </a-space>
             </a-form-item>
             <a-form-item>
               <a-space>
@@ -144,7 +142,7 @@
 import { ref, reactive, computed } from "vue";
 import { Message } from "@arco-design/web-vue";
 import { IconCheck, IconClose, IconImage } from "@arco-design/web-vue/es/icon";
-import { StatusTag } from "commonprovide/status-tag";
+import StatusTag from "commonprovide/status-tag";
 import { approveItem, rejectItem } from "../services/api";
 
 const props = defineProps({

@@ -95,6 +95,16 @@ public class OpsController {
     return opsService.getBuyers(keyword, pageNo, Math.min(pageSize, 100));
   }
 
+  @GetMapping("/buyers/{buyerId}")
+  public Map<String, Object> getBuyerDetail(@PathVariable Long buyerId) {
+    return buildSuccessResponse(opsService.getUserDetail(buyerId));
+  }
+
+  @GetMapping("/vendors/{vendorId}")
+  public Map<String, Object> getVendorDetail(@PathVariable Long vendorId) {
+    return buildSuccessResponse(opsService.getUserDetail(vendorId));
+  }
+
   /**
    * 用户列表（分页）
    * @param keyword 搜索关键词
@@ -136,6 +146,16 @@ public class OpsController {
     List<String> roles = (List<String>) request.get("roles");
     opsService.updateUserRoles(userId, roles);
     return buildSuccessResponse(Map.of("message", "角色更新成功"));
+  }
+
+  @PutMapping("/users/{userId}/status")
+  public Map<String, Object> updateUserStatus(
+      @PathVariable Long userId,
+      @RequestBody Map<String, Object> request
+  ) {
+    String status = (String) request.get("status");
+    opsService.updateUserStatus(userId, status);
+    return buildSuccessResponse(Map.of("message", "状态更新成功"));
   }
 
   /**

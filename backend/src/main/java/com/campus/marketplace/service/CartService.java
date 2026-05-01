@@ -24,12 +24,11 @@ public class CartService {
       throw new IllegalArgumentException("数量必须在1-99之间");
     }
 
-    var itemOpt = itemRepository.findById(itemId);
-    if (itemOpt.isEmpty()) {
+    var item = itemRepository.findById(itemId);
+    if (item == null) {
       throw new IllegalArgumentException("商品不存在");
     }
 
-    Map<String, Object> item = itemOpt.get();
     if (!"APPROVED".equals(item.get("reviewStatus"))) {
       throw new IllegalArgumentException("商品未上架");
     }
@@ -56,9 +55,8 @@ public class CartService {
 
     for (Map<String, Object> cart : cartItems) {
       Long itemId = (Long) cart.get("itemId");
-      var itemOpt = itemRepository.findById(itemId);
-      if (itemOpt.isPresent()) {
-        Map<String, Object> item = itemOpt.get();
+      var item = itemRepository.findById(itemId);
+      if (item != null) {
         Map<String, Object> enrichedItem = new HashMap<>(cart);
         enrichedItem.put("item", item);
         if ((Boolean) cart.get("selected")) {

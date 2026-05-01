@@ -1,4 +1,4 @@
-import { http } from "commonprovide/http";
+import { opsHttp as http } from "commonprovide/http";
 
 // ── 审核 API ──────────────────────────────
 export function getReviewQueue(params = {}) {
@@ -90,23 +90,6 @@ export function savePortalConfig(data) {
 
 export function deletePortalConfig(portalCode) {
   return http.delete(`/portal/configs/${portalCode}`);
-}
-
-// ── 资源菜单 API ──────────────────────────────
-export function getResourceMenus() {
-  return http.get("/resource/menus");
-}
-
-export function getResourceMenuTree() {
-  return http.get("/resource/menu-tree");
-}
-
-export function saveResourceMenu(data) {
-  return http.post("/resource/menus", data);
-}
-
-export function deleteResourceMenu(id) {
-  return http.delete(`/resource/menus/${id}`);
 }
 
 // ── 角色管理 API ──────────────────────────────

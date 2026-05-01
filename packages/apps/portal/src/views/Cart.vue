@@ -150,6 +150,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Message } from "@arco-design/web-vue";
 import { IconLeft, IconDelete, IconShoppingCart, IconStore, IconImage } from "@arco-design/web-vue/es/icon";
+import { parseFirstImageUrl } from "commonprovide/image-utils";
 import {
   getCartList,
   updateCartQuantity,
@@ -204,16 +205,7 @@ function getSubtotal(cartItem) {
 }
 
 function getImageUrl(item) {
-  if (!item) return "";
-  const urls = item.imageUrls || item.images || [];
-  if (typeof urls === "string") {
-    try {
-      return JSON.parse(urls)[0] || "";
-    } catch {
-      return urls || "";
-    }
-  }
-  return Array.isArray(urls) && urls.length > 0 ? urls[0] : "";
+  return parseFirstImageUrl(item?.imageUrls || item?.images);
 }
 
 function goToItem(itemId) {
@@ -226,7 +218,7 @@ async function loadCart() {
   loading.value = true;
   try {
     const res = await getCartList();
-    cartItems.value = res?.data || [];
+    cartItems.value = res || [];
   } catch (e) {
     Message.error(e.message || "加载购物车失败");
   } finally {
@@ -295,8 +287,8 @@ function checkout() {
     Message.warning("请选择要结算的商品");
     return;
   }
-  const itemId = selectedItems[0].itemId;
-  router.push(`/orders/confirm/${itemId}`);
+  const firstItem = selectedItems[0];
+  router.push(`/orders/confirm/${firstItem.itemId}`);
 }
 
 onMounted(loadCart);

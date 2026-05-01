@@ -69,8 +69,23 @@ public class OrderService {
     }
 
     Long sellerId = ((Number) item.get("sellerId")).longValue();
+    if (buyerId.equals(sellerId)) {
+      throw new IllegalArgumentException("不能购买自己的商品");
+    }
     String itemTitle = (String) item.get("title");
-    String itemImage = (String) item.get("imageUrls");
+    String itemImage = "";
+    Object imageUrlsObj = item.get("imageUrls");
+    if (imageUrlsObj != null) {
+      String imageUrlsStr = imageUrlsObj.toString();
+      if (imageUrlsStr.startsWith("[")) {
+        try {
+          var urls = new com.fasterxml.jackson.databind.ObjectMapper().readValue(imageUrlsStr, java.util.List.class);
+          if (!urls.isEmpty()) itemImage = (String) urls.get(0);
+        } catch (Exception ignored) {}
+      } else {
+        itemImage = imageUrlsStr;
+      }
+    }
     Integer price = ((Number) item.get("price")).intValue();
     String sellerName = (String) item.get("sellerName");
     String buyerName = getBuyerName(buyerId);
@@ -218,8 +233,18 @@ public class OrderService {
     int total;
 
     if (isSeller && isBuyer) {
-      rows = orderRepository.findByBuyerIdPaged(userId, status, pageNo, pageSize);
-      total = orderRepository.countByBuyerIdWithFilter(userId, status);
+      List<Map<String, Object>> buyerRows = orderRepository.findByBuyerIdPaged(userId, status, pageNo, pageSize);
+      List<Map<String, Object>> sellerRows = orderRepository.findBySellerIdPaged(userId, status, pageNo, pageSize);
+      rows = new ArrayList<>(buyerRows);
+      rows.addAll(sellerRows);
+      rows.sort((a, b) -> {
+        String timeA = String.valueOf(a.getOrDefault("createdAt", ""));
+        String timeB = String.valueOf(b.getOrDefault("createdAt", ""));
+        return timeB.compareTo(timeA);
+      });
+      int buyerTotal = orderRepository.countByBuyerIdWithFilter(userId, status);
+      int sellerTotal = orderRepository.countBySellerIdWithFilter(userId, status);
+      total = buyerTotal + sellerTotal;
     } else if (isSeller) {
       rows = orderRepository.findBySellerIdPaged(userId, status, pageNo, pageSize);
       total = orderRepository.countBySellerIdWithFilter(userId, status);

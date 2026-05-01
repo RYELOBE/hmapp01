@@ -58,7 +58,7 @@ public class AddressRepository {
       return ps;
     }, kh);
     Long id = kh.getKey().longValue();
-    return findById(id);
+    return findById(id).orElseThrow();
   }
 
   public Optional<Map<String, Object>> findById(Long id) {

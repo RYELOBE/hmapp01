@@ -39,7 +39,7 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { http } from "commonprovide/http";
+import { opsHttp as http } from "commonprovide/http";
 import { BUYER_COLUMNS } from "./const";
 
 const tableData = ref([]);

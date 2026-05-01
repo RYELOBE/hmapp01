@@ -252,7 +252,7 @@ import {
   IconEdit,
   IconSend,
 } from "@arco-design/web-vue/es/icon";
-import { StatusTag } from "commonprovide/status-tag";
+import StatusTag from "commonprovide/status-tag";
 import { getMyItems, getMyOrders, shipOrder as apiShipOrder } from "../services/api";
 
 const router = useRouter();
@@ -391,7 +391,7 @@ function viewOrder(record) {
 
 async function shipOrder(record) {
   try {
-    await apiShipOrder(record.id);
+    await apiShipOrder(record.id, { trackingCompany: '未填写', trackingNumber: '' });
     Message.success("发货成功");
     loadOrders();
   } catch (error) {

@@ -178,6 +178,16 @@ public class OpsService {
     userRepository.updateRoles(userId, roles);
   }
 
+  public void updateUserStatus(Long userId, String status) {
+    if (userId == null) {
+      throw new IllegalArgumentException("用户ID不能为空");
+    }
+    if (status == null || status.isBlank()) {
+      throw new IllegalArgumentException("状态不能为空");
+    }
+    userRepository.updateStatus(userId, status);
+  }
+
   /**
    * 获取待审核商品列表（分页）
    * @param pageNo 页码

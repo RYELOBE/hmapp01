@@ -128,7 +128,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { http } from "commonprovide/http";
+import { opsHttp as http } from "commonprovide/http";
 import { Message } from "@arco-design/web-vue";
 
 const loading = ref(false);

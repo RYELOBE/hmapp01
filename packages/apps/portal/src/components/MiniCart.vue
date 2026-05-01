@@ -28,7 +28,7 @@
                 >
                   <img
                     v-if="item.item?.imageUrls"
-                    :src="item.item.imageUrls"
+                    :src="parseFirstImageUrl(item.item.imageUrls)"
                     class="item-thumb"
                   />
                   <div v-else class="item-thumb item-thumb--empty">📷</div>
@@ -76,6 +76,7 @@
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { IconShoppingCart, IconDown } from "@arco-design/web-vue/es/icon";
+import { parseFirstImageUrl } from "commonprovide/image-utils";
 import { getCartCount, getCartList } from "../../services/api";
 
 const router = useRouter();
@@ -93,11 +94,11 @@ const totalAmount = computed(() => {
 async function loadCartData() {
   try {
     const countRes = await getCartCount();
-    cartCount.value = countRes?.data?.total || 0;
+    cartCount.value = countRes?.total || 0;
 
     if (visible.value) {
       const listRes = await getCartList();
-      cartItems.value = listRes?.data || [];
+      cartItems.value = listRes || [];
     }
   } catch (e) {
     console.error("加载购物车数据失败", e);

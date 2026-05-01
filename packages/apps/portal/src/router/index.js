@@ -14,6 +14,7 @@ import { hasAnyRole } from "@campus/common/roles";
 const routes = [
   { path: "/", redirect: "/home" },
   { path: "/login", component: Login, meta: { hideMenu: true } },
+  { path: "/register", name: "Register", component: () => import("../views/Register.vue"), meta: { hideMenu: true } },
   { path: "/forbidden", component: ForbiddenView, meta: { hideMenu: true } },
   {
     path: "/",

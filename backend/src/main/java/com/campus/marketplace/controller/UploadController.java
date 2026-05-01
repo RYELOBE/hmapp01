@@ -1,6 +1,7 @@
 package com.campus.marketplace.controller;
 
 import com.campus.marketplace.service.UploadService;
+import cn.dev33.satoken.annotation.SaCheckLogin;
 import cn.dev33.satoken.stp.StpUtil;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,6 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api")
+@SaCheckLogin
 public class UploadController {
 
     private final UploadService uploadService;
@@ -30,7 +32,7 @@ public class UploadController {
 
         // 统一返回格式：{ code: 0, data: { url: "..." } }
         Map<String, Object> response = new HashMap<>();
-        response.put("code", 0);
+        response.put("code", 200);
         response.put("data", result);
         return response;
     }

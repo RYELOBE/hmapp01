@@ -1,6 +1,8 @@
 package com.campus.marketplace.repository;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
@@ -46,5 +48,39 @@ public class RoleResourceRepository {
     return jdbc.query(
         "SELECT DISTINCT role_code FROM role_resource ORDER BY role_code",
         (rs, rowNum) -> rs.getString("role_code"));
+  }
+
+  private static final RowMapper<Map<String, Object>> ROLE_MAPPER = (rs, rowNum) -> {
+    Map<String, Object> row = new HashMap<>();
+    row.put("roleCode", rs.getString("role_code"));
+    row.put("roleName", rs.getString("role_name"));
+    row.put("description", rs.getString("description"));
+    row.put("status", rs.getString("status"));
+    return row;
+  };
+
+  public Map<String, Object> createRole(String roleCode, String roleName, String description) {
+    jdbc.update("INSERT INTO ops_role (role_code, role_name, description, status) VALUES (?, ?, ?, 'ACTIVE')",
+        roleCode, roleName, description);
+    Map<String, Object> role = new HashMap<>();
+    role.put("roleCode", roleCode);
+    role.put("roleName", roleName);
+    role.put("description", description);
+    role.put("status", "ACTIVE");
+    return role;
+  }
+
+  public void updateRole(String roleCode, String roleName, String description) {
+    jdbc.update("UPDATE ops_role SET role_name = ?, description = ? WHERE role_code = ?",
+        roleName, description, roleCode);
+  }
+
+  public void deleteRole(String roleCode) {
+    jdbc.update("DELETE FROM role_resource WHERE role_code = ?", roleCode);
+    jdbc.update("DELETE FROM ops_role WHERE role_code = ?", roleCode);
+  }
+
+  public void updateRoleStatus(String roleCode, String status) {
+    jdbc.update("UPDATE ops_role SET status = ? WHERE role_code = ?", status, roleCode);
   }
 }

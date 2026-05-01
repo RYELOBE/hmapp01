@@ -104,7 +104,7 @@
               <div class="item-cell">
                 <img
                   v-if="record.imageUrls"
-                  :src="record.imageUrls"
+                  :src="parseFirstImageUrl(record.imageUrls)"
                   class="item-thumb"
                 />
                 <div v-else class="item-thumb item-thumb--empty">📷</div>
@@ -134,6 +134,7 @@ import {
   IconChart,
   IconBox,
 } from "@arco-design/web-vue/es/icon";
+import { parseFirstImageUrl } from "commonprovide/image-utils";
 import {
   getSellerOverview,
   getSellerTrend,
@@ -177,7 +178,7 @@ async function loadOverview() {
   loading.value = true;
   try {
     const res = await getSellerOverview();
-    stats.value = res?.data;
+    stats.value = res;
   } catch (e) {
     Message.error(e.message || "加载统计数据失败");
   } finally {
@@ -188,7 +189,7 @@ async function loadOverview() {
 async function loadTrend() {
   try {
     const res = await getSellerTrend(parseInt(trendDays.value));
-    trendData.value = res?.data || [];
+    trendData.value = res || [];
   } catch (e) {
     console.error("加载趋势数据失败", e);
   }
@@ -198,7 +199,7 @@ async function loadRanking() {
   rankingLoading.value = true;
   try {
     const res = await getSellerRanking(10);
-    rankingData.value = res?.data || [];
+    rankingData.value = res || [];
   } catch (e) {
     console.error("加载排行数据失败", e);
   } finally {

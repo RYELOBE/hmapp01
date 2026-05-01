@@ -77,6 +77,7 @@
 <script setup>
 import { computed } from 'vue';
 import { IconImage, IconShoppingCart } from '@arco-design/web-vue/es/icon';
+import { parseFirstImageUrl } from 'commonprovide/image-utils';
 
 const props = defineProps({
   item: {
@@ -117,15 +118,7 @@ const props = defineProps({
 const emit = defineEmits(['click', 'add-cart', 'buy-now']);
 
 const imageUrl = computed(() => {
-  const urls = props.item.imageUrls || props.item.images || [];
-  if (typeof urls === 'string') {
-    try {
-      return JSON.parse(urls)[0] || '';
-    } catch {
-      return urls || '';
-    }
-  }
-  return Array.isArray(urls) && urls.length > 0 ? urls[0] : '';
+  return parseFirstImageUrl(props.item.imageUrls || props.item.images);
 });
 
 function handleClick() {

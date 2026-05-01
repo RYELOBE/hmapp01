@@ -8,17 +8,7 @@
     <a-form :model="form" layout="vertical" ref="formRef" class="publish-page__form">
       <!-- 图片上传 -->
       <a-form-item label="商品图片（最多6张）" field="imageUrls" :rules="[{ required: true, message: '请至少上传一张图片' }]">
-        <a-upload
-          list-type="picture-card"
-          :file-list="fileList"
-          :limit="6"
-          :custom-request="handleUpload"
-          accept="image/*"
-          image-preview
-          :multiple="true"
-          @success="onUploadSuccess"
-          @remove="onRemove"
-        />
+        <ImageUploader v-model="form.imageUrls" :limit="6" />
       </a-form-item>
 
       <!-- 标题 -->
@@ -77,62 +67,40 @@
 import { ref, reactive } from "vue";
 import { useRouter } from "vue-router";
 import { Message } from "@arco-design/web-vue";
-import { publishItem, uploadImage } from "../../services/api";
+import ImageUploader from "commonprovide/ImageUploader";
+import { publishItem } from "../../services/api";
 
 const router = useRouter();
 const formRef = ref(null);
 const submitting = ref(false);
-const fileList = ref([]);
 
 const CATEGORY_OPTIONS = [
-  { value: "digital", label: "📱 数码" },
-  { value: "book", label: "📚 教材" },
+  { value: "electronics", label: "📱 数码" },
+  { value: "textbooks", label: "📚 教材" },
   { value: "clothing", label: "👕 服饰" },
   { value: "daily", label: "🧴 生活" },
-  { value: "sport", label: "⚽ 运动" },
-  { value: "instrument", label: "🎸 乐器" },
-  { value: "other", label: "📦 其他" },
+  { value: "sports", label: "⚽ 运动" },
+  { value: "furniture", label: "🪑 家具" },
+  { value: "transport", label: "🚲 出行" },
+  { value: "others", label: "📦 其他" },
 ];
 
 const CONDITION_OPTIONS = [
-  { value: "new", label: "全新" },
-  { value: "99", label: "99新" },
-  { value: "95", label: "95新" },
-  { value: "9", label: "9成新" },
-  { value: "8", label: "8成新" },
-  { value: "7", label: "7成新" },
+  { value: "brand_new", label: "全新" },
+  { value: "like_new", label: "九成新" },
+  { value: "good", label: "八成新" },
+  { value: "fair", label: "七成新" },
+  { value: "poor", label: "六成新及以下" },
 ];
 
 const form = reactive({
   title: "",
   price: null,
   category: "",
-  conditionLevel: "9",
+  conditionLevel: "good",
   description: "",
   imageUrls: [],
 });
-
-async function handleUpload({ file, onSuccess, onError }) {
-  try {
-    const res = await uploadImage(file);
-    form.imageUrls.push(res.url || res);
-    onSuccess(res);
-  } catch (e) {
-    onError(e);
-    Message.error("图片上传失败");
-  }
-}
-
-function onUploadSuccess(fileItem) {
-  // handled in handleUpload
-}
-
-function onRemove(fileItem) {
-  const idx = fileList.value.findIndex(f => f.uid === fileItem.uid);
-  if (idx > -1) {
-    form.imageUrls.splice(idx, 1);
-  }
-}
 
 async function handleSubmit() {
   const valid = await formRef.value?.validate();
@@ -156,7 +124,6 @@ async function handleSubmit() {
 function handleReset() {
   formRef.value?.resetFields();
   form.imageUrls = [];
-  fileList.value = [];
 }
 </script>
 

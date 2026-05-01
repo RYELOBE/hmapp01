@@ -32,7 +32,7 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import { http } from "commonprovide/http";
+import { opsHttp as http } from "commonprovide/http";
 import { ORDER_STATUS_OPTIONS, ORDER_STATUS_MAP, ORDER_COLUMNS } from "./const";
 
 const tableData = ref([]);

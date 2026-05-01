@@ -3,7 +3,7 @@
     <a-card :bordered="false" class="list-card">
       <template #title>
         <div class="card-title">
-          <icon-check-circle-rejected class="title-icon" />
+          <icon-close-circle class="title-icon" />
           <span>商品审核队列</span>
         </div>
       </template>
@@ -115,9 +115,9 @@
 import { ref, reactive, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Message } from "@arco-design/web-vue";
-import { IconEye, IconCheck, IconCheckCircle, IconCheckCircleRejected } from "@arco-design/web-vue/es/icon";
-import { StatusTag } from "commonprovide/status-tag";
-import { SearchFilter } from "commonprovide/SearchFilter";
+import { IconEye, IconCheck, IconCheckCircle, IconCloseCircle } from "@arco-design/web-vue/es/icon";
+import StatusTag from "commonprovide/status-tag";
+import SearchFilter from "commonprovide/SearchFilter";
 import { approveItem as apiApproveItem, rejectItem, getReviewQueue } from "../services/api";
 import ReviewDetail from "./ReviewDetail.vue";
 

@@ -112,7 +112,8 @@ import {
   createRole,
   updateRole,
   getRoleDetail,
-  updateRoleStatus
+  updateRoleStatus,
+  deleteRole
 } from '../services/api';
 
 const router = useRouter();

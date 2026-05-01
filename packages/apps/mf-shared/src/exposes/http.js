@@ -38,15 +38,20 @@ function isOpsPath(url) {
   return url.startsWith("/ops/") || url.includes("/ops/");
 }
 
-function getAuthToken(url) {
+function getAuthToken(url, appType) {
+  if (appType === 'ops') {
+    return getOpsToken();
+  }
   if (isOpsPath(url)) {
     return getOpsToken();
   }
   return getToken();
 }
 
-function handleLogout(url) {
-  if (isOpsPath(url)) {
+function handleLogout(url, appType) {
+  if (appType === 'ops') {
+    opsLogout();
+  } else if (isOpsPath(url)) {
     opsLogout();
   } else {
     logout();
@@ -60,6 +65,7 @@ export function createHttp({
   responseCallback = undefined,
   baseURL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api",
   timeout = 12000,
+  appType = '',
 } = {}) {
   const instance = axios.create({ baseURL, timeout, withCredentials: false });
 
@@ -72,7 +78,7 @@ export function createHttp({
       if (conf.method === "get") {
         conf.params = { t: Date.now(), ...conf.params };
       }
-      const token = getAuthToken(conf.url);
+      const token = getAuthToken(conf.url, appType);
       if (token) {
         conf.headers["Authorization"] = token;
       }
@@ -92,14 +98,14 @@ export function createHttp({
       if (data && typeof data === "object" && "code" in data) {
         if (
           !response.config.isTokenNotAuth &&
-          getAuthToken(url) &&
+          getAuthToken(url, appType) &&
           (data.code === 401 || data.code === 402)
         ) {
-          handleLogout(url);
+          handleLogout(url, appType);
           if (gotoLoginCallback && typeof gotoLoginCallback === "function") {
             gotoLoginCallback(response);
           } else {
-            window.location.hash = isOpsPath(url) ? "#/ops/login" : "#/login";
+            window.location.href = (appType === 'ops' || isOpsPath(url)) ? "/ops/login" : "/login";
           }
           return Promise.reject(data);
         }
@@ -133,11 +139,11 @@ export function createHttp({
       const message = data?.message || data?.msg || STATUS_MSG_MAP[status] || "请求失败";
 
       if (status === 401) {
-        handleLogout(url);
+        handleLogout(url, appType);
         if (gotoLoginCallback && typeof gotoLoginCallback === "function") {
           gotoLoginCallback(error.response);
         } else {
-          window.location.hash = isOpsPath(url) ? "#/ops/login" : "#/login";
+          window.location.href = (appType === 'ops' || isOpsPath(url)) ? "/ops/login" : "/login";
         }
       }
 
@@ -156,7 +162,8 @@ export function createHttp({
 }
 
 const { http, CancelToken } = createHttp();
-export { http, CancelToken };
+const { http: opsHttp } = createHttp({ appType: 'ops' });
+export { http, CancelToken, opsHttp };
 
 export function post(url, data = {}, params = {}, optionConfig = {}) {
   return http({ method: "post", url, data, params, ...optionConfig });

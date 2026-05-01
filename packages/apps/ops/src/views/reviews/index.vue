@@ -26,10 +26,10 @@
       <template #actions="{ record }">
         <a-space>
           <a-button size="small" @click="$router.push(`/ops/reviews/${record.id}`)">详情</a-button>
-          <a-button v-if="record.reviewStatus === 'PENDING'" size="small" type="primary" @click="handleApprove(record)">
+          <a-button v-if="record.reviewStatus === 'PENDING_REVIEW'" size="small" type="primary" @click="handleApprove(record)">
             通过
           </a-button>
-          <a-button v-if="record.reviewStatus === 'PENDING'" size="small" status="danger" @click="openRejectModal(record)">
+          <a-button v-if="record.reviewStatus === 'PENDING_REVIEW'" size="small" status="danger" @click="openRejectModal(record)">
             驳回
           </a-button>
         </a-space>
@@ -56,7 +56,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { Message } from "@arco-design/web-vue";
-import { http } from "commonprovide/http";
+import { opsHttp as http } from "commonprovide/http";
 import { REVIEW_STATUS_OPTIONS, REVIEW_STATUS_MAP, REVIEW_COLUMNS } from "./const";
 
 const tableData = ref([]);

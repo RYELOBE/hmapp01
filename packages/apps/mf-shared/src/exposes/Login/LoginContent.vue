@@ -18,12 +18,16 @@
 <script setup>
 import { reactive, ref } from "vue";
 import { Message } from "@arco-design/web-vue";
-import { login } from "../auth-sdk.js";
+import { login, opsLogin } from "../auth-sdk.js";
 
 const props = defineProps({
   loginConfig: {
     type: Object,
     default: () => ({})
+  },
+  appType: {
+    type: String,
+    default: ""
   }
 });
 
@@ -38,7 +42,11 @@ const form = reactive({
 async function submit() {
   loading.value = true;
   try {
-    await login(form);
+    if (props.appType === "ops") {
+      await opsLogin(form);
+    } else {
+      await login(form);
+    }
     Message.success("登录成功");
     emits("login-success");
   } catch (error) {

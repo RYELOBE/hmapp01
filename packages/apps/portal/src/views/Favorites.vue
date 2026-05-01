@@ -72,6 +72,7 @@ import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Message } from "@arco-design/web-vue";
 import { IconArrowLeft, IconHeart, IconClose } from "@arco-design/web-vue/es/icon";
+import { parseFirstImageUrl } from "commonprovide/image-utils";
 import { getFavoriteList, removeFavorite } from "../../services/api";
 
 const router = useRouter();
@@ -79,19 +80,7 @@ const loading = ref(false);
 const favorites = ref([]);
 
 function getItemImage(item) {
-  if (!item) return "";
-  if (Array.isArray(item.imageUrls)) {
-    return item.imageUrls[0];
-  }
-  if (typeof item.imageUrls === "string") {
-    try {
-      const parsed = JSON.parse(item.imageUrls);
-      return Array.isArray(parsed) ? parsed[0] : parsed;
-    } catch {
-      return item.imageUrls;
-    }
-  }
-  return "";
+  return parseFirstImageUrl(item?.imageUrls);
 }
 
 function getStatusText(status) {
@@ -129,7 +118,7 @@ async function loadFavorites() {
   loading.value = true;
   try {
     const res = await getFavoriteList();
-    favorites.value = res?.data || [];
+    favorites.value = res || [];
   } catch (e) {
     Message.error(e.message || "加载收藏失败");
   } finally {

@@ -35,6 +35,8 @@
 <script setup>
 import { computed } from 'vue';
 import StatusTag from 'commonprovide/status-tag';
+import OrderGoods from './sub/OrderGoods.vue';
+import OrderActions from './sub/OrderActions.vue';
 
 const props = defineProps({
   order: {

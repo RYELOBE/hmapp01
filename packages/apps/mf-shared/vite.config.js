@@ -22,6 +22,7 @@ export default defineConfig({
         "./SearchFilter": "./src/exposes/SearchFilter/index.js",
         "./ItemCard": "./src/exposes/ItemCard/index.js",
         "./ImageGallery": "./src/exposes/ImageGallery/index.js",
+        "./image-utils": "./src/exposes/image-utils.js",
       },
       shared: {
         vue: { singleton: true },

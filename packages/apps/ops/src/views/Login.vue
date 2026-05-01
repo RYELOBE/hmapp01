@@ -1,5 +1,5 @@
 <template>
-  <Login type="full-screen" @login-success="loginSuccess" />
+  <Login type="full-screen" app-type="ops" @login-success="loginSuccess" />
 </template>
 
 <script setup>

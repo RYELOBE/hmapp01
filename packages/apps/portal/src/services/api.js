@@ -25,6 +25,10 @@ export function offShelfItem(id) {
   return http.post(`/items/${id}/off-shelf`);
 }
 
+export function getMyItems(params = {}) {
+  return http.get("/items/mine", { params });
+}
+
 // ── 订单接口 ──────────────────────────────
 export function getMyOrders(params = {}) {
   return http.get("/orders/mine", { params });
@@ -187,7 +191,7 @@ export function getSellerRanking(limit = 10) {
 export function uploadImage(file) {
   const formData = new FormData();
   formData.append("file", file);
-  return http.post("/upload/image", formData, {
+  return http.post("/upload", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 }

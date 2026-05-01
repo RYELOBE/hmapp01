@@ -19,8 +19,8 @@ public class FavoriteService {
   }
 
   public Map<String, Object> addFavorite(Long userId, Long itemId) {
-    var itemOpt = itemRepository.findById(itemId);
-    if (itemOpt.isEmpty()) {
+    var item = itemRepository.findById(itemId);
+    if (item == null) {
       throw new IllegalArgumentException("商品不存在");
     }
 
@@ -46,10 +46,10 @@ public class FavoriteService {
 
     for (Map<String, Object> fav : favorites) {
       Long itemId = (Long) fav.get("itemId");
-      var itemOpt = itemRepository.findById(itemId);
-      if (itemOpt.isPresent()) {
+      var item = itemRepository.findById(itemId);
+      if (item != null) {
         Map<String, Object> enriched = new java.util.HashMap<>(fav);
-        enriched.put("item", itemOpt.get());
+        enriched.put("item", item);
         enriched.put("isFavorited", true);
         result.add(enriched);
       }

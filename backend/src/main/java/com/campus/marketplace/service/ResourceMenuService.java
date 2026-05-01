@@ -92,6 +92,22 @@ public class ResourceMenuService {
     return roleResourceRepository.findRolesByResourceId(resourceId);
   }
 
+  public Map<String, Object> createRole(String roleCode, String roleName, String description) {
+    return roleResourceRepository.createRole(roleCode, roleName, description);
+  }
+
+  public void updateRole(String roleCode, String roleName, String description) {
+    roleResourceRepository.updateRole(roleCode, roleName, description);
+  }
+
+  public void deleteRole(String roleCode) {
+    roleResourceRepository.deleteRole(roleCode);
+  }
+
+  public void updateRoleStatus(String roleCode, String status) {
+    roleResourceRepository.updateRoleStatus(roleCode, status);
+  }
+
   @SuppressWarnings("unchecked")
   private List<Map<String, Object>> buildTree(List<Map<String, Object>> menus, Long parentId) {
     List<Map<String, Object>> tree = new ArrayList<>();

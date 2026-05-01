@@ -188,6 +188,30 @@ public class ItemService {
     itemRepository.updateReviewStatus(itemId, "OFF_SHELF", "卖家主动下架");
   }
 
+  public Map<String, Object> updateItem(Long itemId, Long sellerId, String title, Integer price,
+      String description, Object imageUrls, String category, String conditionLevel) {
+    Map<String, Object> item = itemRepository.findById(itemId);
+    if (item == null) {
+      throw new IllegalArgumentException("商品不存在");
+    }
+    if (!sellerId.equals(item.get("sellerId"))) {
+      throw new IllegalArgumentException("只能编辑自己的商品");
+    }
+    itemRepository.update(itemId, title, price, description, imageUrls, category, conditionLevel);
+    return Map.of("code", 200, "message", "商品已更新", "data", itemRepository.findById(itemId));
+  }
+
+  public void deleteItem(Long itemId, Long sellerId) {
+    Map<String, Object> item = itemRepository.findById(itemId);
+    if (item == null) {
+      throw new IllegalArgumentException("商品不存在");
+    }
+    if (!sellerId.equals(item.get("sellerId"))) {
+      throw new IllegalArgumentException("只能删除自己的商品");
+    }
+    itemRepository.delete(itemId);
+  }
+
   /**
    * 按日期范围统计商品数量
    * @param startTime 开始时间

@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -81,6 +82,39 @@ public class ResourceMenuController {
     return Map.of("roles", resourceMenuService.getAllRoles());
   }
 
+  @PostMapping("/roles")
+  @SaCheckLogin
+  @SaCheckRole("OPS")
+  public Map<String, Object> createRole(@RequestBody RoleCreateRequest req) {
+    var role = resourceMenuService.createRole(req.roleCode(), req.roleName(), req.description());
+    return Map.of("role", role, "message", "角色已创建");
+  }
+
+  @PutMapping("/roles/{roleCode}")
+  @SaCheckLogin
+  @SaCheckRole("OPS")
+  public Map<String, Object> updateRole(@PathVariable String roleCode, @RequestBody RoleCreateRequest req) {
+    resourceMenuService.updateRole(roleCode, req.roleName(), req.description());
+    return Map.of("message", "角色已更新");
+  }
+
+  @DeleteMapping("/roles/{roleCode}")
+  @SaCheckLogin
+  @SaCheckRole("OPS")
+  public Map<String, Object> deleteRole(@PathVariable String roleCode) {
+    resourceMenuService.deleteRole(roleCode);
+    return Map.of("message", "角色已删除");
+  }
+
+  @PutMapping("/roles/{roleCode}/status")
+  @SaCheckLogin
+  @SaCheckRole("OPS")
+  public Map<String, Object> updateRoleStatus(@PathVariable String roleCode, @RequestBody Map<String, Object> req) {
+    String status = (String) req.get("status");
+    resourceMenuService.updateRoleStatus(roleCode, status);
+    return Map.of("message", "角色状态已更新");
+  }
+
   /** 获取角色已授权的资源 ID 列表 */
   @GetMapping("/roles/{roleCode}/resources")
   @SaCheckLogin
@@ -113,5 +147,11 @@ public class ResourceMenuController {
 
   public record RoleResourceRequest(
       @NotNull List<Long> resourceIds
+  ) {}
+
+  public record RoleCreateRequest(
+      @NotBlank String roleCode,
+      @NotBlank String roleName,
+      String description
   ) {}
 }

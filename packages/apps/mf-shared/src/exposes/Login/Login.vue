@@ -22,7 +22,7 @@
   </div>
   <div v-else class="login-wrap">
     <a-card class="login-card" title="校园二手交易平台">
-      <LoginContent :login-config="loginConfig" @login-success="loginSuccess" />
+      <LoginContent :login-config="loginConfig" :app-type="appType" @login-success="loginSuccess" />
     </a-card>
   </div>
 </template>
@@ -42,6 +42,10 @@ const props = defineProps({
       name: "Campus Trade",
       bg: ""
     })
+  },
+  appType: {
+    type: String,
+    default: ""
   }
 });
 

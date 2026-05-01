@@ -90,7 +90,7 @@ import {
   IconSafe,
   IconMenu,
 } from '@arco-design/web-vue/es/icon';
-import { getCurrentUser, logout as logoutSdk } from "commonprovide/auth-sdk";
+import { getOpsCurrentUser as getCurrentUser, opsLogout as logoutSdk } from "commonprovide/auth-sdk";
 import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
 
 const isQiankunMode = qiankunWindow.__POWERED_BY_QIANKUN__;

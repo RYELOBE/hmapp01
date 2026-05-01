@@ -1,13 +1,13 @@
 -- 插入运营账号数据
 INSERT IGNORE INTO ops_account (id, username, password, nickname, roles, role_level, status) VALUES
-  (2001, 'ops_admin', '123456', '运营管理员', 'OPS_ADMIN', 'OPS_ADMIN', 'ACTIVE'),
-  (2002, 'ops_super', '123456', '超级管理员', 'OPS_ADMIN,OPS_SUPER', 'OPS_SUPER', 'ACTIVE');
+  (2001, 'ops_admin', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '运营管理员', 'OPS_ADMIN', 'OPS_ADMIN', 'ACTIVE'),
+  (2002, 'ops_super', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '超级管理员', 'OPS_ADMIN,OPS_SUPER', 'OPS_SUPER', 'ACTIVE');
 
 -- 插入用户数据
 INSERT IGNORE INTO user_account (id, username, password, nickname, roles) VALUES
-  (1001, 'buyer', '123456', '买家同学', 'BUYER'),
-  (1002, 'seller', '123456', '卖家同学', 'SELLER'),
-  (1003, 'ops', '123456', '运营同学', 'OPS');
+  (1001, 'buyer', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '买家同学', 'BUYER'),
+  (1002, 'seller', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '卖家同学', 'SELLER'),
+  (1003, 'ops', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '运营同学', 'OPS');
 
 -- 插入商品数据
 INSERT IGNORE INTO item (id, title, price, description, seller_id, seller_name, review_status, reject_reason) VALUES

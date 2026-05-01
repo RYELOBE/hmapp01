@@ -1,13 +1,14 @@
 // ── 分类常量 ──────────────────────────────
 export const CATEGORIES = [
   { value: "", label: "全部", icon: "🏠" },
-  { value: "digital", label: "数码", icon: "📱" },
-  { value: "book", label: "教材", icon: "📚" },
+  { value: "electronics", label: "数码", icon: "📱" },
+  { value: "textbooks", label: "教材", icon: "📚" },
   { value: "clothing", label: "服饰", icon: "👕" },
   { value: "daily", label: "生活", icon: "🧴" },
-  { value: "sport", label: "运动", icon: "⚽" },
-  { value: "instrument", label: "乐器", icon: "🎸" },
-  { value: "other", label: "其他", icon: "📦" },
+  { value: "sports", label: "运动", icon: "⚽" },
+  { value: "furniture", label: "家具", icon: "🪑" },
+  { value: "transport", label: "出行", icon: "🚲" },
+  { value: "others", label: "其他", icon: "📦" },
 ];
 
 // ── 排序选项 ──────────────────────────────

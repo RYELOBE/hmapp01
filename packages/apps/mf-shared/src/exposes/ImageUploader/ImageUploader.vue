@@ -97,7 +97,7 @@ const handleUpload = async (options) => {
     const response = await fetch(props.uploadUrl, {
       method: 'POST',
       headers: {
-        'Authorization': token ? `Bearer ${token}` : '',
+        'Authorization': token || '',
       },
       body: formData,
     });

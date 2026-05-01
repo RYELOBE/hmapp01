@@ -214,8 +214,8 @@
 import { ref, reactive, onMounted } from "vue";
 import { Message } from "@arco-design/web-vue";
 import { IconClockCircle, IconCheckCircle, IconTruck, IconSafe, IconEye, IconImage, IconList } from "@arco-design/web-vue/es/icon";
-import { StatusTag } from "commonprovide/status-tag";
-import { SearchFilter } from "commonprovide/SearchFilter";
+import StatusTag from "commonprovide/status-tag";
+import SearchFilter from "commonprovide/SearchFilter";
 import { getOpsOrders, getStatistics } from "../services/api";
 
 const rows = ref([]);
@@ -316,7 +316,7 @@ async function loadData() {
       status: filterParams.status || undefined,
     };
     const result = await getOpsOrders(params);
-    const data = result?.data || result || {};
+    const data = result || {};
     rows.value = data.rows || data.items || [];
     paginationConfig.total = data.totalCount || data.total || 0;
   } catch (error) {
