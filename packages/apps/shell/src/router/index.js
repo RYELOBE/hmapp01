@@ -3,6 +3,7 @@ import LoginView from "../views/LoginView.vue";
 import ForbiddenView from "../views/ForbiddenView.vue";
 import ShellHomeView from "../views/ShellHomeView.vue";
 import LayoutView from "../views/container/Layout.vue";
+import MicroView from "../views/MicroView.vue";
 import { useAuthStore } from "../stores/auth";
 import { hasAnyRole } from "@campus/common/roles";
 import framePinia from "../minFrame/pinia/framePinia";
@@ -36,7 +37,7 @@ const routes = [
   {
     path: "/:pathMatch(.*)*",
     name: "fallback",
-    component: MicroRoutePlaceholder,
+    component: MicroView,
     meta: { requiresAuth: true },
   },
 ];

@@ -1,25 +1,16 @@
 <template>
-  <teleport :to="targetEl">
-    <div id="FRAME_WINDOW" />
-  </teleport>
+  <div></div>
 </template>
 
 <script setup>
-import { onMounted, ref, watch, nextTick } from "vue";
+import { onMounted, watch, nextTick } from "vue";
 import { startMinFrame } from "../../minFrame";
 import framePinia from "../../minFrame/pinia/framePinia";
 
 const frame = framePinia();
-const targetEl = ref("#TO_FRAME_WINDOW");
 
 onMounted(() => {
-  // 缓存 DOM 引用，避免 teleport 动态查找失败
   nextTick(() => {
-    const el = document.getElementById("TO_FRAME_WINDOW");
-    if (el) {
-      targetEl.value = el;
-      frame.toEL = el;
-    }
     startMinFrame();
   });
 });
@@ -31,16 +22,6 @@ watch(
     if (loaded) {
       startMinFrame();
     }
-  }
+  },
 );
-
 </script>
-
-<!-- 不使用 scoped，确保 #FRAME_WINDOW 样式对 qiankun 子应用可见 -->
-<style>
-#FRAME_WINDOW {
-  width: 100%;
-  height: 100%;
-  min-height: inherit;
-}
-</style>

@@ -44,7 +44,7 @@ public class ItemRepository {
     KeyHolder kh = new GeneratedKeyHolder();
     jdbc.update(con -> {
       var ps = con.prepareStatement(
-          "INSERT INTO item (title, price, description, seller_id, seller_name, review_status, image_urls, category, condition_level, campus) VALUES (?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?)",
+          "INSERT INTO item (title, price, description, seller_id, seller_name, review_status, image_urls, category, condition_level, campus) VALUES (?, ?, ?, ?, ?, 'PENDING_REVIEW', ?, ?, ?, ?)",
           Statement.RETURN_GENERATED_KEYS);
       ps.setString(1, title);
       ps.setInt(2, price);
@@ -84,7 +84,7 @@ public class ItemRepository {
   }
 
   public List<Map<String, Object>> findPending() {
-    return jdbc.query("SELECT * FROM item WHERE review_status = 'PENDING' ORDER BY created_at DESC, id DESC", ROW_MAPPER);
+    return jdbc.query("SELECT * FROM item WHERE review_status = 'PENDING_REVIEW' ORDER BY created_at DESC, id DESC", ROW_MAPPER);
   }
 
   public Map<String, Object> findById(Long id) {
@@ -180,7 +180,7 @@ public class ItemRepository {
         "SELECT u.id, u.username, u.nickname, " +
         "COUNT(i.id) AS totalItems, " +
         "SUM(CASE WHEN i.review_status = 'APPROVED' THEN 1 ELSE 0 END) AS activeItems, " +
-        "SUM(CASE WHEN i.review_status = 'PENDING' THEN 1 ELSE 0 END) AS pendingItems " +
+        "SUM(CASE WHEN i.review_status = 'PENDING_REVIEW' THEN 1 ELSE 0 END) AS pendingItems " +
         "FROM user_account u LEFT JOIN item i ON u.id = i.seller_id " +
         "WHERE u.roles LIKE ?");
     List<Object> params = new ArrayList<>();

@@ -1,17 +1,34 @@
 /** 商品状态映射 */
 export const ITEM_STATUS = {
   PENDING: { label: "待审核", color: "orange" },
-  APPROVED: { label: "已通过", color: "green" },
+  PENDING_REVIEW: { label: "待审核", color: "orange" },
+  APPROVED: { label: "已上架", color: "green" },
   REJECTED: { label: "已驳回", color: "red" },
+  OFF_SHELF: { label: "已下架", color: "gray" },
 };
 
 /** 订单状态映射 */
 export const ORDER_STATUS = {
-  CREATED: { label: "已创建", color: "blue" },
+  PENDING_PAYMENT: { label: "待支付", color: "blue" },
   PAID: { label: "已支付", color: "cyan" },
   SHIPPED: { label: "已发货", color: "purple" },
   COMPLETED: { label: "已完成", color: "green" },
+  CANCELLED: { label: "已取消", color: "gray" },
+  REFUNDING: { label: "退款中", color: "orange" },
+  REFUNDED: { label: "已退款", color: "red" },
 };
+
+/** 订单状态选项卡（用于前端显示） */
+export const ORDER_STATUS_TABS = [
+  { value: "", label: "全部" },
+  { value: "PENDING_PAYMENT", label: "待支付" },
+  { value: "PAID", label: "已支付" },
+  { value: "SHIPPED", label: "已发货" },
+  { value: "COMPLETED", label: "已完成" },
+  { value: "CANCELLED", label: "已取消" },
+  { value: "REFUNDING", label: "退款中" },
+  { value: "REFUNDED", label: "已退款" },
+];
 
 /** 合并所有状态映射（供 StatusTag 使用） */
 export const STATUS_MAP = {

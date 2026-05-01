@@ -11,6 +11,8 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
 import java.sql.Statement;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Repository
 public class OrderRepository {
@@ -19,16 +21,25 @@ public class OrderRepository {
   private static final RowMapper<Map<String, Object>> ROW_MAPPER = (rs, rowNum) -> {
     Map<String, Object> row = new HashMap<>();
     row.put("id", rs.getLong("id"));
+    row.put("orderNo", rs.getString("order_no"));
     row.put("itemId", rs.getLong("item_id"));
     row.put("itemTitle", rs.getString("item_title"));
+    row.put("itemImage", rs.getString("item_image"));
     row.put("buyerId", rs.getLong("buyer_id"));
     row.put("sellerId", rs.getLong("seller_id"));
-    row.put("amount", rs.getInt("amount"));
+    row.put("price", rs.getInt("price"));
+    row.put("quantity", rs.getInt("quantity"));
+    row.put("totalAmount", rs.getInt("total_amount"));
     row.put("status", rs.getString("status"));
-    row.put("itemPrice", rs.getObject("item_price") != null ? rs.getInt("item_price") : null);
+    row.put("receiverName", rs.getString("receiver_name"));
+    row.put("receiverPhone", rs.getString("receiver_phone"));
+    row.put("receiverAddress", rs.getString("receiver_address"));
+    row.put("expressCompany", rs.getString("express_company"));
+    row.put("expressNo", rs.getString("express_no"));
     row.put("buyerName", rs.getString("buyer_name"));
     row.put("sellerName", rs.getString("seller_name"));
     row.put("createdAt", rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toString() : null);
+    row.put("updatedAt", rs.getTimestamp("updated_at") != null ? rs.getTimestamp("updated_at").toString() : null);
     return row;
   };
 
@@ -36,32 +47,55 @@ public class OrderRepository {
     this.jdbc = jdbc;
   }
 
+  /** 生成订单号 */
+  private String generateOrderNo() {
+    return "ORD" + LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss")) + 
+           String.valueOf((int)(Math.random() * 1000));
+  }
+
   public Map<String, Object> save(Long buyerId, Long sellerId, Long itemId,
-      String itemTitle, Integer amount, String buyerName, String sellerName) {
+      String itemTitle, String itemImage, Integer price, Integer quantity, 
+      String receiverName, String receiverPhone, String receiverAddress, 
+      String buyerName, String sellerName) {
+    String orderNo = generateOrderNo();
+    Integer totalAmount = price * quantity;
+    
     KeyHolder kh = new GeneratedKeyHolder();
     jdbc.update(con -> {
       var ps = con.prepareStatement(
-          "INSERT INTO orders (item_id, item_title, buyer_id, seller_id, amount, status, item_price, buyer_name, seller_name) VALUES (?, ?, ?, ?, ?, 'CREATED', ?, ?, ?)",
+          "INSERT INTO orders (order_no, item_id, item_title, item_image, buyer_id, seller_id, price, quantity, total_amount, status, receiver_name, receiver_phone, receiver_address, buyer_name, seller_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING_PAYMENT', ?, ?, ?, ?, ?)",
           Statement.RETURN_GENERATED_KEYS);
-      ps.setLong(1, itemId);
-      ps.setString(2, itemTitle);
-      ps.setLong(3, buyerId);
-      ps.setLong(4, sellerId);
-      ps.setInt(5, amount);
-      ps.setInt(6, amount);
-      ps.setString(7, buyerName);
-      ps.setString(8, sellerName);
+      ps.setString(1, orderNo);
+      ps.setLong(2, itemId);
+      ps.setString(3, itemTitle);
+      ps.setString(4, itemImage);
+      ps.setLong(5, buyerId);
+      ps.setLong(6, sellerId);
+      ps.setInt(7, price);
+      ps.setInt(8, quantity);
+      ps.setInt(9, totalAmount);
+      ps.setString(10, receiverName);
+      ps.setString(11, receiverPhone);
+      ps.setString(12, receiverAddress);
+      ps.setString(13, buyerName);
+      ps.setString(14, sellerName);
       return ps;
     }, kh);
     Long id = kh.getKey().longValue();
+    return findById(id);
+  }
+
+  public Map<String, Object> findById(Long id) {
     List<Map<String, Object>> results = jdbc.query("SELECT * FROM orders WHERE id = ?", ROW_MAPPER, id);
     return results.isEmpty() ? null : results.get(0);
   }
 
-  // 向后兼容
-  public Map<String, Object> save(Long buyerId, Long sellerId, Long itemId,
-      String itemTitle, Integer amount) {
-    return save(buyerId, sellerId, itemId, itemTitle, amount, null, null);
+  /** 检查是否有进行中的订单 */
+  public boolean hasActiveOrder(Long buyerId, Long itemId) {
+    List<String> activeStatuses = List.of("PENDING_PAYMENT", "PAID", "SHIPPED");
+    String sql = "SELECT COUNT(*) FROM orders WHERE buyer_id = ? AND item_id = ? AND status IN (?, ?, ?)";
+    Integer count = jdbc.queryForObject(sql, Integer.class, buyerId, itemId, "PENDING_PAYMENT", "PAID", "SHIPPED");
+    return count != null && count > 0;
   }
 
   public List<Map<String, Object>> findAll() {
@@ -78,6 +112,16 @@ public class OrderRepository {
 
   public void updateStatus(Long id, String status) {
     jdbc.update("UPDATE orders SET status = ? WHERE id = ?", status, id);
+  }
+
+  /** 发货 */
+  public void ship(Long id, String expressCompany, String expressNo) {
+    jdbc.update("UPDATE orders SET status = 'SHIPPED', express_company = ?, express_no = ? WHERE id = ?", expressCompany, expressNo, id);
+  }
+
+  /** 更新快递信息 */
+  public void updateExpressInfo(Long id, String expressCompany, String expressNo) {
+    jdbc.update("UPDATE orders SET express_company = ?, express_no = ? WHERE id = ?", expressCompany, expressNo, id);
   }
 
   // ── 运营端分页查询 ──────────────────────────
@@ -119,9 +163,9 @@ public class OrderRepository {
     StringBuilder sql = new StringBuilder(
         "SELECT u.id, u.username, u.nickname, " +
         "COUNT(o.id) AS totalOrders, " +
-        "SUM(CASE WHEN o.status IN ('CREATED','PAID') THEN 1 ELSE 0 END) AS paidOrders, " +
+        "SUM(CASE WHEN o.status IN ('PENDING_PAYMENT','PAID') THEN 1 ELSE 0 END) AS paidOrders, " +
         "SUM(CASE WHEN o.status = 'COMPLETED' THEN 1 ELSE 0 END) AS completedOrders, " +
-        "COALESCE(SUM(o.amount), 0) AS totalSpent " +
+        "COALESCE(SUM(o.total_amount), 0) AS totalSpent " +
         "FROM user_account u LEFT JOIN orders o ON u.id = o.buyer_id " +
         "WHERE u.roles LIKE ?");
     List<Object> params = new ArrayList<>();
@@ -159,7 +203,7 @@ public class OrderRepository {
     return count != null ? count : 0;
   }
 
-  // ── 我的订单分页（按买家/卖家） ──────────────
+  // ── 我的订单分页（按买家/卖家） ──────────────────────────
   public List<Map<String, Object>> findByBuyerIdPaged(Long buyerId, String status, int pageNo, int pageSize) {
     StringBuilder sql = new StringBuilder("SELECT * FROM orders WHERE buyer_id = ?");
     List<Object> params = new ArrayList<>();

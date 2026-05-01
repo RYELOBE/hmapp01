@@ -46,16 +46,25 @@ CREATE TABLE IF NOT EXISTS review_log (
 
 CREATE TABLE IF NOT EXISTS orders (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  order_no VARCHAR(32) NOT NULL UNIQUE,
   item_id BIGINT NOT NULL,
   item_title VARCHAR(128) NOT NULL,
+  item_image TEXT,
   buyer_id BIGINT NOT NULL,
   seller_id BIGINT NOT NULL,
-  amount INT NOT NULL,
-  status VARCHAR(16) NOT NULL,
-  item_price INT,
+  price INT NOT NULL,
+  quantity INT NOT NULL DEFAULT 1,
+  total_amount INT NOT NULL,
+  status VARCHAR(32) NOT NULL,
+  receiver_name VARCHAR(64),
+  receiver_phone VARCHAR(32),
+  receiver_address VARCHAR(512),
+  express_company VARCHAR(64),
+  express_no VARCHAR(64),
   buyer_name VARCHAR(64) DEFAULT '',
   seller_name VARCHAR(64) DEFAULT '',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS knowledge_chunk (
