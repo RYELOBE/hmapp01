@@ -1,3 +1,8 @@
+-- 插入运营账号数据
+INSERT IGNORE INTO ops_account (id, username, password, nickname, roles, role_level, status) VALUES
+  (2001, 'ops_admin', '123456', '运营管理员', 'OPS_ADMIN', 'OPS_ADMIN', 'ACTIVE'),
+  (2002, 'ops_super', '123456', '超级管理员', 'OPS_ADMIN,OPS_SUPER', 'OPS_SUPER', 'ACTIVE');
+
 -- 插入用户数据
 INSERT IGNORE INTO user_account (id, username, password, nickname, roles) VALUES
   (1001, 'buyer', '123456', '买家同学', 'BUYER'),

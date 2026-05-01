@@ -66,4 +66,7 @@ export const TRADE_METHODS = {
 export const STORAGE_KEYS = {
   TOKEN: "campus_market_token",
   USER: "campus_market_user",
+  OPS_TOKEN: "campus_ops_token",
+  OPS_USER: "campus_ops_user",
+  OPS_PORTAL_CONFIG: "campus_ops_portal_config",
 };
