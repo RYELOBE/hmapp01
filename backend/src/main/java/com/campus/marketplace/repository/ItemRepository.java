@@ -1,5 +1,6 @@
 package com.campus.marketplace.repository;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -149,6 +150,116 @@ public class ItemRepository {
   public int countBySellerIdAndStatus(Long sellerId, String status) {
     Integer count = jdbc.queryForObject("SELECT COUNT(*) FROM item WHERE seller_id = ? AND review_status = ?", Integer.class, sellerId, status);
     return count != null ? count : 0;
+  }
+
+  /**
+   * 按日期范围统计商品数量
+   * @param status 商品状态
+   * @param startTime 开始时间
+   * @param endTime 结束时间
+   * @return 商品数量
+   */
+  public int countByStatusAndDateRange(String status, LocalDateTime startTime, LocalDateTime endTime) {
+    StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM item WHERE created_at >= ? AND created_at < ?");
+    List<Object> params = new ArrayList<>();
+    params.add(java.sql.Timestamp.valueOf(startTime));
+    params.add(java.sql.Timestamp.valueOf(endTime));
+
+    if (status != null && !status.isEmpty()) {
+      sql.append(" AND review_status = ?");
+      params.add(status);
+    }
+
+    Integer count = jdbc.queryForObject(sql.toString(), Integer.class, params.toArray());
+    return count != null ? count : 0;
+  }
+
+  /**
+   * 统计今日发布商品数
+   * @return 今日发布商品数量
+   */
+  public int countTodayItems() {
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+    LocalDateTime endOfDay = startOfDay.plusDays(1);
+    return countByStatusAndDateRange(null, startOfDay, endOfDay);
+  }
+
+  /**
+   * 统计今日新增待审核商品数
+   * @return 今日新增待审核商品数量
+   */
+  public int countTodayPendingItems() {
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+    LocalDateTime endOfDay = startOfDay.plusDays(1);
+    return countByStatusAndDateRange("PENDING_REVIEW", startOfDay, endOfDay);
+  }
+
+  /**
+   * 统计今日审核通过商品数
+   * @return 今日审核通过商品数量
+   */
+  public int countTodayApprovedItems() {
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+    LocalDateTime endOfDay = startOfDay.plusDays(1);
+    return countByStatusAndDateRange("APPROVED", startOfDay, endOfDay);
+  }
+
+  /**
+   * 统计今日审核拒绝商品数
+   * @return 今日审核拒绝商品数量
+   */
+  public int countTodayRejectedItems() {
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+    LocalDateTime endOfDay = startOfDay.plusDays(1);
+    return countByStatusAndDateRange("REJECTED", startOfDay, endOfDay);
+  }
+
+  /**
+   * 按日期范围统计商品发布数量
+   * @param startTime 开始时间
+   * @param endTime 结束时间
+   * @return 商品数量
+   */
+  public int countItemsByDateRange(LocalDateTime startTime, LocalDateTime endTime) {
+    String sql = "SELECT COUNT(*) FROM item WHERE created_at >= ? AND created_at < ?";
+    Integer count = jdbc.queryForObject(sql, Integer.class,
+        java.sql.Timestamp.valueOf(startTime), java.sql.Timestamp.valueOf(endTime));
+    return count != null ? count : 0;
+  }
+
+  /**
+   * 按类别统计商品数量
+   * @param category 商品类别
+   * @return 商品数量
+   */
+  public int countByCategory(String category) {
+    String sql = "SELECT COUNT(*) FROM item WHERE category = ? AND review_status = 'APPROVED'";
+    Integer count = jdbc.queryForObject(sql, Integer.class, category);
+    return count != null ? count : 0;
+  }
+
+  /**
+   * 查询待审核商品列表（带分页）
+   * @param pageNo 页码
+   * @param pageSize 每页数量
+   * @return 待审核商品列表
+   */
+  public List<Map<String, Object>> findPendingByPage(int pageNo, int pageSize) {
+    String sql = "SELECT * FROM item WHERE review_status = 'PENDING_REVIEW' ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?";
+    int offset = (pageNo - 1) * pageSize;
+    return jdbc.query(sql, ROW_MAPPER, pageSize, offset);
+  }
+
+  /**
+   * 统计待审核商品数量
+   * @return 待审核商品数量
+   */
+  public int countPending() {
+    return countByStatus("PENDING_REVIEW");
   }
 
   /** 卖家的商品分页（带状态筛选） */

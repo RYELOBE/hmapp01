@@ -286,4 +286,130 @@ public class OrderRepository {
     Integer count = jdbc.queryForObject(sql, Integer.class, itemId, sellerId, status);
     return count != null ? count : 0;
   }
+
+  /**
+   * 按日期范围统计订单数量
+   * @param status 订单状态（可选）
+   * @param startTime 开始时间
+   * @param endTime 结束时间
+   * @return 订单数量
+   */
+  public int countByDateRange(String status, LocalDateTime startTime, LocalDateTime endTime) {
+    StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM orders WHERE created_at >= ? AND created_at < ?");
+    List<Object> params = new ArrayList<>();
+    params.add(java.sql.Timestamp.valueOf(startTime));
+    params.add(java.sql.Timestamp.valueOf(endTime));
+
+    if (status != null && !status.isEmpty()) {
+      sql.append(" AND status = ?");
+      params.add(status);
+    }
+
+    Integer count = jdbc.queryForObject(sql.toString(), Integer.class, params.toArray());
+    return count != null ? count : 0;
+  }
+
+  /**
+   * 统计今日新增订单数
+   * @return 今日订单数量
+   */
+  public int countTodayOrders() {
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+    LocalDateTime endOfDay = startOfDay.plusDays(1);
+    return countByDateRange(null, startOfDay, endOfDay);
+  }
+
+  /**
+   * 统计今日新增已完成订单数
+   * @return 今日已完成订单数量
+   */
+  public int countTodayCompletedOrders() {
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+    LocalDateTime endOfDay = startOfDay.plusDays(1);
+    return countByDateRange("COMPLETED", startOfDay, endOfDay);
+  }
+
+  /**
+   * 统计今日新增待支付订单数
+   * @return 今日待支付订单数量
+   */
+  public int countTodayPendingPaymentOrders() {
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+    LocalDateTime endOfDay = startOfDay.plusDays(1);
+    return countByDateRange("PENDING_PAYMENT", startOfDay, endOfDay);
+  }
+
+  /**
+   * 按日期范围统计订单总金额
+   * @param startTime 开始时间
+   * @param endTime 结束时间
+   * @return 订单总金额
+   */
+  public int sumTotalAmountByDateRange(LocalDateTime startTime, LocalDateTime endTime) {
+    String sql = "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE created_at >= ? AND created_at < ?";
+    Integer sum = jdbc.queryForObject(sql, Integer.class,
+        java.sql.Timestamp.valueOf(startTime), java.sql.Timestamp.valueOf(endTime));
+    return sum != null ? sum : 0;
+  }
+
+  /**
+   * 统计今日订单总金额
+   * @return 今日订单总金额
+   */
+  public int sumTodayTotalAmount() {
+    LocalDateTime now = LocalDateTime.now();
+    LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+    LocalDateTime endOfDay = startOfDay.plusDays(1);
+    return sumTotalAmountByDateRange(startOfDay, endOfDay);
+  }
+
+  /**
+   * 按状态统计订单总金额
+   * @param status 订单状态
+   * @return 订单总金额
+   */
+  public int sumTotalAmountByStatus(String status) {
+    String sql = "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = ?";
+    Integer sum = jdbc.queryForObject(sql, Integer.class, status);
+    return sum != null ? sum : 0;
+  }
+
+  /**
+   * 统计所有已完成订单的总金额
+   * @return 已完成订单总金额
+   */
+  public int sumCompletedTotalAmount() {
+    return sumTotalAmountByStatus("COMPLETED");
+  }
+
+  /**
+   * 按日期范围和状态统计订单数量
+   * @param status 订单状态
+   * @param startTime 开始时间
+   * @param endTime 结束时间
+   * @return 订单数量
+   */
+  public int countByStatusAndDateRange(String status, LocalDateTime startTime, LocalDateTime endTime) {
+    String sql = "SELECT COUNT(*) FROM orders WHERE status = ? AND created_at >= ? AND created_at < ?";
+    Integer count = jdbc.queryForObject(sql, Integer.class, status,
+        java.sql.Timestamp.valueOf(startTime), java.sql.Timestamp.valueOf(endTime));
+    return count != null ? count : 0;
+  }
+
+  /**
+   * 按日期范围和状态统计订单金额
+   * @param status 订单状态
+   * @param startTime 开始时间
+   * @param endTime 结束时间
+   * @return 订单总金额
+   */
+  public int sumTotalAmountByStatusAndDateRange(String status, LocalDateTime startTime, LocalDateTime endTime) {
+    String sql = "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE status = ? AND created_at >= ? AND created_at < ?";
+    Integer sum = jdbc.queryForObject(sql, Integer.class, status,
+        java.sql.Timestamp.valueOf(startTime), java.sql.Timestamp.valueOf(endTime));
+    return sum != null ? sum : 0;
+  }
 }

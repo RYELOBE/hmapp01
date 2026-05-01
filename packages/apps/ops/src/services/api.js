@@ -32,9 +32,34 @@ export function getVendors(params = {}) {
   return http.get("/ops/vendors", { params });
 }
 
+export function getVendorDetail(vendorId) {
+  return http.get(`/ops/vendors/${vendorId}`);
+}
+
 // ── 需方管理 API ──────────────────────────────
 export function getBuyers(params = {}) {
   return http.get("/ops/buyers", { params });
+}
+
+export function getBuyerDetail(buyerId) {
+  return http.get(`/ops/buyers/${buyerId}`);
+}
+
+// ── 用户管理 API ──────────────────────────────
+export function getUsers(params = {}) {
+  return http.get("/ops/users", { params });
+}
+
+export function getUserDetail(userId) {
+  return http.get(`/ops/users/${userId}`);
+}
+
+export function updateUserStatus(userId, status) {
+  return http.put(`/ops/users/${userId}/status`, { status });
+}
+
+export function updateUserRole(userId, role) {
+  return http.put(`/ops/users/${userId}/roles`, { roles: [role] });
 }
 
 // ── 子应用管理 API ──────────────────────────────
@@ -95,4 +120,57 @@ export function getRoleResources(roleCode) {
 
 export function saveRoleResources(roleCode, resourceIds) {
   return http.post(`/resource/roles/${roleCode}/resources`, { resourceIds });
+}
+
+export function createRole(data) {
+  return http.post("/resource/roles", data);
+}
+
+export function updateRole(roleCode, data) {
+  return http.put(`/resource/roles/${roleCode}`, data);
+}
+
+export function deleteRole(roleCode) {
+  return http.delete(`/resource/roles/${roleCode}`);
+}
+
+export function updateRoleStatus(roleCode, status) {
+  return http.put(`/resource/roles/${roleCode}/status`, { status });
+}
+
+// ── 资源管理 API ──────────────────────────────
+export function getResourceMenus(params = {}) {
+  return http.get("/resource/menus", { params });
+}
+
+export function getResourceMenuTree() {
+  return http.get("/resource/menu-tree");
+}
+
+export function saveResourceMenu(data) {
+  return http.post("/resource/menus", data);
+}
+
+export function deleteResourceMenu(id) {
+  return http.delete(`/resource/menus/${id}`);
+}
+
+export function getResourceDetail(id) {
+  return http.get(`/resource/menus/${id}`);
+}
+
+export function updateResourceMenu(id, data) {
+  return http.put(`/resource/menus/${id}`, data);
+}
+
+export function getResourceFunctions(menuId) {
+  return http.get(`/resource/menus/${menuId}/functions`);
+}
+
+export function saveResourceFunction(data) {
+  return http.post("/resource/functions", data);
+}
+
+export function deleteResourceFunction(id) {
+  return http.delete(`/resource/functions/${id}`);
 }

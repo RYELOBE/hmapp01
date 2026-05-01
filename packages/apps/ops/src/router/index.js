@@ -11,6 +11,12 @@ import Buyer from "../views/buyer/index.vue";
 import AppRegisterView from "../views/AppRegisterView.vue";
 import PortalDesign from "../views/PortalDesign.vue";
 import RoleManage from "../views/RoleManage.vue";
+import RouteManage from "../views/RouteManage.vue";
+import ResourceManage from "../views/ResourceManage.vue";
+import UserManage from "../views/UserManage.vue";
+import UserManage2 from "../views/UserManage2.vue";
+import VendorManage from "../views/VendorManage.vue";
+import BuyerManage from "../views/BuyerManage.vue";
 import { getCurrentUser } from "commonprovide/auth-sdk";
 import { hasAnyRole } from "@campus/common/roles";
 
@@ -28,9 +34,15 @@ const routes = [
       { path: "ops/orders", component: Orders, meta: { roles: ["OPS"] } },
       { path: "ops/vendor", component: Vendor, meta: { roles: ["OPS"] } },
       { path: "ops/buyer", component: Buyer, meta: { roles: ["OPS"] } },
+      { path: "ops/user-manage", component: UserManage, meta: { roles: ["OPS"] } },
+      { path: "ops/vendor-manage", component: VendorManage, meta: { roles: ["OPS"] } },
+      { path: "ops/buyer-manage", component: BuyerManage, meta: { roles: ["OPS"] } },
       { path: "ops/app-register", component: AppRegisterView, meta: { roles: ["OPS"] } },
       { path: "ops/portal-design", component: PortalDesign, meta: { roles: ["OPS"] } },
       { path: "ops/role-manage", component: RoleManage, meta: { roles: ["OPS"] } },
+      { path: "ops/route-manage", component: RouteManage, meta: { roles: ["OPS"] } },
+      { path: "ops/resource-manage", component: ResourceManage, meta: { roles: ["OPS"] } },
+      { path: "ops/user-manage-2", component: UserManage2, meta: { roles: ["OPS"] } },
     ],
   },
 ];
