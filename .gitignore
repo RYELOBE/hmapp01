@@ -12,3 +12,4 @@ backend/.idea
 .env
 .env.*
 !.env.example
+.pnpm-store

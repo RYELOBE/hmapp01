@@ -3,7 +3,7 @@ import Layout from "../views/Layout.vue";
 import Login from "../views/Login.vue";
 import ForbiddenView from "../views/ForbiddenView.vue";
 import Home from "../views/home/index.vue";
-import ItemDetail from "../views/item/index.vue";
+import ItemDetail from "../views/ItemDetail.vue";
 import SellerPublish from "../views/seller/PublishItem.vue";
 import SellerItems from "../views/seller/MyItems.vue";
 import Orders from "../views/orders/index.vue";
@@ -29,6 +29,11 @@ const routes = [
       { path: "seller/items", component: SellerItems, meta: { roles: ["SELLER"] } },
       { path: "seller/orders", component: Orders, meta: { roles: ["SELLER"] } },
       { path: "orders", component: Orders, meta: { roles: ["BUYER", "SELLER"] } },
+      { path: "addresses", component: () => import("../views/AddressList.vue"), meta: { roles: ["BUYER", "SELLER"] } },
+      { path: "cart", component: () => import("../views/Cart.vue"), meta: { roles: ["BUYER"] } },
+      { path: "favorites", component: () => import("../views/Favorites.vue"), meta: { roles: ["BUYER"] } },
+      { path: "review/:orderId", component: () => import("../views/ReviewSubmit.vue"), meta: { roles: ["BUYER"] } },
+      { path: "seller/stats", component: () => import("../views/SellerStats.vue"), meta: { roles: ["SELLER"] } },
     ],
   },
 ];
