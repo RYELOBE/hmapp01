@@ -14,6 +14,7 @@ import RoleManage from "../views/RoleManage.vue";
 import RouteManage from "../views/RouteManage.vue";
 import ResourceManage from "../views/ResourceManage.vue";
 import UserManage from "../views/UserManage.vue";
+import UserManage2 from "../views/UserManage2.vue";
 import VendorManage from "../views/VendorManage.vue";
 import BuyerManage from "../views/BuyerManage.vue";
 import { getCurrentUser } from "commonprovide/auth-sdk";
@@ -40,6 +41,8 @@ const routes = [
       { path: "ops/portal-design", component: PortalDesign, meta: { roles: ["OPS"] } },
       { path: "ops/role-manage", component: RoleManage, meta: { roles: ["OPS"] } },
       { path: "ops/route-manage", component: RouteManage, meta: { roles: ["OPS"] } },
+      { path: "ops/resource-manage", component: ResourceManage, meta: { roles: ["OPS"] } },
+      { path: "ops/user-manage-2", component: UserManage2, meta: { roles: ["OPS"] } },
     ],
   },
 ];

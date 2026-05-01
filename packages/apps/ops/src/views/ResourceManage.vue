@@ -1,65 +1,79 @@
 <template>
   <div class="resource-manage-page">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <div class="page-header__left">
-        <h2 class="page-title">资源管理</h2>
-        <span class="page-subtitle">管理系统菜单资源和功能按钮</span>
-      </div>
-      <div class="page-header__right">
-        <a-button type="primary" @click="showAddModal = true">
-          <template #icon><icon-plus /></template>
-          新建菜单
-        </a-button>
-      </div>
-    </div>
+    <a-layout class="page-layout">
+      <!-- 左侧菜单 -->
+      <a-layout-sider :width="240" class="menu-sider">
+        <PermissionMenuTree @select="handleMenuSelect" />
+      </a-layout-sider>
 
-    <a-spin :loading="loading">
-      <a-row :gutter="16">
-        <!-- 左侧资源树 -->
-        <a-col :span="9">
-          <a-card title="资源树" :bordered="false" class="tree-card">
-            <ResourceTree
-              :tree-data="menuTree"
-              :checkable="false"
-              :default-expand-all="true"
-              @select="handleSelectResource"
+      <!-- 右侧内容 -->
+      <a-layout-content class="main-content">
+        <!-- 页面头部 -->
+        <div class="page-header">
+          <div class="page-header__left">
+            <h2 class="page-title">资源管理</h2>
+            <span class="page-subtitle">管理系统菜单资源和功能按钮</span>
+          </div>
+          <div class="page-header__right">
+            <a-input-search
+              v-model="searchKeyword"
+              placeholder="搜索资源名称或代码"
+              style="width: 220px; margin-right: 12px;"
+              @search="handleSearchResource"
             />
-          </a-card>
-        </a-col>
+            <a-button type="primary" @click="showAddModal = true">
+              <template #icon><icon-plus /></template>
+              新建菜单
+            </a-button>
+          </div>
+        </div>
 
-        <!-- 右侧详情 -->
-        <a-col :span="15">
-          <a-card
-            v-if="selectedResource"
-            :title="selectedResource.menuName"
-            :bordered="false"
-            class="detail-card"
-          >
-            <template #extra>
-              <a-space :size="8">
-                <a-button size="small" @click="handleEditResource">编辑</a-button>
-                <a-button size="small" status="danger" @click="handleDeleteResource">删除</a-button>
-              </a-space>
-            </template>
-            <ResourceDetail
-              :resource="selectedResource"
-              :functions="resourceFunctions"
-              :available-roles="availableRoles"
-              @add-function="handleAddFunction"
-              @edit-function="handleEditFunction"
-              @delete-function="handleDeleteFunction"
-            />
-          </a-card>
-          <a-card v-else :bordered="false" class="empty-card">
-            <div class="empty-content">
-              <icon-folder-open class="empty-icon" />
-              <p>请从左侧选择一个资源查看详情</p>
-            </div>
-          </a-card>
-        </a-col>
-      </a-row>
-    </a-spin>
+        <a-spin :loading="loading">
+          <a-row :gutter="16">
+            <!-- 中间资源树 -->
+            <a-col :span="7">
+              <a-card title="资源树" :bordered="false" class="tree-card">
+                <ResourceTree
+                  :tree-data="filteredMenuTree"
+                  :checkable="false"
+                  :default-expand-all="true"
+                  @select="handleSelectResource"
+                />
+              </a-card>
+            </a-col>
+
+            <!-- 右侧详情 -->
+            <a-col :span="17">
+              <a-card
+                v-if="selectedResource"
+                :title="selectedResource.menuName"
+                :bordered="false"
+                class="detail-card"
+              >
+                <template #extra>
+                  <a-space :size="8">
+                    <a-button size="small" @click="handleEditResource">编辑</a-button>
+                    <a-button size="small" status="danger" @click="handleDeleteResource">删除</a-button>
+                  </a-space>
+                </template>
+                <ResourceDetail
+                  :resource="selectedResource"
+                  :functions="resourceFunctions"
+                  :available-roles="availableRoles"
+                  @add-function="handleAddFunction"
+                  @edit-function="handleEditFunction"
+                  @delete-function="handleDeleteFunction"
+                />
+              </a-card>
+              <a-card v-else :bordered="false" class="empty-card">
+                <div class="empty-content">
+                  <icon-folder-open class="empty-icon" />
+                  <p>请从左侧选择一个资源查看详情</p>
+                </div>
+              </a-card>
+            </a-col>
+          </a-row>
+        </a-spin>
 
     <!-- 新建/编辑菜单弹窗 -->
     <a-modal
@@ -129,10 +143,12 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { Message, Modal } from '@arco-design/web-vue';
 import { IconPlus, IconFolderOpen } from '@arco-design/web-vue/es/icon';
 import ResourceTree from '../components/ResourceTree.vue';
 import ResourceDetail from '../components/ResourceDetail.vue';
+import PermissionMenuTree from '../components/PermissionMenuTree.vue';
 import {
   getResourceMenuTree,
   getResourceDetail,
@@ -145,6 +161,7 @@ import {
   deleteResourceFunction
 } from '../services/api';
 
+const router = useRouter();
 const loading = ref(false);
 const menuTree = ref([]);
 const selectedResource = ref(null);
@@ -152,6 +169,7 @@ const resourceFunctions = ref([]);
 const availableRoles = ref([]);
 const showAddModal = ref(false);
 const isEditResource = ref(false);
+const searchKeyword = ref('');
 
 const resourceForm = reactive({
   menuName: '',
@@ -166,6 +184,42 @@ const resourceForm = reactive({
   status: 'ACTIVE',
   visible: true
 });
+
+function filterTree(nodes, keyword) {
+  return nodes
+    .map(node => {
+      const filteredChildren = node.children ? filterTree(node.children, keyword) : [];
+      if (
+        (node.menuName && node.menuName.toLowerCase().includes(keyword.toLowerCase())) ||
+        (node.menuCode && node.menuCode.toLowerCase().includes(keyword.toLowerCase())) ||
+        (node.resourceCode && node.resourceCode.toLowerCase().includes(keyword.toLowerCase())) ||
+        filteredChildren.length > 0
+      ) {
+        return { ...node, children: filteredChildren.length > 0 ? filteredChildren : undefined };
+      }
+      return null;
+    })
+    .filter(Boolean);
+}
+
+const filteredMenuTree = computed(() => {
+  if (!searchKeyword.value) return menuTree.value;
+  return filterTree(menuTree.value, searchKeyword.value);
+});
+
+function handleMenuSelect(key) {
+  if (key === 'org-user') {
+    router.push('/ops/user-manage-2');
+  } else if (key === 'resource-manage') {
+    router.push('/ops/resource-manage');
+  } else if (key === 'role-manage') {
+    router.push('/ops/role-manage');
+  }
+}
+
+function handleSearchResource() {
+  // 搜索已通过 computed 属性实现
+}
 
 const parentMenuOptions = computed(() => {
   const options = [];
@@ -314,7 +368,22 @@ onMounted(loadData);
 
 <style lang="scss" scoped>
 .resource-manage-page {
-  padding: 20px;
+  height: calc(100vh - 64px);
+
+  .page-layout {
+    height: 100%;
+  }
+
+  .menu-sider {
+    background: #fff;
+    height: 100%;
+    overflow: auto;
+  }
+
+  .main-content {
+    padding: 20px;
+    overflow: auto;
+  }
 
   .page-header {
     display: flex;

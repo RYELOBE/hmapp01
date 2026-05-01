@@ -72,10 +72,10 @@ defineProps({
   pagination: { type: Object, default: () => ({ pageSize: 10, current: 1, total: 0 }) },
 });
 
-defineEmits(['design', 'preview', 'edit', 'delete', 'page-change']);
+const emit = defineEmits(['design', 'preview', 'edit', 'delete', 'page-change']);
 
 function handlePageChange(page) {
-  this.$emit('page-change', page);
+  emit('page-change', page);
 }
 </script>
 

@@ -42,7 +42,7 @@
 
     <div class="config-section">
       <label class="config-label">顶部背景图</label>
-      <a-space direction="vertical" :style="width: 100%">
+      <a-space direction="vertical" style="width: 100%">
         <a-input
           v-model="localTheme.headerImage"
           placeholder="输入背景图片URL"

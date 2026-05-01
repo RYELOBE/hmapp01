@@ -1,108 +1,121 @@
 <template>
   <div class="role-manage-page">
-    <!-- 页面头部 -->
-    <div class="page-header">
-      <div class="page-header__left">
-        <h2 class="page-title">角色管理</h2>
-        <span class="page-subtitle">管理角色与资源菜单的权限绑定</span>
-      </div>
-      <div class="page-header__right">
-        <a-button type="primary" @click="showAddModal = true">
-          <template #icon><icon-plus /></template>
-          新建角色
-        </a-button>
-      </div>
-    </div>
+    <a-layout class="page-layout">
+      <!-- 左侧菜单 -->
+      <a-layout-sider :width="240" class="menu-sider">
+        <PermissionMenuTree @select="handleMenuSelect" />
+      </a-layout-sider>
 
-    <a-spin :loading="loading">
-      <!-- 角色列表 -->
-      <a-card title="角色列表" :bordered="false" class="role-card">
-        <template #extra>
-          <a-input-search
-            v-model="searchKeyword"
-            placeholder="搜索角色名称或编码"
-            style="width: 260px"
-            search-button
-            @search="handleSearch"
-          />
-        </template>
-        <RoleList
-          :roles="filteredRoles"
-          :loading="loading"
-          @edit="handleEdit"
-          @delete="handleDelete"
-          @toggle-status="handleToggleStatus"
-          @permissions="handlePermissions"
-        />
-      </a-card>
+      <!-- 右侧内容 -->
+      <a-layout-content class="main-content">
+        <!-- 页面头部 -->
+        <div class="page-header">
+          <div class="page-header__left">
+            <h2 class="page-title">角色管理</h2>
+            <span class="page-subtitle">管理角色与资源菜单的权限绑定</span>
+          </div>
+          <div class="page-header__right">
+            <a-button type="primary" @click="showAddModal = true">
+              <template #icon><icon-plus /></template>
+              新建角色
+            </a-button>
+          </div>
+        </div>
 
-      <!-- 权限配置抽屉 -->
-      <a-drawer
-        v-model:visible="showPermissionDrawer"
-        title="权限配置"
-        :width="480"
-        :height="800"
-      >
-        <PermissionConfig
-          v-if="selectedRole"
-          :role-code="selectedRole.roleCode"
-          :role-name="selectedRole.roleName"
-          :menu-tree="menuTree"
-          :initial-checked-keys="rolePermissions"
-          @save-success="handlePermissionSave"
-        />
-      </a-drawer>
-    </a-spin>
+        <a-spin :loading="loading">
+          <!-- 角色列表 -->
+          <a-card title="角色列表" :bordered="false" class="role-card">
+            <template #extra>
+              <a-input-search
+                v-model="searchKeyword"
+                placeholder="搜索角色名称或编码"
+                style="width: 260px"
+                search-button
+                @search="handleSearch"
+              />
+            </template>
+            <RoleList
+              :roles="filteredRoles"
+              :loading="loading"
+              @edit="handleEdit"
+              @delete="handleDelete"
+              @toggle-status="handleToggleStatus"
+              @permissions="handlePermissions"
+            />
+          </a-card>
 
-    <!-- 新建/编辑角色弹窗 -->
-    <a-modal
-      v-model:visible="showAddModal"
-      :title="isEdit ? '编辑角色' : '新建角色'"
-      @ok="handleSaveRole"
-      @cancel="handleCancel"
-    >
-      <a-form :model="roleForm" label-align="left" label-width="100px">
-        <a-form-item label="角色名称" required>
-          <a-input v-model="roleForm.roleName" placeholder="请输入角色名称" />
-        </a-form-item>
-        <a-form-item label="角色编码" :required="!isEdit">
-          <a-input
-            v-model="roleForm.roleCode"
-            :disabled="isEdit"
-            placeholder="请输入角色编码（如：CUSTOMER）"
-          />
-        </a-form-item>
-        <a-form-item label="角色描述">
-          <a-textarea v-model="roleForm.description" placeholder="请输入角色描述" :rows="3" />
-        </a-form-item>
-        <a-form-item label="状态">
-          <a-switch
-            v-model="roleForm.status"
-            :checked-value="'ACTIVE'"
-            :unchecked-value="'INACTIVE'"
-          />
-        </a-form-item>
-      </a-form>
-    </a-modal>
+          <!-- 权限配置抽屉 -->
+          <a-drawer
+            v-model:visible="showPermissionDrawer"
+            title="权限配置"
+            :width="480"
+            :height="800"
+          >
+            <PermissionConfig
+              v-if="selectedRole"
+              :role-code="selectedRole.roleCode"
+              :role-name="selectedRole.roleName"
+              :menu-tree="menuTree"
+              :initial-checked-keys="rolePermissions"
+              @save-success="handlePermissionSave"
+            />
+          </a-drawer>
+        </a-spin>
+
+        <!-- 新建/编辑角色弹窗 -->
+        <a-modal
+          v-model:visible="showAddModal"
+          :title="isEdit ? '编辑角色' : '新建角色'"
+          @ok="handleSaveRole"
+          @cancel="handleCancel"
+        >
+          <a-form :model="roleForm" label-align="left" label-width="100px">
+            <a-form-item label="角色名称" required>
+              <a-input v-model="roleForm.roleName" placeholder="请输入角色名称" />
+            </a-form-item>
+            <a-form-item label="角色编码" :required="!isEdit">
+              <a-input
+                v-model="roleForm.roleCode"
+                :disabled="isEdit"
+                placeholder="请输入角色编码（如：CUSTOMER）"
+              />
+            </a-form-item>
+            <a-form-item label="角色描述">
+              <a-textarea v-model="roleForm.description" placeholder="请输入角色描述" :rows="3" />
+            </a-form-item>
+            <a-form-item label="状态">
+              <a-switch
+                v-model="roleForm.status"
+                :checked-value="'ACTIVE'"
+                :unchecked-value="'INACTIVE'"
+              />
+            </a-form-item>
+          </a-form>
+        </a-modal>
+      </a-layout-content>
+    </a-layout>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { Message, Modal } from '@arco-design/web-vue';
 import { IconPlus } from '@arco-design/web-vue/es/icon';
 import RoleList from '../components/RoleList.vue';
 import PermissionConfig from '../components/PermissionConfig.vue';
+import PermissionMenuTree from '../components/PermissionMenuTree.vue';
 import {
   getAllRoles,
   getResourceMenuTree,
   getRoleResources,
   createRole,
   updateRole,
-  deleteRole,
+  getRoleDetail,
   updateRoleStatus
 } from '../services/api';
 
+const router = useRouter();
 const loading = ref(false);
 const roles = ref([]);
 const menuTree = ref([]);
@@ -112,6 +125,16 @@ const showPermissionDrawer = ref(false);
 const isEdit = ref(false);
 const selectedRole = ref(null);
 const rolePermissions = ref([]);
+
+function handleMenuSelect(key) {
+  if (key === 'org-user') {
+    router.push('/ops/user-manage-2');
+  } else if (key === 'resource-manage') {
+    router.push('/ops/resource-manage');
+  } else if (key === 'role-manage') {
+    router.push('/ops/role-manage');
+  }
+}
 
 const roleForm = reactive({
   roleName: '',
@@ -234,7 +257,22 @@ onMounted(loadData);
 
 <style lang="scss" scoped>
 .role-manage-page {
-  padding: 20px;
+  height: calc(100vh - 64px);
+
+  .page-layout {
+    height: 100%;
+  }
+
+  .menu-sider {
+    background: #fff;
+    height: 100%;
+    overflow: auto;
+  }
+
+  .main-content {
+    padding: 20px;
+    overflow: auto;
+  }
 
   .page-header {
     display: flex;
