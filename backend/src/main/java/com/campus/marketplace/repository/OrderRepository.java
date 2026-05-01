@@ -253,4 +253,37 @@ public class OrderRepository {
         "SELECT COUNT(*) FROM orders WHERE seller_id = ?", Integer.class, sellerId);
     return count != null ? count : 0;
   }
+
+  // ── 卖家统计方法 ──────────────────────────
+  public int sumTotalAmountBySellerAndStatusAndTimeRange(Long sellerId, String status, LocalDateTime startTime, LocalDateTime endTime) {
+    String sql = "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE seller_id = ? AND status = ? AND created_at >= ? AND created_at < ?";
+    Integer sum = jdbc.queryForObject(sql, Integer.class, sellerId, status,
+        java.sql.Timestamp.valueOf(startTime), java.sql.Timestamp.valueOf(endTime));
+    return sum != null ? sum : 0;
+  }
+
+  public int countBySellerAndStatusAndTimeRange(Long sellerId, String status, LocalDateTime startTime, LocalDateTime endTime) {
+    String sql = "SELECT COUNT(*) FROM orders WHERE seller_id = ? AND status = ? AND created_at >= ? AND created_at < ?";
+    Integer count = jdbc.queryForObject(sql, Integer.class, sellerId, status,
+        java.sql.Timestamp.valueOf(startTime), java.sql.Timestamp.valueOf(endTime));
+    return count != null ? count : 0;
+  }
+
+  public int sumTotalAmountBySellerAndStatus(Long sellerId, String status) {
+    String sql = "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE seller_id = ? AND status = ?";
+    Integer sum = jdbc.queryForObject(sql, Integer.class, sellerId, status);
+    return sum != null ? sum : 0;
+  }
+
+  public int countBySellerAndStatus(Long sellerId, String status) {
+    String sql = "SELECT COUNT(*) FROM orders WHERE seller_id = ? AND status = ?";
+    Integer count = jdbc.queryForObject(sql, Integer.class, sellerId, status);
+    return count != null ? count : 0;
+  }
+
+  public int countByItemIdAndSellerIdAndStatus(Long itemId, Long sellerId, String status) {
+    String sql = "SELECT COUNT(*) FROM orders WHERE item_id = ? AND seller_id = ? AND status = ?";
+    Integer count = jdbc.queryForObject(sql, Integer.class, itemId, sellerId, status);
+    return count != null ? count : 0;
+  }
 }
