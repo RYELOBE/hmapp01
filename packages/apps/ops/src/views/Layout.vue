@@ -46,7 +46,7 @@
           class="ops-menu"
         >
           <template v-for="item in menuConfig" :key="item.path">
-            <a-menu-item :key="item.path">
+            <a-menu-item>
               <template #icon>
                 <component :is="item.iconComponent" />
               </template>
@@ -71,7 +71,7 @@
 </template>
 
 <script setup>
-import { computed, h } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { Message } from '@arco-design/web-vue';
 import {
@@ -82,16 +82,18 @@ import {
   IconExport,
   IconDashboard,
   IconCheckCircle,
-  IconShoppingCart,
+  IconList,
   IconUserGroup,
   IconShop,
   IconApp,
   IconEdit,
   IconSafe,
   IconMenu,
+  IconFile,
 } from '@arco-design/web-vue/es/icon';
 import { getOpsCurrentUser as getCurrentUser, opsLogout as logoutSdk } from "commonprovide/auth-sdk";
 import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
+import { getMyNavigation } from '../services/api';
 
 const isQiankunMode = qiankunWindow.__POWERED_BY_QIANKUN__;
 const router = useRouter();
@@ -104,54 +106,100 @@ const activeKey = computed(() => {
   return menuPath ? menuPath.path : path;
 });
 
-const menuConfig = [
-  { 
-    path: '/ops/dashboard', 
-    label: '数据概览', 
+const iconMapping = {
+  '/ops/dashboard': IconDashboard,
+  '/ops/reviews': IconCheckCircle,
+  '/ops/orders': IconList,
+  '/ops/vendor': IconUserGroup,
+  '/ops/buyer': IconShop,
+  '/ops/app-register': IconApp,
+  '/ops/portal-design': IconEdit,
+  '/ops/role-manage': IconSafe,
+  '/ops/route-manage': IconMenu,
+  '/ops/user-manage': IconSettings,
+  '/ops/resource/manage': IconFile,
+};
+const defaultIcon = IconMenu;
+
+const fallbackMenuConfig = [
+  {
+    path: '/ops/dashboard',
+    label: '数据概览',
     iconComponent: IconDashboard,
   },
-  { 
-    path: '/ops/reviews', 
-    label: '商品审核', 
+  {
+    path: '/ops/reviews',
+    label: '商品审核',
     iconComponent: IconCheckCircle,
     badge: 0,
   },
-  { 
-    path: '/ops/orders', 
-    label: '订单监控', 
-    iconComponent: IconShoppingCart,
+  {
+    path: '/ops/orders',
+    label: '订单监控',
+    iconComponent: IconList,
   },
-  { 
-    path: '/ops/vendor', 
-    label: '供方管理', 
+  {
+    path: '/ops/vendor',
+    label: '供方管理',
     iconComponent: IconUserGroup,
   },
-  { 
-    path: '/ops/buyer', 
-    label: '需方管理', 
+  {
+    path: '/ops/buyer',
+    label: '需方管理',
     iconComponent: IconShop,
   },
-  { 
-    path: '/ops/app-register', 
-    label: '子应用管理', 
+  {
+    path: '/ops/app-register',
+    label: '子应用管理',
     iconComponent: IconApp,
   },
-  { 
-    path: '/ops/portal-design', 
-    label: '门户设计', 
+  {
+    path: '/ops/portal-design',
+    label: '门户设计',
     iconComponent: IconEdit,
   },
-  { 
-    path: '/ops/role-manage', 
-    label: '角色管理', 
+  {
+    path: '/ops/role-manage',
+    label: '角色管理',
     iconComponent: IconSafe,
   },
-  { 
-    path: '/ops/route-manage', 
-    label: '路由配置', 
+  {
+    path: '/ops/route-manage',
+    label: '路由配置',
     iconComponent: IconMenu,
   },
 ];
+
+const menuConfig = ref(fallbackMenuConfig);
+
+function transformMenuTree(tree, parentPath = '') {
+  const result = [];
+  for (const node of tree) {
+    const path = node.path || `${parentPath}/${node.menuCode}`.replace('//', '/');
+    result.push({
+      path: path,
+      label: node.menuName || node.name || node.menuCode,
+      iconComponent: iconMapping[path] || iconMapping[node.menuCode] || defaultIcon,
+      badge: node.badge || 0,
+    });
+    if (node.children && node.children.length > 0) {
+      result.push(...transformMenuTree(node.children, path));
+    }
+  }
+  return result;
+}
+
+onMounted(async () => {
+  try {
+    const res = await getMyNavigation();
+    if (res.tree && res.tree.length > 0) {
+      menuConfig.value = transformMenuTree(res.tree);
+    }
+  } catch (e) {
+    console.warn('动态菜单加载失败，使用默认菜单:', e.message || e);
+    menuConfig.value = fallbackMenuConfig;
+  }
+});
 
 function showLeftMenu(r) {
   if (r.meta?.hideMenu !== undefined) return !r.meta.hideMenu;

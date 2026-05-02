@@ -47,7 +47,7 @@
           @selection-change="handleSelectionChange"
         >
           <template #drag-handle>
-            <icon-drag-dot-vertical style="cursor: move;" />
+            <icon-more-vertical style="cursor: move;" />
           </template>
 
           <template #path="{ record }">
@@ -202,7 +202,7 @@ import {
   IconDelete,
   IconRefresh,
   IconSave,
-  IconDragDotVertical,
+  IconMoreVertical,
 } from "@arco-design/web-vue/es/icon";
 import {
   getResourceMenus,

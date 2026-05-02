@@ -1,5 +1,17 @@
 <template>
   <div class="portal-designer">
+    <div class="designer-toolbar">
+      <a-space>
+        <a-button @click="openResourceSystemModal">
+          <template #icon><icon-apps /></template>
+          资源选择
+        </a-button>
+        <a-tag v-if="selectedAppCode" color="arcoblue" closable @close="clearResourceSystem">
+          {{ selectedAppCode === 'ops' ? '运营系统(ops)' : '门户系统(portal)' }}
+        </a-tag>
+      </a-space>
+    </div>
+
     <a-tabs v-model:active-key="activeTab" type="card">
       <a-tab-pane key="theme" title="主题配置">
         <ThemeConfig
@@ -163,18 +175,65 @@
       :title="resourceModalTitle"
       @select="handleResourceSelect"
     />
+
+    <a-modal
+      v-model:visible="resourceSystemModalVisible"
+      title="资源系统选择"
+      :width="680"
+      @ok="confirmResourceSystem"
+      @cancel="resourceSystemModalVisible = false"
+    >
+      <div class="resource-system-content">
+        <a-form layout="vertical">
+          <a-form-item label="选择资源系统">
+            <a-select
+              v-model="tempAppCode"
+              placeholder="请选择要关联的资源系统"
+              @change="handleAppCodeChange"
+            >
+              <a-option value="ops">运营系统 (ops)</a-option>
+              <a-option value="portal">门户系统 (portal)</a-option>
+            </a-select>
+          </a-form-item>
+        </a-form>
+
+        <div v-if="menuTree.length > 0" class="menu-tree-section">
+          <h4 class="section-subtitle">菜单树预览</h4>
+          <a-spin :loading="menuLoading">
+            <a-tree
+              :data="menuTree"
+              :field-names="{ key: 'id', title: 'name', children: 'children' }"
+              :default-expand-all="true"
+              show-line
+              :selected-keys="selectedMenuKeys"
+              @select="handleMenuSelect"
+            />
+          </a-spin>
+          <div class="menu-actions">
+            <a-button size="small" type="outline" @click="goToResourceManage">
+              <template #icon><icon-settings /></template>
+              去配置
+            </a-button>
+          </div>
+        </div>
+
+        <a-empty v-else-if="tempAppCode && !menuLoading" description="该资源系统暂无菜单数据" />
+      </div>
+    </a-modal>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, watch } from 'vue';
 import { Message } from '@arco-design/web-vue';
-import { IconImage, IconSave, IconPlus, IconMessage } from '@arco-design/web-vue/es/icon';
-import { savePortalConfig } from '../services/api';
+import { IconImage, IconSave, IconPlus, IconMessage, IconApps, IconSettings } from '@arco-design/web-vue/es/icon';
+import { useRouter } from 'vue-router';
+import { savePortalConfig, getResourceMenus } from '../services/api';
 import ThemeConfig from '../components/ThemeConfig.vue';
 import LayoutConfig from '../components/LayoutConfig.vue';
 import ResourceSelectModal from '../components/ResourceSelectModal.vue';
 
+const router = useRouter();
 const props = defineProps({
   portal: { type: Object, required: true },
 });
@@ -186,6 +245,13 @@ const saving = ref(false);
 const resourceModalVisible = ref(false);
 const resourceModalTitle = ref('选择资源');
 const currentResourceType = ref('');
+
+const resourceSystemModalVisible = ref(false);
+const tempAppCode = ref('');
+const selectedAppCode = ref('');
+const menuTree = ref([]);
+const menuLoading = ref(false);
+const selectedMenuKeys = ref([]);
 
 const defaultConfig = {
   theme: {
@@ -224,6 +290,11 @@ watch(() => props.portal, (portal) => {
     try {
       const parsed = JSON.parse(portal.configJson);
       Object.assign(config, defaultConfig, parsed);
+      if (parsed.resourceSystem) {
+        selectedAppCode.value = parsed.resourceSystem;
+      } else if (parsed.resourceAppCode) {
+        selectedAppCode.value = parsed.resourceAppCode;
+      }
     } catch {
       Object.assign(config, defaultConfig);
     }
@@ -250,14 +321,82 @@ function handleResourceSelect(resource) {
   }
 }
 
+function openResourceSystemModal() {
+  tempAppCode.value = selectedAppCode.value || '';
+  menuTree.value = [];
+  selectedMenuKeys.value = [];
+  if (tempAppCode.value) {
+    loadMenuTree(tempAppCode.value);
+  }
+  resourceSystemModalVisible.value = true;
+}
+
+async function handleAppCodeChange(appCode) {
+  if (appCode) {
+    await loadMenuTree(appCode);
+  } else {
+    menuTree.value = [];
+  }
+}
+
+async function loadMenuTree(appCode) {
+  menuLoading.value = true;
+  try {
+    const res = await getResourceMenus({ appCode });
+    menuTree.value = res.menus || [];
+    if (menuTree.value.length > 0) {
+      Message.success(`已加载 ${appCode} 系统的菜单数据`);
+    }
+  } catch (e) {
+    Message.error('加载菜单失败：' + e.message);
+    menuTree.value = [];
+  } finally {
+    menuLoading.value = false;
+  }
+}
+
+function handleMenuSelect(selectedKeys) {
+  selectedMenuKeys.value = selectedKeys;
+}
+
+function confirmResourceSystem() {
+  if (!tempAppCode.value) {
+    Message.warning('请先选择资源系统');
+    return;
+  }
+  selectedAppCode.value = tempAppCode.value;
+  config.resourceAppCode = tempAppCode.value;
+  resourceSystemModalVisible.value = false;
+  Message.success(`已关联资源系统: ${tempAppCode.value}`);
+  handleConfigChange();
+}
+
+function clearResourceSystem() {
+  selectedAppCode.value = '';
+  tempAppCode.value = '';
+  menuTree.value = [];
+  selectedMenuKeys.value = [];
+  delete config.resourceAppCode;
+  Message.info('已清除资源系统关联');
+  handleConfigChange();
+}
+
+function goToResourceManage() {
+  router.push('/ops/resource/manage');
+}
+
 async function handleSave() {
   saving.value = true;
   try {
+    const configToSave = { ...config };
+    if (!configToSave.resourceSystem && selectedAppCode.value) {
+      configToSave.resourceSystem = selectedAppCode.value;
+    }
     await savePortalConfig({
       portalCode: props.portal.portalCode,
       portalName: props.portal.portalName,
       templateType: props.portal.templateType,
-      configJson: JSON.stringify(config),
+      configJson: JSON.stringify(configToSave),
       updatedBy: 'ops',
     });
     Message.success('门户配置已保存');
@@ -453,5 +592,43 @@ async function handleSave() {
   justify-content: flex-end;
   padding-top: 8px;
   border-top: 1px solid #e5e6eb;
+}
+
+.designer-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e5e6eb;
+  margin-bottom: 16px;
+}
+
+.resource-system-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.menu-tree-section {
+  border: 1px solid #e5e6eb;
+  border-radius: 8px;
+  padding: 16px;
+  background: #f7f8fa;
+}
+
+.section-subtitle {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1d2129;
+}
+
+.menu-actions {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #e5e6eb;
+  text-align: right;
 }
 </style>

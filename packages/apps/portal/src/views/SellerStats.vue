@@ -36,7 +36,7 @@
 
           <div class="stat-card stat-card--total">
             <div class="stat-icon">
-              <icon-chart />
+              <icon-apps />
             </div>
             <div class="stat-info">
               <div class="stat-label">累计销售</div>
@@ -131,7 +131,7 @@ import {
   IconArrowLeft,
   IconToday,
   IconCalendar,
-  IconChart,
+  IconApps,
   IconBox,
 } from "@arco-design/web-vue/es/icon";
 import { parseFirstImageUrl } from "commonprovide/image-utils";

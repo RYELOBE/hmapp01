@@ -22,8 +22,12 @@ public class ResourceMenuRepository {
     row.put("menuType", rs.getString("menu_type"));
     row.put("appCode", rs.getString("app_code"));
     row.put("path", rs.getString("path"));
+    row.put("urlPath", rs.getString("url_path"));
+    row.put("componentPath", rs.getString("component_path"));
+    row.put("resourceCode", rs.getString("resource_code"));
     row.put("icon", rs.getString("icon"));
     row.put("sortOrder", rs.getInt("sort_order"));
+    row.put("status", rs.getInt("status"));
     row.put("visible", rs.getBoolean("visible"));
     return row;
   };
@@ -63,14 +67,20 @@ public class ResourceMenuRepository {
   }
 
   public Map<String, Object> save(String menuCode, String menuName, String menuType,
-      String appCode, Long parentId, String path, String icon, int sortOrder) {
+      String appCode, Long parentId, String path, String icon, int sortOrder,
+      String urlPath, String componentPath, String resourceCode, Integer status, Integer visible) {
     jdbc.update("""
-        INSERT INTO resource_menu (parent_id, menu_code, menu_name, menu_type, app_code, path, icon, sort_order)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        INSERT INTO resource_menu (parent_id, menu_code, menu_name, menu_type, app_code, path, icon, sort_order, url_path, component_path, resource_code, status, visible)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE menu_name = VALUES(menu_name), menu_type = VALUES(menu_type),
         app_code = VALUES(app_code), parent_id = VALUES(parent_id), path = VALUES(path),
-        icon = VALUES(icon), sort_order = VALUES(sort_order)
-        """, parentId, menuCode, menuName, menuType, appCode, path, icon, sortOrder);
+        icon = VALUES(icon), sort_order = VALUES(sort_order), url_path = VALUES(url_path),
+        component_path = VALUES(component_path), resource_code = VALUES(resource_code),
+        status = VALUES(status), visible = VALUES(visible)
+        """, parentId, menuCode, menuName, menuType, appCode, path, icon, sortOrder,
+        urlPath != null ? urlPath : "", componentPath != null ? componentPath : "",
+        resourceCode != null ? resourceCode : "", status != null ? status : 1,
+        visible != null ? visible : 1);
     return findByMenuCode(menuCode).orElseThrow();
   }
 

@@ -3,6 +3,27 @@ import { getRegisters, getAuthRoutes, getPortalConfig, getMyMenuTree } from "../
 import { createConfigs, createRoutes } from "../index";
 import { useAuthStore } from "../../stores/auth";
 
+const isDev = import.meta.env.DEV;
+
+const devStaticApps = [
+  {
+    appCode: "portal",
+    title: "门户（买家/卖家）",
+    entry: "http://localhost:7101",
+    pathPrefix: "/portal",
+    roles: ["BUYER", "SELLER"],
+    portalCode: "portal",
+  },
+  {
+    appCode: "ops",
+    title: "运营中心",
+    entry: "http://localhost:7102",
+    pathPrefix: "/ops",
+    roles: ["OPS"],
+    portalCode: "ops",
+  },
+];
+
 const framePinia = defineStore("framePinia", {
   state: () => ({
     registConfigs: null,
@@ -31,9 +52,16 @@ const framePinia = defineStore("framePinia", {
         this.registConfigs = createConfigs(data, authStore);
         this.configsLoaded = true;
       } catch (e) {
-        console.error("[framePinia] getRegistConfigs failed:", e);
-        this.registConfigs = [];
-        this.configsLoaded = true;
+        console.warn("[framePinia] getRegistConfigs failed, using dev fallback:", e);
+        // 开发环境用静态数据兜底
+        if (isDev) {
+          const authStore = useAuthStore();
+          this.registConfigs = createConfigs(devStaticApps, authStore);
+          this.configsLoaded = true;
+        } else {
+          this.registConfigs = [];
+          this.configsLoaded = true;
+        }
       }
     },
 
@@ -52,7 +80,18 @@ const framePinia = defineStore("framePinia", {
         this.loaded = true;
         this.resetMark = String(Date.now());
       } catch (e) {
-        console.warn("[framePinia] getRegistRoutes failed (user may not be logged in):", e);
+        console.warn("[framePinia] getRegistRoutes failed, using dev fallback:", e);
+        // 开发环境用静态数据兜底
+        if (isDev) {
+          this.authorizedApps = devStaticApps;
+          this.routePermissionMap = devStaticApps.reduce((acc, item) => {
+            acc[item.pathPrefix] = item.roles || [];
+            return acc;
+          }, {});
+          createRoutes(devStaticApps);
+          this.loaded = true;
+          this.resetMark = String(Date.now());
+        }
       }
     },
 

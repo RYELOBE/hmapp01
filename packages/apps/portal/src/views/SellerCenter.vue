@@ -188,7 +188,7 @@
                       status="success"
                       @click="shipOrder(record)"
                     >
-                      <template #icon><icon-send /></template>
+                      <template #icon><icon-right /></template>
                       发货
                     </a-button>
                     <a-button type="text" size="small" @click="viewOrder(record)">
@@ -244,13 +244,13 @@ import { Message } from "@arco-design/web-vue";
 import {
   IconStore,
   IconPlus,
-  IconApp,
+  IconApps,
   IconCheckCircle,
   IconClockCircle,
-  IconShoppingCart,
+  IconList,
   IconEye,
   IconEdit,
-  IconSend,
+  IconRight,
 } from "@arco-design/web-vue/es/icon";
 import StatusTag from "commonprovide/status-tag";
 import { getMyItems, getMyOrders, shipOrder as apiShipOrder } from "../services/api";
@@ -391,7 +391,7 @@ function viewOrder(record) {
 
 async function shipOrder(record) {
   try {
-    await apiShipOrder(record.id, { trackingCompany: '未填写', trackingNumber: '' });
+    await apiShipOrder(record.id, { expressCompany: record.expressCompany || '顺丰快递', expressNo: '' });
     Message.success("发货成功");
     loadOrders();
   } catch (error) {

@@ -48,10 +48,20 @@ const router = createRouter({
 });
 
 const whiteList = ["/login", "/forbidden"];
+const redirectCountMap = new Map(); // 防止无限重定向
 
 router.beforeEach(async (to) => {
   const authStore = useAuthStore();
   const frame = framePinia();
+
+  // --- 防止无限重定向的安全检查 ---
+  const now = Date.now();
+  const lastRedirect = redirectCountMap.get(to.fullPath) || 0;
+  if (now - lastRedirect < 3000) {
+    console.warn("[router] Possible infinite redirect detected, stopping:", to.fullPath);
+    return true; // 停止重定向，留在当前页面
+  }
+  redirectCountMap.set(to.fullPath, now);
 
   // 恢复本地存储的 token
   if (!authStore.user && !authStore.token) {
@@ -70,7 +80,7 @@ router.beforeEach(async (to) => {
       }
       return true;
     }
-    // 需认证页面 → 跳转登录，不等待 configs 加载
+    // 需认证页面 → 跳转登录，保存当前路径用于登录后重定向
     if (to.meta.requiresAuth || to.meta.roles) {
       return { name: "login", query: { redirect: to.fullPath } };
     }
@@ -78,7 +88,7 @@ router.beforeEach(async (to) => {
     return true;
   }
 
-  // === 已登录：加载 configs + 权限路由 ===
+  // === 已登录：Token有效性预检 ===
   if (authStore.isLoggedIn && !frame.loaded) {
     try {
       await frame.initFrameWithRoutes();
@@ -86,7 +96,8 @@ router.beforeEach(async (to) => {
       if (to.matched.length === 0 || to.name === "fallback") {
         // 检查是否已经添加了对应的动态路由
         const hasDynamicRoute = router.getRoutes().some(route => {
-          return route.path.startsWith(to.path.split('/')[1]);
+          const pathPrefix = `/${to.path.split('/')[1]}`;
+          return route.path.startsWith(pathPrefix);
         });
         if (hasDynamicRoute) {
           return { path: to.fullPath, replace: true };
@@ -97,11 +108,11 @@ router.beforeEach(async (to) => {
       // 如果是 401（token 过期/无效），清除登录状态并跳转登录页
       const status = error?.response?.status;
       const msg = error?.message || "";
-      if (status === 401 || msg.includes("Unauthorized") || msg.includes("未登录") || msg.includes("登录")) {
+      if (status === 401 || msg.includes("Unauthorized") || msg.includes("未登录") || msg.includes("登录") || msg.includes("expired")) {
         authStore.logout();
-        return { name: "login", query: { redirect: to.fullPath } };
+        return { name: "login", query: { redirect: to.fullPath, reason: 'session_expired' } };
       }
-      // 其他错误继续导航
+      // 其他错误继续导航，不要阻塞
       return true;
     }
   }
@@ -111,6 +122,11 @@ router.beforeEach(async (to) => {
     return { name: "forbidden" };
   }
   return true;
+});
+
+// 全局后置钩子：记录页面访问日志（可选）
+router.afterEach((to) => {
+  document.title = to.meta?.title || 'CampusTrade - Shell';
 });
 
 export default router;

@@ -157,3 +157,12 @@ export function saveResourceFunction(data) {
 export function deleteResourceFunction(id) {
   return http.delete(`/resource/functions/${id}`);
 }
+
+export function updateResourceFunction(id, data) {
+  return http.put(`/resource/functions/${id}`, data);
+}
+
+// ── 导航菜单 API ──────────────────────────────
+export function getMyNavigation() {
+  return http.get("/resource/my-menus");
+}

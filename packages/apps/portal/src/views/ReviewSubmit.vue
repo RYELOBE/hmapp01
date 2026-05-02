@@ -29,7 +29,6 @@
                 v-model="form.rating"
                 :count="5"
                 :stroke-width="20"
-                allow-half
               />
               <span class="rating-text">{{ ratingText }}</span>
             </div>
@@ -119,7 +118,7 @@ async function submitReview() {
     await createReview({
       orderId: order.value.id,
       itemId: order.value.itemId,
-      rating: form.value.rating,
+      rating: Math.floor(form.value.rating),
       content: form.value.content,
       images: Array.isArray(form.value.images) ? form.value.images.join(",") : form.value.images,
     });

@@ -15,10 +15,6 @@
             <span class="page-subtitle">管理角色与资源菜单的权限绑定</span>
           </div>
           <div class="page-header__right">
-            <a-button type="primary" @click="showAddModal = true">
-              <template #icon><icon-plus /></template>
-              新建角色
-            </a-button>
           </div>
         </div>
 
@@ -26,13 +22,20 @@
           <!-- 角色列表 -->
           <a-card title="角色列表" :bordered="false" class="role-card">
             <template #extra>
-              <a-input-search
-                v-model="searchKeyword"
-                placeholder="搜索角色名称或编码"
-                style="width: 260px"
-                search-button
-                @search="handleSearch"
-              />
+              <a-space :size="12">
+                <a-input-search
+                  v-model="searchKeyword"
+                  placeholder="搜索角色名称或编码"
+                  style="width: 260px"
+                  size="small"
+                  allow-clear
+                  @search="handleSearch"
+                />
+                <a-button type="primary" size="small" @click="showAddModal = true">
+                  <template #icon><icon-plus /></template>
+                  新建角色
+                </a-button>
+              </a-space>
             </template>
             <RoleList
               :roles="filteredRoles"
@@ -48,11 +51,13 @@
           <a-drawer
             v-model:visible="showPermissionDrawer"
             title="权限配置"
-            :width="480"
-            :height="800"
+            :width="520"
+            :footer="false"
+            unmount-on-close
           >
             <PermissionConfig
-              v-if="selectedRole"
+              v-if="selectedRole && showPermissionDrawer"
+              :key="selectedRole.roleCode"
               :role-code="selectedRole.roleCode"
               :role-name="selectedRole.roleName"
               :menu-tree="menuTree"
@@ -111,7 +116,6 @@ import {
   getRoleResources,
   createRole,
   updateRole,
-  getRoleDetail,
   updateRoleStatus,
   deleteRole
 } from '../services/api';

@@ -134,7 +134,7 @@
       <div v-else-if="!loading" class="cart-empty">
         <a-empty description="购物车是空的">
           <template #image>
-            <icon-shopping-cart size="64" />
+            <icon-list size="64" />
           </template>
           <a-button type="primary" @click="$router.push('/home')">
             去逛逛
@@ -149,7 +149,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Message } from "@arco-design/web-vue";
-import { IconLeft, IconDelete, IconShoppingCart, IconStore, IconImage } from "@arco-design/web-vue/es/icon";
+import { IconLeft, IconDelete, IconList, IconStore, IconImage } from "@arco-design/web-vue/es/icon";
 import { parseFirstImageUrl } from "commonprovide/image-utils";
 import {
   getCartList,

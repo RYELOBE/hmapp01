@@ -138,6 +138,14 @@
             </a-option>
           </a-select>
         </a-form-item>
+        <a-form-item label="关联资源系统" field="appCode">
+          <a-select v-model="form.appCode" placeholder="选择关联的资源系统（可选）" allow-clear @change="handleAppCodeChange">
+            <a-option value="">不关联</a-option>
+            <a-option value="ops">运营系统 (ops)</a-option>
+            <a-option value="portal">门户系统 (portal)</a-option>
+          </a-select>
+          <template #extra>选择后可在门户设计器中加载该系统的菜单树用于导航配置</template>
+        </a-form-item>
       </a-form>
     </a-modal>
 
@@ -229,6 +237,7 @@ const defaultForm = () => ({
   portalName: '',
   templateType: 'backstage',
   groupCode: '',
+  appCode: '',
   configJson: '',
   updatedBy: 'ops',
 });
@@ -285,6 +294,7 @@ function openEditModal(portal) {
     portalName: portal.portalName,
     templateType: portal.templateType,
     groupCode: portal.groupCode || '',
+    appCode: portal.appCode || '',
     configJson: portal.configJson,
     updatedBy: 'ops',
   };
@@ -356,6 +366,12 @@ function resetFilter() {
 
 function handlePageChange(page) {
   pagination.value.current = page;
+}
+
+function handleAppCodeChange(appCode) {
+  if (appCode) {
+    Message.info(`已选择资源系统: ${appCode}`);
+  }
 }
 
 function exportConfig() {

@@ -33,6 +33,14 @@
             <span>{{ record.groupName || '-' }}</span>
           </template>
         </a-table-column>
+        <a-table-column title="关联资源系统" data-index="appCode" :width="140">
+          <template #cell="{ record }">
+            <a-tag v-if="record.appCode" size="small" color="arcoblue">
+              {{ record.appCode === 'ops' ? '运营系统(ops)' : '门户系统(portal)' }}
+            </a-tag>
+            <span v-else style="color: #c9cdd4;">未关联</span>
+          </template>
+        </a-table-column>
         <a-table-column title="更新时间" data-index="updatedAt" :width="180" />
         <a-table-column title="操作" :width="300" align="right">
           <template #cell="{ record }">

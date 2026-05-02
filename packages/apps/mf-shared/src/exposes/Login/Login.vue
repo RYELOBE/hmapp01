@@ -1,5 +1,30 @@
 <template>
-  <div v-if="props.type === 'full-screen'" class="full-screen-login">
+  <a-modal
+    v-if="props.modal"
+    :visible="visible"
+    :title="null"
+    :footer="false"
+    :closable="true"
+    :mask-closable="false"
+    :width="420"
+    :centered="true"
+    class="login-modal"
+    @cancel="handleClose"
+  >
+    <div class="login-modal-content">
+      <div class="login-modal-header">
+        <h3 class="login-modal-title">{{ loginConfig.name || 'Campus Trade' }}</h3>
+        <p class="login-modal-subtitle">校园二手交易平台</p>
+      </div>
+      <LoginContent
+        :login-config="loginConfig"
+        :app-type="appType"
+        @login-success="handleLoginSuccess"
+      />
+    </div>
+  </a-modal>
+
+  <div v-else-if="props.type === 'full-screen'" class="full-screen-login">
     <div class="full-screen-login-inner">
       <div class="login-bg"></div>
       <div class="login-content-outer">
@@ -11,6 +36,7 @@
         <LoginContent
           class="login-content"
           :login-config="loginConfig"
+          :app-type="appType"
           @login-success="loginSuccess"
         >
         </LoginContent>
@@ -20,6 +46,7 @@
       </div>
     </div>
   </div>
+
   <div v-else class="login-wrap">
     <a-card class="login-card" title="校园二手交易平台">
       <LoginContent :login-config="loginConfig" :app-type="appType" @login-success="loginSuccess" />
@@ -28,12 +55,21 @@
 </template>
 
 <script setup>
+import { ref } from "vue";
 import LoginContent from "./LoginContent.vue";
 
 const props = defineProps({
   type: {
     type: String,
     default: () => "full-screen"
+  },
+  modal: {
+    type: Boolean,
+    default: false
+  },
+  visible: {
+    type: Boolean,
+    default: false
   },
   loginConfig: {
     type: Object,
@@ -49,10 +85,23 @@ const props = defineProps({
   }
 });
 
-const emits = defineEmits(["login-success"]);
+const emits = defineEmits(["login-success", "update:visible", "close"]);
 
 function loginSuccess() {
   emits("login-success");
+}
+
+function handleLoginSuccess() {
+  emits("login-success");
+  if (props.modal) {
+    emits("update:visible", false);
+    emits("close");
+  }
+}
+
+function handleClose() {
+  emits("update:visible", false);
+  emits("close");
 }
 </script>
 
@@ -133,5 +182,27 @@ function loginSuccess() {
   border-radius: 8px;
   border: 1px solid #d9e7ff;
   box-shadow: 0 16px 30px rgba(69, 120, 218, 0.12);
+}
+
+.login-modal-content {
+  padding: 8px;
+}
+
+.login-modal-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.login-modal-title {
+  margin: 0 0 8px;
+  font-size: 22px;
+  font-weight: 700;
+  color: #336ad8;
+}
+
+.login-modal-subtitle {
+  margin: 0;
+  font-size: 14px;
+  color: #86909c;
 }
 </style>

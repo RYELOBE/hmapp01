@@ -1,5 +1,6 @@
 package com.campus.marketplace.service;
 
+import com.campus.marketplace.repository.FunctionRepository;
 import com.campus.marketplace.repository.ResourceMenuRepository;
 import com.campus.marketplace.repository.RoleResourceRepository;
 import java.util.ArrayList;
@@ -12,11 +13,14 @@ import org.springframework.stereotype.Service;
 public class ResourceMenuService {
   private final ResourceMenuRepository resourceMenuRepository;
   private final RoleResourceRepository roleResourceRepository;
+  private final FunctionRepository functionRepository;
 
   public ResourceMenuService(ResourceMenuRepository resourceMenuRepository,
-      RoleResourceRepository roleResourceRepository) {
+      RoleResourceRepository roleResourceRepository,
+      FunctionRepository functionRepository) {
     this.resourceMenuRepository = resourceMenuRepository;
     this.roleResourceRepository = roleResourceRepository;
+    this.functionRepository = functionRepository;
   }
 
   /** 获取所有资源菜单（平铺列表） */
@@ -60,8 +64,10 @@ public class ResourceMenuService {
 
   /** 保存/更新资源菜单 */
   public Map<String, Object> saveMenu(String menuCode, String menuName, String menuType,
-      String appCode, Long parentId, String path, String icon, int sortOrder) {
-    return resourceMenuRepository.save(menuCode, menuName, menuType, appCode, parentId, path, icon, sortOrder);
+      String appCode, Long parentId, String path, String icon, int sortOrder,
+      String urlPath, String componentPath, String resourceCode, Integer status, Integer visible) {
+    return resourceMenuRepository.save(menuCode, menuName, menuType, appCode, parentId, path, icon, sortOrder,
+        urlPath, componentPath, resourceCode, status, visible);
   }
 
   /** 删除资源菜单 */
@@ -106,6 +112,24 @@ public class ResourceMenuService {
 
   public void updateRoleStatus(String roleCode, String status) {
     roleResourceRepository.updateRoleStatus(roleCode, status);
+  }
+
+  /** 获取某菜单下的功能按钮列表 */
+  public List<Map<String, Object>> getFunctionsByMenuId(Long menuId) {
+    return functionRepository.findByMenuId(menuId);
+  }
+
+  /** 创建/更新功能按钮 */
+  public Map<String, Object> saveFunction(Map<String, Object> func) {
+    return functionRepository.save(func);
+  }
+
+  /** 删除功能按钮 */
+  public void deleteFunction(Long id) {
+    boolean deleted = functionRepository.delete(id);
+    if (!deleted) {
+      throw new IllegalArgumentException("功能按钮不存在");
+    }
   }
 
   @SuppressWarnings("unchecked")

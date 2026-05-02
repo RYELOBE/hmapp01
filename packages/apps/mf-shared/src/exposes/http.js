@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getToken, getOpsToken, logout, opsLogout } from "./auth-sdk.js";
+import { Message } from "@arco-design/web-vue";
 
 const throttleMap = new Map();
 function throttle(fn, delay) {
@@ -13,7 +14,6 @@ function throttle(fn, delay) {
 
 const showErrorMsg = throttle((msg) => {
   try {
-    const { Message } = require("@arco-design/web-vue");
     Message.error({ content: msg, resetOnHover: true });
   } catch {
     console.error("[http]", msg);
@@ -105,7 +105,12 @@ export function createHttp({
           if (gotoLoginCallback && typeof gotoLoginCallback === "function") {
             gotoLoginCallback(response);
           } else {
-            window.location.href = (appType === 'ops' || isOpsPath(url)) ? "/ops/login" : "/login";
+            // 检查当前是否已经在登录页
+            const currentPath = window.location.pathname;
+            const loginPath = (appType === 'ops' || isOpsPath(url)) ? "/ops/login" : "/login";
+            if (currentPath !== loginPath) {
+              window.location.href = loginPath;
+            }
           }
           return Promise.reject(data);
         }
@@ -143,7 +148,12 @@ export function createHttp({
         if (gotoLoginCallback && typeof gotoLoginCallback === "function") {
           gotoLoginCallback(error.response);
         } else {
-          window.location.href = (appType === 'ops' || isOpsPath(url)) ? "/ops/login" : "/login";
+          // 检查当前是否已经在登录页
+          const currentPath = window.location.pathname;
+          const loginPath = (appType === 'ops' || isOpsPath(url)) ? "/ops/login" : "/login";
+          if (currentPath !== loginPath) {
+            window.location.href = loginPath;
+          }
         }
       }
 

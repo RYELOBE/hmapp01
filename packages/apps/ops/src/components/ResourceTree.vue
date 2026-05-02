@@ -9,6 +9,7 @@
       :default-expand-all="defaultExpandAll"
       :check-strictly="checkStrictly"
       :disabled="disabled"
+      :selected-keys="selectedKeys"
       class="tree-container"
       @check="handleCheck"
       @select="handleSelect"
@@ -17,7 +18,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 const props = defineProps({
   treeData: {
@@ -43,6 +44,10 @@ const props = defineProps({
   disabled: {
     type: Boolean,
     default: false
+  },
+  selectedKeys: {
+    type: Array,
+    default: () => []
   },
   fieldNames: {
     type: Object,
@@ -74,8 +79,27 @@ function getAllKeys() {
   return keys;
 }
 
+function getSelectedNode() {
+  if (treeRef.value && props.selectedKeys.length > 0) {
+    const selectedKey = props.selectedKeys[0];
+    function findNode(nodes) {
+      for (const node of nodes) {
+        if (node.id === selectedKey) return node;
+        if (node.children) {
+          const found = findNode(node.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    }
+    return findNode(props.treeData);
+  }
+  return null;
+}
+
 defineExpose({
   getAllKeys,
+  getSelectedNode,
   treeRef
 });
 </script>
@@ -83,8 +107,29 @@ defineExpose({
 <style lang="scss" scoped>
 .resource-tree {
   .tree-container {
-    max-height: 500px;
+    max-height: calc(100vh - 280px);
     overflow-y: auto;
+
+    :deep(.arco-tree-node) {
+      padding: 4px 0;
+
+      &:hover {
+        background-color: #f2f3f5;
+      }
+
+      &.arco-tree-node-selected {
+        background-color: #e8f3ff;
+      }
+    }
+
+    :deep(.arco-tree-node-title) {
+      font-size: 13px;
+      line-height: 28px;
+    }
+
+    :deep(.arco-tree-node-icon) {
+      margin-right: 4px;
+    }
   }
 }
 </style>

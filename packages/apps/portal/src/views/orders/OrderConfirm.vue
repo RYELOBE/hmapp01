@@ -67,7 +67,7 @@ import { useRouter, useRoute } from "vue-router";
 import { Message } from "@arco-design/web-vue";
 import { IconArrowLeft } from "@arco-design/web-vue/es/icon";
 import { parseFirstImageUrl } from "commonprovide/image-utils";
-import { getItemDetail, createOrder } from "../../services/api";
+import { getItemDetail, createOrder, getDefaultAddress } from "../../services/api";
 
 const router = useRouter();
 const route = useRoute();
@@ -134,7 +134,23 @@ async function submitOrder() {
   }
 }
 
-onMounted(loadItem);
+async function loadDefaultAddress() {
+  try {
+    const res = await getDefaultAddress();
+    if (res) {
+      form.value.receiverName = res.receiverName || res.name || "";
+      form.value.receiverPhone = res.receiverPhone || res.phone || "";
+      form.value.receiverAddress = res.receiverAddress || res.address || res.detailAddress || "";
+    }
+  } catch (e) {
+    console.warn("[OrderConfirm] 加载默认地址失败:", e);
+  }
+}
+
+onMounted(() => {
+  loadItem();
+  loadDefaultAddress();
+});
 </script>
 
 <style lang="scss" scoped>

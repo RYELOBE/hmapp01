@@ -20,7 +20,7 @@
       <a-row :gutter="16">
         <a-col :span="12">
           <a-form-item label="价格（元）" field="price" :rules="[{ required: true, message: '请输入价格' }]">
-            <a-input-number v-model="form.price" :min="0.01" :precision="2" placeholder="0.00" style="width: 100%">
+            <a-input-number v-model="form.price" :min="0.01" placeholder="0.00" style="width: 100%">
               <template #prefix>¥</template>
             </a-input-number>
           </a-form-item>
@@ -110,6 +110,7 @@ async function handleSubmit() {
   try {
     await publishItem({
       ...form,
+      price: Math.round(form.price),
       imageUrls: form.imageUrls,
     });
     Message.success("发布成功，已进入审核队列！");

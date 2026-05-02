@@ -1,4 +1,28 @@
-CREATE TABLE IF NOT EXISTS ops_account (
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS favorite;
+DROP TABLE IF EXISTS cart;
+DROP TABLE IF EXISTS address;
+DROP TABLE IF EXISTS uploaded_file;
+DROP TABLE IF EXISTS ops_role;
+DROP TABLE IF EXISTS resource_function;
+DROP TABLE IF EXISTS role_resource;
+DROP TABLE IF EXISTS resource_menu;
+DROP TABLE IF EXISTS portal_config;
+DROP TABLE IF EXISTS app_register;
+DROP TABLE IF EXISTS ai_message;
+DROP TABLE IF EXISTS ai_session;
+DROP TABLE IF EXISTS knowledge_chunk;
+DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS review_log;
+DROP TABLE IF EXISTS review;
+DROP TABLE IF EXISTS item;
+DROP TABLE IF EXISTS user_account;
+DROP TABLE IF EXISTS ops_account;
+
+SET FOREIGN_KEY_CHECKS = 1;
+
+CREATE TABLE ops_account (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   username VARCHAR(64) NOT NULL UNIQUE,
   password VARCHAR(128) NOT NULL,
@@ -10,7 +34,7 @@ CREATE TABLE IF NOT EXISTS ops_account (
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS user_account (
+CREATE TABLE user_account (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   username VARCHAR(64) NOT NULL UNIQUE,
   password VARCHAR(128) NOT NULL,
@@ -23,7 +47,7 @@ CREATE TABLE IF NOT EXISTS user_account (
   INDEX idx_roles (roles(32))
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS item (
+CREATE TABLE item (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   title VARCHAR(128) NOT NULL,
   price INT NOT NULL,
@@ -47,7 +71,7 @@ CREATE TABLE IF NOT EXISTS item (
   INDEX idx_status_created (review_status, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS review_log (
+CREATE TABLE review_log (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   item_id BIGINT NOT NULL,
   operator_id BIGINT NOT NULL,
@@ -59,7 +83,7 @@ CREATE TABLE IF NOT EXISTS review_log (
   INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS orders (
+CREATE TABLE orders (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   order_no VARCHAR(32) NOT NULL UNIQUE,
   item_id BIGINT NOT NULL,
@@ -91,14 +115,14 @@ CREATE TABLE IF NOT EXISTS orders (
   INDEX idx_status_created (status, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS knowledge_chunk (
+CREATE TABLE knowledge_chunk (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   source_type VARCHAR(32) NOT NULL,
   title VARCHAR(128) NOT NULL,
   content TEXT NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS ai_session (
+CREATE TABLE ai_session (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   session_id VARCHAR(64) NOT NULL UNIQUE,
   user_id BIGINT NOT NULL,
@@ -106,7 +130,7 @@ CREATE TABLE IF NOT EXISTS ai_session (
   INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS ai_message (
+CREATE TABLE ai_message (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   session_id VARCHAR(64) NOT NULL,
   role VARCHAR(16) NOT NULL,
@@ -117,7 +141,7 @@ CREATE TABLE IF NOT EXISTS ai_message (
   INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS app_register (
+CREATE TABLE app_register (
   app_code VARCHAR(64) PRIMARY KEY,
   title VARCHAR(128) NOT NULL,
   entry VARCHAR(512) NOT NULL,
@@ -127,7 +151,7 @@ CREATE TABLE IF NOT EXISTS app_register (
   portal_code VARCHAR(64) NOT NULL DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS portal_config (
+CREATE TABLE portal_config (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   portal_code VARCHAR(64) NOT NULL UNIQUE,
   portal_name VARCHAR(128) NOT NULL,
@@ -139,7 +163,7 @@ CREATE TABLE IF NOT EXISTS portal_config (
   INDEX idx_portal_code (portal_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS resource_menu (
+CREATE TABLE resource_menu (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   parent_id BIGINT NOT NULL DEFAULT 0,
   menu_code VARCHAR(64) NOT NULL UNIQUE,
@@ -147,14 +171,18 @@ CREATE TABLE IF NOT EXISTS resource_menu (
   menu_type VARCHAR(16) NOT NULL DEFAULT 'MENU',
   app_code VARCHAR(64) NOT NULL DEFAULT '',
   path VARCHAR(256) NOT NULL DEFAULT '',
+  url_path VARCHAR(256) NOT NULL DEFAULT '',
+  component_path VARCHAR(512) NOT NULL DEFAULT '',
+  resource_code VARCHAR(64) NOT NULL DEFAULT '',
   icon VARCHAR(128) NOT NULL DEFAULT '',
   sort_order INT NOT NULL DEFAULT 0,
+  status TINYINT NOT NULL DEFAULT 1,
   visible TINYINT(1) NOT NULL DEFAULT 1,
   INDEX idx_parent_id (parent_id),
   INDEX idx_app_code (app_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS role_resource (
+CREATE TABLE role_resource (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   role_code VARCHAR(64) NOT NULL,
   resource_id BIGINT NOT NULL,
@@ -163,7 +191,19 @@ CREATE TABLE IF NOT EXISTS role_resource (
   INDEX idx_resource_id (resource_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS ops_role (
+CREATE TABLE resource_function (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  menu_id BIGINT NOT NULL COMMENT '所属菜单ID',
+  function_code VARCHAR(64) NOT NULL COMMENT '功能编码',
+  function_name VARCHAR(128) NOT NULL COMMENT '功能名称',
+  status TINYINT DEFAULT 1 COMMENT '状态 1启用 0禁用',
+  sort_order INT DEFAULT 0 COMMENT '排序',
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_menu_id (menu_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资源功能按钮表';
+
+CREATE TABLE ops_role (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   role_code VARCHAR(64) NOT NULL UNIQUE,
   role_name VARCHAR(128) NOT NULL,
@@ -173,7 +213,7 @@ CREATE TABLE IF NOT EXISTS ops_role (
   INDEX idx_role_code (role_code)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS uploaded_file (
+CREATE TABLE uploaded_file (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   original_name VARCHAR(255) NOT NULL,
   stored_name VARCHAR(255) NOT NULL,
@@ -187,7 +227,7 @@ CREATE TABLE IF NOT EXISTS uploaded_file (
   INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS address (
+CREATE TABLE address (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT NOT NULL,
   receiver_name VARCHAR(64) NOT NULL,
@@ -204,7 +244,7 @@ CREATE TABLE IF NOT EXISTS address (
   INDEX idx_user_default (user_id, is_default)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS cart (
+CREATE TABLE cart (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT NOT NULL,
   item_id BIGINT NOT NULL,
@@ -217,7 +257,7 @@ CREATE TABLE IF NOT EXISTS cart (
   INDEX idx_item_id (item_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS favorite (
+CREATE TABLE favorite (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT NOT NULL,
   item_id BIGINT NOT NULL,
@@ -228,7 +268,7 @@ CREATE TABLE IF NOT EXISTS favorite (
   INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE IF NOT EXISTS review (
+CREATE TABLE review (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   order_id BIGINT NOT NULL,
   item_id BIGINT NOT NULL,

@@ -18,7 +18,7 @@
         </a-typography-paragraph>
         <div class="order-goods__meta">
           <span class="meta-seller" v-if="sellerName">
-            <icon-store /> {{ sellerName }}
+            <icon-apps /> {{ sellerName }}
           </span>
           <span class="meta-quantity" v-if="quantity > 1">
             x{{ quantity }}
@@ -34,7 +34,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import { IconStore } from '@arco-design/web-vue/es/icon';
+import { IconApps } from '@arco-design/web-vue/es/icon';
 
 const props = defineProps({
   order: {

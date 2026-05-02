@@ -21,7 +21,7 @@
             <template #cell="{ record }">
               <div class="item-cell">
                 <a-image
-                  :src="getImageUrl(record)"
+                  :src="parseFirstImageUrl(record.imageUrls || record.images)"
                   width="56"
                   height="56"
                   fit="cover"
@@ -83,6 +83,7 @@ import { useRouter } from "vue-router";
 import { Message } from "@arco-design/web-vue";
 import { IconPlus, IconEye, IconEdit } from "@arco-design/web-vue/es/icon";
 import StatusTag from "commonprovide/status-tag";
+import { parseFirstImageUrl } from "commonprovide/image-utils";
 import { getMyItems } from "../services/api";
 
 const router = useRouter();
@@ -98,18 +99,6 @@ const paginationConfig = reactive({
   showPageSize: true,
   pageSizeOptions: [10, 20, 50],
 });
-
-function getImageUrl(record) {
-  const urls = record.imageUrls || record.images || [];
-  if (typeof urls === "string") {
-    try {
-      return JSON.parse(urls)[0] || "";
-    } catch {
-      return urls || "";
-    }
-  }
-  return Array.isArray(urls) && urls.length > 0 ? urls[0] : "";
-}
 
 function formatDate(dateStr) {
   if (!dateStr) return "-";

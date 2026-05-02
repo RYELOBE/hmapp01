@@ -47,10 +47,10 @@
                 <template #icon><icon-list /></template>我的订单
               </a-doption>
               <a-doption v-if="isSeller" @click="$router.push('/seller/items')">
-                <template #icon><icon-subscription /></template>卖家中心
+                <template #icon><icon-notification /></template>卖家中心
               </a-doption>
               <a-doption v-if="isSeller" @click="$router.push('/seller/stats')">
-                <template #icon><icon-chart /></template>销售统计
+                <template #icon><icon-apps /></template>销售统计
               </a-doption>
               <a-doption @click="$router.push('/addresses')">
                 <template #icon><icon-location /></template>收货地址
@@ -90,8 +90,8 @@ import {
   IconList,
   IconPlus,
   IconExport,
-  IconSubscription,
-  IconChart,
+  IconNotification,
+  IconApps,
   IconLocation,
   IconHeart,
 } from "@arco-design/web-vue/es/icon";

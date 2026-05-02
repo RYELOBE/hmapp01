@@ -85,7 +85,7 @@ public class ReviewService {
     if (order == null) {
       throw new IllegalArgumentException("订单不存在");
     }
-    if (!buyerId.equals(order.get("buyerId"))) {
+    if (((Number)order.get("buyerId")).longValue() != buyerId) {
       throw new IllegalArgumentException("无权查看此订单评价");
     }
 
@@ -120,8 +120,8 @@ public class ReviewService {
   }
 
   public Map<String, Object> getReviewQueuePaged(String status, int pageNo, int pageSize) {
-    List<Map<String, Object>> rows = itemRepository.findPendingByPage(pageNo, pageSize);
-    int total = itemRepository.countPending();
+    List<Map<String, Object>> rows = itemRepository.findByPage(status, null, null, pageNo, pageSize);
+    int total = itemRepository.countByFilter(status, null, null);
     return Map.of("code", 200, "data", Map.of("items", rows, "totalCount", total, "pageNo", pageNo, "pageSize", pageSize));
   }
 

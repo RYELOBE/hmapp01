@@ -30,7 +30,8 @@ public class AIController {
   @PostMapping("/chat")
   public Map<String, Object> chat(@RequestBody ChatRequest req) {
     Long userId = currentUserService.userId();
-    return aiService.chat(userId, req.sessionId(), req.role(), req.message());
+    Map<String, Object> data = aiService.chat(userId, req.sessionId(), req.role(), req.message());
+    return Map.of("code", 200, "data", data);
   }
 
   /** 获取预设问题列表 */
@@ -38,19 +39,19 @@ public class AIController {
   public Map<String, Object> presets() {
     List<String> roles = currentUserService.roles();
     String role = roles.isEmpty() ? "BUYER" : roles.get(0);
-    return Map.of("presets", aiService.getPresets(role));
+    return Map.of("code", 200, "data", Map.of("presets", aiService.getPresets(role)));
   }
 
   /** 获取最近的会话列表 */
   @GetMapping("/sessions/recent")
   public Map<String, Object> recentSessions() {
     Long userId = currentUserService.userId();
-    return Map.of("sessions", aiService.getRecentSessions(userId));
+    return Map.of("code", 200, "data", Map.of("sessions", aiService.getRecentSessions(userId)));
   }
 
   /** 获取某个会话的消息记录 */
   @GetMapping("/sessions/{sessionId}/messages")
   public Map<String, Object> sessionMessages(@PathVariable("sessionId") String sessionId) {
-    return Map.of("messages", aiService.getMessages(sessionId));
+    return Map.of("code", 200, "data", Map.of("messages", aiService.getMessages(sessionId)));
   }
 }

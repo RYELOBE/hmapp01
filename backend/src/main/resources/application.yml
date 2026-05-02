@@ -36,4 +36,4 @@ ai:
   base-url: ${AI_BASE_URL:https://open.bigmodel.cn}
   api-key: ${AI_API_KEY:4b1730b7bef904e7ccd7bc105d8d4ec7.SQis5Gk6cLtj6QQX}
   model: ${AI_MODEL:glm-4-flash}
-  use-mock: true
+  use-mock: ${AI_USE_MOCK:true}

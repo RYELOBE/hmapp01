@@ -30,15 +30,15 @@
 
               <div class="item-meta">
                 <div class="meta-item">
-                  <template #icon><icon-environment /></template>
+                  <icon-location />
                   <span>{{ detail.campus || '未知校区' }}</span>
                 </div>
                 <div class="meta-item">
-                  <template #icon><icon-eye /></template>
+                  <icon-eye />
                   <span>{{ detail.viewCount || 0 }} 浏览</span>
                 </div>
-                <div class="meta-item" @click="handleFavorite">
-                  <template #icon><icon-heart :class="{ 'is-favorite': isFavorited }" /></template>
+                <div class="meta-item clickable" @click="handleFavorite">
+                  <icon-heart :class="{ 'is-favorite': isFavorited }" />
                   <span>{{ favoriteCount }} 收藏</span>
                 </div>
               </div>
@@ -80,7 +80,7 @@
                   {{ isFavorited ? '已收藏' : '收藏' }}
                 </a-button>
                 <a-button class="action-btn action-btn--cart" long @click="handleAddToCart">
-                  <template #icon><icon-shopping-cart /></template>
+                  <template #icon><icon-plus /></template>
                   加入购物车
                 </a-button>
                 <a-button
@@ -90,7 +90,7 @@
                   :disabled="detail.reviewStatus !== 'APPROVED'"
                   @click="handleBuy"
                 >
-                  <template #icon><icon-shopping /></template>
+                  <template #icon><icon-list /></template>
                   立即购买
                 </a-button>
               </a-space>
@@ -120,10 +120,10 @@ import { Message } from '@arco-design/web-vue';
 import {
   IconHeart,
   IconEye,
-  IconEnvironment,
+  IconLocation,
   IconUser,
-  IconShoppingCart,
-  IconShopping,
+  IconList,
+  IconPlus,
 } from '@arco-design/web-vue/es/icon';
 import StatusTag from "commonprovide/status-tag";
 import ImageGallery from "commonprovide/ImageGallery";
@@ -316,7 +316,7 @@ onMounted(loadDetail);
     cursor: pointer;
     transition: color 0.2s;
 
-    &:hover {
+    &.clickable:hover {
       color: #165dff;
     }
 

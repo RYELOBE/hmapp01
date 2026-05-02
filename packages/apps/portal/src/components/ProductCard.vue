@@ -53,7 +53,7 @@
               size="small"
               @click.stop="handleAddCart"
             >
-              <template #icon><icon-shopping-cart /></template>
+              <template #icon><icon-plus /></template>
               加入购物车
             </a-button>
             <a-button
@@ -76,7 +76,7 @@
 
 <script setup>
 import { computed } from 'vue';
-import { IconImage, IconShoppingCart } from '@arco-design/web-vue/es/icon';
+import { IconImage, IconPlus } from '@arco-design/web-vue/es/icon';
 import { parseFirstImageUrl } from 'commonprovide/image-utils';
 
 const props = defineProps({

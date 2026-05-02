@@ -72,7 +72,7 @@
         <div v-if="!loading && items.length === 0" class="home-grid__empty">
           <a-empty description="暂无商品，换个关键词试试？">
             <template #image>
-              <icon-subscribe-search size="48" />
+              <icon-search size="48" />
             </template>
           </a-empty>
         </div>
@@ -90,7 +90,7 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { IconSubscribeSearch } from "@arco-design/web-vue/es/icon";
+import { IconSearch } from "@arco-design/web-vue/es/icon";
 import { getItems } from "../../services/api";
 import ItemCard from "commonprovide/ItemCard";
 import { CATEGORIES, SORT_OPTIONS } from "./const";
@@ -135,6 +135,7 @@ async function loadData(append = false) {
       sort: sortBy.value,
       pageNo: currentPage.value,
       pageSize,
+      approvedOnly: true,
     };
     const res = await getItems(params);
     const rows = res?.items || res?.rows || [];

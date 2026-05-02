@@ -45,7 +45,7 @@ const props = defineProps({
   },
   uploadUrl: {
     type: String,
-    default: '/api/upload',
+    default: () => `${window.location.origin}/api/upload`
   },
 });
 

@@ -61,7 +61,8 @@ public class ResourceMenuController {
   public Map<String, Object> saveMenu(@RequestBody MenuSaveRequest req) {
     var menu = resourceMenuService.saveMenu(
         req.menuCode(), req.menuName(), req.menuType(),
-        req.appCode(), req.parentId(), req.path(), req.icon(), req.sortOrder());
+        req.appCode(), req.parentId(), req.path(), req.icon(), req.sortOrder(),
+        req.urlPath(), req.componentPath(), req.resourceCode(), req.status(), req.visible());
     return Map.of("menu", menu, "message", "资源菜单已保存");
   }
 
@@ -134,6 +135,32 @@ public class ResourceMenuController {
     return Map.of("message", "角色资源权限已更新");
   }
 
+  /** 获取某菜单下的功能按钮列表 */
+  @GetMapping("/menus/{menuId}/functions")
+  @SaCheckLogin
+  @SaCheckRole("OPS")
+  public Map<String, Object> getFunctionsByMenuId(@PathVariable Long menuId) {
+    return Map.of("functions", resourceMenuService.getFunctionsByMenuId(menuId));
+  }
+
+  /** 创建功能按钮 */
+  @PostMapping("/functions")
+  @SaCheckLogin
+  @SaCheckRole("OPS")
+  public Map<String, Object> createFunction(@RequestBody Map<String, Object> func) {
+    var saved = resourceMenuService.saveFunction(func);
+    return Map.of("function", saved, "message", "功能按钮已创建");
+  }
+
+  /** 删除功能按钮 */
+  @DeleteMapping("/functions/{id}")
+  @SaCheckLogin
+  @SaCheckRole("OPS")
+  public Map<String, Object> deleteFunction(@PathVariable Long id) {
+    resourceMenuService.deleteFunction(id);
+    return Map.of("message", "功能按钮已删除");
+  }
+
   public record MenuSaveRequest(
       @NotBlank String menuCode,
       @NotBlank String menuName,
@@ -142,7 +169,12 @@ public class ResourceMenuController {
       Long parentId,
       String path,
       String icon,
-      int sortOrder
+      int sortOrder,
+      String urlPath,
+      String componentPath,
+      String resourceCode,
+      Integer status,
+      Integer visible
   ) {}
 
   public record RoleResourceRequest(

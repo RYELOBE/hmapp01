@@ -5,7 +5,7 @@
         <div class="mini-cart-panel" :class="{ 'mini-cart-panel--expanded': expanded }">
           <div class="mini-cart-header" @click="toggleExpand">
             <div class="mini-cart-icon">
-              <icon-shopping-cart size="24" />
+              <icon-list size="24" />
               <span v-if="cartCount > 0" class="cart-badge">{{ cartCount > 99 ? '99+' : cartCount }}</span>
             </div>
             <div class="mini-cart-info">
@@ -44,7 +44,7 @@
 
               <a-empty v-else description="购物车是空的" :image-size="48">
                 <template #image>
-                  <icon-shopping-cart size="32" />
+                  <icon-list size="32" />
                 </template>
               </a-empty>
 
@@ -65,7 +65,7 @@
 
     <transition name="mini-cart-badge">
       <div v-if="!visible && cartCount > 0" class="mini-cart-trigger" @click="visible = true">
-        <icon-shopping-cart size="28" />
+        <icon-list size="28" />
         <span class="cart-badge">{{ cartCount > 99 ? '99+' : cartCount }}</span>
       </div>
     </transition>
@@ -75,9 +75,9 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
-import { IconShoppingCart, IconDown } from "@arco-design/web-vue/es/icon";
+import { IconList, IconDown } from "@arco-design/web-vue/es/icon";
 import { parseFirstImageUrl } from "commonprovide/image-utils";
-import { getCartCount, getCartList } from "../../services/api";
+import { getCartCount, getCartList } from "../services/api";
 
 const router = useRouter();
 const visible = ref(false);

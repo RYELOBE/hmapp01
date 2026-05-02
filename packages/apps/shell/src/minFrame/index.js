@@ -51,7 +51,11 @@ export function createConfigs(apps = [], authStore = null) {
       messageManager: MessageManager,
       frameRouter: router,
       shellRouter,
+      container: "#FRAME_WINDOW",
       gWin: window,
+      appCode: app.appCode,
+      pathPrefix: app.pathPrefix,
+      portalCode: app.portalCode || '',
       // 传递认证状态给子应用
       authStore: authStore ? {
         token: authStore.token,
@@ -213,7 +217,15 @@ function getMicroAppErrorMessage(event) {
 }
 
 addGlobalUncaughtErrorHandler((event) => {
-  const current = router.currentRoute.value.fullPath;
+  let currentPath = "/";
+  try {
+    // 只有当 router 已初始化时才访问
+    if (router && router.currentRoute && router.currentRoute.value) {
+      currentPath = router.currentRoute.value.fullPath;
+    }
+  } catch (e) {
+    console.warn("[minFrame] router 尚未初始化完成，跳过路径获取");
+  }
   const reason = getMicroAppErrorMessage(event);
   console.error("[minFrame] 子应用加载错误:", reason, event);
 

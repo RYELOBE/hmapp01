@@ -15,12 +15,6 @@
             <span class="page-subtitle">管理系统菜单资源和功能按钮</span>
           </div>
           <div class="page-header__right">
-            <a-input-search
-              v-model="searchKeyword"
-              placeholder="搜索资源名称或代码"
-              style="width: 220px; margin-right: 12px;"
-              @search="handleSearchResource"
-            />
             <a-button type="primary" @click="showAddModal = true">
               <template #icon><icon-plus /></template>
               新建菜单
@@ -29,21 +23,31 @@
         </div>
 
         <a-spin :loading="loading">
-          <a-row :gutter="16">
-            <!-- 中间资源树 -->
-            <a-col :span="7">
-              <a-card title="资源树" :bordered="false" class="tree-card">
+          <div class="content-wrapper">
+            <!-- 左侧资源树 -->
+            <div class="tree-panel">
+              <a-card title="资源菜单" :bordered="false" class="tree-card">
+                <template #extra>
+                  <a-input-search
+                    v-model="treeSearchKeyword"
+                    placeholder="搜索菜单"
+                    size="small"
+                    style="width: 140px;"
+                    allow-clear
+                  />
+                </template>
                 <ResourceTree
+                  ref="resourceTreeRef"
                   :tree-data="filteredMenuTree"
                   :checkable="false"
-                  :default-expand-all="true"
+                  :default-expand-all="!treeSearchKeyword"
                   @select="handleSelectResource"
                 />
               </a-card>
-            </a-col>
+            </div>
 
             <!-- 右侧详情 -->
-            <a-col :span="17">
+            <div class="detail-panel">
               <a-card
                 v-if="selectedResource"
                 :title="selectedResource.menuName"
@@ -63,17 +67,20 @@
                   @add-function="handleAddFunction"
                   @edit-function="handleEditFunction"
                   @delete-function="handleDeleteFunction"
+                  @toggle-function-status="handleToggleFunctionStatus"
                 />
               </a-card>
               <a-card v-else :bordered="false" class="empty-card">
                 <div class="empty-content">
                   <icon-folder-open class="empty-icon" />
-                  <p>请从左侧选择一个资源查看详情</p>
+                  <p>请从左侧选择一个菜单查看详情</p>
                 </div>
               </a-card>
-            </a-col>
-          </a-row>
+            </div>
+          </div>
         </a-spin>
+      </a-layout-content>
+    </a-layout>
 
     <!-- 新建/编辑菜单弹窗 -->
     <a-modal
@@ -158,7 +165,8 @@ import {
   updateResourceMenu,
   deleteResourceMenu,
   saveResourceFunction,
-  deleteResourceFunction
+  deleteResourceFunction,
+  updateResourceFunction
 } from '../services/api';
 
 const router = useRouter();
@@ -169,7 +177,8 @@ const resourceFunctions = ref([]);
 const availableRoles = ref([]);
 const showAddModal = ref(false);
 const isEditResource = ref(false);
-const searchKeyword = ref('');
+const treeSearchKeyword = ref('');
+const resourceTreeRef = ref(null);
 
 const resourceForm = reactive({
   menuName: '',
@@ -186,6 +195,7 @@ const resourceForm = reactive({
 });
 
 function filterTree(nodes, keyword) {
+  if (!keyword) return nodes;
   return nodes
     .map(node => {
       const filteredChildren = node.children ? filterTree(node.children, keyword) : [];
@@ -203,13 +213,12 @@ function filterTree(nodes, keyword) {
 }
 
 const filteredMenuTree = computed(() => {
-  if (!searchKeyword.value) return menuTree.value;
-  return filterTree(menuTree.value, searchKeyword.value);
+  return filterTree(menuTree.value, treeSearchKeyword.value);
 });
 
 function handleMenuSelect(key) {
   if (key === 'org-user') {
-    router.push('/ops/user-manage-2');
+    router.push('/ops/user-manage');
   } else if (key === 'resource-manage') {
     router.push('/ops/resource-manage');
   } else if (key === 'role-manage') {
@@ -217,14 +226,11 @@ function handleMenuSelect(key) {
   }
 }
 
-function handleSearchResource() {
-  // 搜索已通过 computed 属性实现
-}
-
 const parentMenuOptions = computed(() => {
   const options = [];
   function collect(nodes) {
     nodes.forEach(node => {
+      if (selectedResource.value && node.id === selectedResource.value.id) return;
       options.push({ id: node.id, menuName: node.menuName });
       if (node.children) collect(node.children);
     });
@@ -250,7 +256,7 @@ async function loadData() {
 }
 
 async function handleSelectResource(selectedKeys) {
-  if (!selectedKeys.length) {
+  if (!selectedKeys || !selectedKeys.length) {
     selectedResource.value = null;
     resourceFunctions.value = [];
     return;
@@ -280,7 +286,7 @@ function handleDeleteResource() {
   if (!selectedResource.value) return;
   Modal.confirm({
     title: '删除资源',
-    content: `确定要删除菜单「${selectedResource.value.menuName}」吗？`,
+    content: `确定要删除菜单「${selectedResource.value.menuName}」吗？此操作不可恢复。`,
     onOk: async () => {
       try {
         await deleteResourceMenu(selectedResource.value.id);
@@ -335,16 +341,24 @@ function handleAddFunction(data) {
     menuId: selectedResource.value.id
   }).then(() => {
     Message.success('创建成功');
-    getResourceFunctions(selectedResource.value.id).then(res => {
-      resourceFunctions.value = res.functions || [];
-    });
+    return getResourceFunctions(selectedResource.value.id);
+  }).then(res => {
+    resourceFunctions.value = res.functions || [];
   }).catch(e => {
     Message.error('创建失败：' + e.message);
   });
 }
 
-function handleEditFunction(record) {
-  Message.info('编辑功能按钮功能开发中');
+function handleEditFunction(data) {
+  if (!selectedResource.value) return;
+  updateResourceFunction(data.id, data).then(() => {
+    Message.success('编辑成功');
+    return getResourceFunctions(selectedResource.value.id);
+  }).then(res => {
+    resourceFunctions.value = res.functions || [];
+  }).catch(e => {
+    Message.error('编辑失败：' + e.message);
+  });
 }
 
 function handleDeleteFunction(record) {
@@ -360,6 +374,16 @@ function handleDeleteFunction(record) {
         Message.error('删除失败：' + e.message);
       }
     }
+  });
+}
+
+function handleToggleFunctionStatus(record) {
+  const newStatus = record.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+  updateResourceFunction(record.id, { ...record, status: newStatus }).then(() => {
+    record.status = newStatus;
+    Message.success(`功能已${newStatus === 'ACTIVE' ? '启用' : '禁用'}`);
+  }).catch(e => {
+    Message.error('操作失败：' + e.message);
   });
 }
 
@@ -415,46 +439,62 @@ onMounted(loadData);
     color: #86909c;
   }
 
-  .tree-card {
-    height: calc(100vh - 180px);
-    overflow: hidden;
+  .content-wrapper {
+    display: flex;
+    gap: 16px;
+    height: calc(100vh - 160px);
+  }
 
-    :deep(.arco-card-body) {
-      height: calc(100% - 56px);
-      overflow: auto;
+  .tree-panel {
+    width: 280px;
+    flex-shrink: 0;
+
+    .tree-card {
+      height: 100%;
+
+      :deep(.arco-card-body) {
+        height: calc(100% - 56px);
+        overflow: auto;
+        padding: 12px;
+      }
     }
   }
 
-  .detail-card {
-    height: calc(100vh - 180px);
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
+  .detail-panel {
+    flex: 1;
+    min-width: 0;
 
-    :deep(.arco-card-body) {
-      flex: 1;
-      overflow: auto;
-      padding: 16px 20px;
-    }
-  }
-
-  .empty-card {
-    height: calc(100vh - 180px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    .empty-content {
+    .detail-card {
+      height: 100%;
+      overflow: hidden;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      color: #86909c;
+
+      :deep(.arco-card-body) {
+        flex: 1;
+        overflow: auto;
+        padding: 16px 20px;
+      }
     }
 
-    .empty-icon {
-      font-size: 48px;
-      color: #c0c4cc;
+    .empty-card {
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .empty-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+        color: #86909c;
+      }
+
+      .empty-icon {
+        font-size: 48px;
+        color: #c0c4cc;
+      }
     }
   }
 }
