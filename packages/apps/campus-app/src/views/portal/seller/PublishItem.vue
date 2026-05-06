@@ -170,7 +170,7 @@ import {
   IconPlus,
   IconClose,
 } from "@arco-design/web-vue/es/icon";
-import { publishItem, updateItem, getItemDetail } from "../../../services/api";
+import { publishItem, updateItem, getItemDetail, uploadImage } from "../../../services/api";
 
 const router = useRouter();
 const route = useRoute();
@@ -303,7 +303,7 @@ async function handleSaveDraft() {
     } else {
       await publishItem(data);
       Message.success("草稿已保存");
-      router.push("/seller/items");
+      router.push("/portal/seller/items");
     }
   } catch (e) {
     Message.error(e.message || "保存失败");
@@ -330,7 +330,7 @@ async function handleSubmit() {
       Message.success("发布成功，已进入审核队列！");
     }
 
-    router.push("/seller/items");
+    router.push("/portal/seller/items");
   } catch (e) {
     if (e.message) Message.error(e.message);
   } finally {

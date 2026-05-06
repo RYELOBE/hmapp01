@@ -146,7 +146,7 @@
         subtitle="该商品可能已下架或被删除"
       >
         <template #extra>
-          <a-button type="primary" @click="$router.push('/home')">返回首页</a-button>
+          <a-button type="primary" @click="$router.push('/portal/home')">返回首页</a-button>
         </template>
       </a-result>
     </a-spin>

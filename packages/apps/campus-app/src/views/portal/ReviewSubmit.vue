@@ -256,7 +256,7 @@ async function submitReview() {
         : [],
     });
     Message.success('评价提交成功');
-    router.push('/orders');
+    router.push('/portal/orders');
   } catch (e) {
     Message.error(e.message || '提交失败');
   } finally {

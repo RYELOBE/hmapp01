@@ -29,6 +29,16 @@ instance.interceptors.response.use((response) => {
   return Promise.reject(error);
 });
 
+export async function uploadImage(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return await instance.post("/upload/image", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+}
+
 export async function getItems(params = {}) {
   return await instance.get("/items", { params });
 }

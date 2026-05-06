@@ -115,7 +115,7 @@ function toggleExpand() {
 function goToCart() {
   visible.value = false;
   expanded.value = false;
-  router.push("/cart");
+  router.push("/portal/cart");
 }
 
 let refreshInterval = null;

@@ -13,7 +13,7 @@
             <div class="home-banner__text">
               <h2>{{ banner.title }}</h2>
               <p>{{ banner.desc }}</p>
-              <a-button type="primary" size="large" @click="$router.push('/home')">
+              <a-button type="primary" size="large" @click="$router.push('/portal/home')">
                 立即去看看
               </a-button>
             </div>
@@ -204,7 +204,7 @@ const quickActions = [
     label: "热门推荐",
     icon: "🔥",
     action: () => {
-      router.push({ path: "/home", query: { keyword: "" } });
+      router.push({ path: "/portal/home", query: { keyword: "" } });
     },
   },
   {
@@ -212,7 +212,7 @@ const quickActions = [
     label: "优惠活动",
     icon: "🎉",
     action: () => {
-      router.push("/home");
+      router.push("/portal/home");
     },
   },
 ];

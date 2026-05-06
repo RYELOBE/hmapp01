@@ -68,7 +68,7 @@ const handleBack = () => {
   if (window.history.state && window.history.state.back) {
     router.back();
   } else {
-    router.push('/');
+    router.push('/portal/home');
   }
 };
 
