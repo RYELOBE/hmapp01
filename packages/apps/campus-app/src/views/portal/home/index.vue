@@ -13,7 +13,7 @@
             <div class="home-banner__text">
               <h2>{{ banner.title }}</h2>
               <p>{{ banner.desc }}</p>
-              <a-button type="primary" size="large" @click="$router.push('/home')">
+              <a-button type="primary" size="large" @click="$router.push('/portal/home')">
                 立即去看看
               </a-button>
             </div>
@@ -143,6 +143,7 @@ import { IconSearch } from "@arco-design/web-vue/es/icon";
 import { getItems } from "../../../services/api";
 import ItemCard from "../../../shared-components/ItemCard/ItemCard.vue";
 import { CATEGORIES, SORT_OPTIONS } from "./const";
+import { debounce } from "@campus/common";
 
 const router = useRouter();
 const route = useRoute();
@@ -203,7 +204,7 @@ const quickActions = [
     label: "热门推荐",
     icon: "🔥",
     action: () => {
-      router.push({ path: "/home", query: { keyword: "" } });
+      router.push({ path: "/portal/home", query: { keyword: "" } });
     },
   },
   {
@@ -211,7 +212,7 @@ const quickActions = [
     label: "优惠活动",
     icon: "🎉",
     action: () => {
-      router.push("/home");
+      router.push("/portal/home");
     },
   },
 ];
@@ -267,12 +268,16 @@ function loadMore() {
 }
 
 function goDetail(item) {
-  router.push(`/item/${item.id}`);
+  router.push(`/portal/item/${item.id}`);
 }
+
+const debouncedSearch = debounce((keyword) => {
+  router.push({ path: '/portal/home', query: { keyword } });
+}, 300);
 
 function handleSearch(value) {
   console.log('搜索:', value || searchQuery.value);
-  router.push({ path: '/home', query: { keyword: value || searchQuery.value } });
+  debouncedSearch(value || searchQuery.value);
 }
 
 function removeFilter(index) {

@@ -109,7 +109,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from "vue";
+import { ref, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Message } from "@arco-design/web-vue";
 import {
@@ -136,18 +136,24 @@ const showAddressModal = ref(false);
 const CATEGORY_MAP = {
   digital: "数码", book: "教材", clothing: "服饰",
   daily: "生活", sport: "运动", instrument: "乐器", other: "其他",
+  electronics: "数码", textbooks: "教材",
 };
 
 function getImageUrl(record) {
   const urls = record.imageUrls || record.images || [];
   if (typeof urls === "string") {
-    try { return JSON.parse(urls)[0]; } catch { return urls; }
+    try {
+      const parsed = JSON.parse(urls);
+      return Array.isArray(parsed) ? parsed[0] : urls;
+    } catch {
+      return urls;
+    }
   }
   return Array.isArray(urls) && urls.length > 0 ? urls[0] : null;
 }
 
-function getItemImage(item) {
-  return parseFirstImageUrl(item?.imageUrls) || getImageUrl(item);
+function getItemImage(itemData) {
+  return parseFirstImageUrl(itemData?.imageUrls) || getImageUrl(itemData);
 }
 
 function getCategoryLabel(category) {
@@ -204,14 +210,17 @@ async function submitOrder() {
 
   submitting.value = true;
   try {
+    const address = defaultAddress.value;
     const orderData = {
       itemId: item.value.id,
       quantity: quantity.value,
-      addressId: defaultAddress.value.id,
+      receiverName: address.receiverName,
+      receiverPhone: address.receiverPhone,
+      receiverAddress: `${address.province}${address.city}${address.district || ''}${address.detailAddress}`
     };
     const res = await createOrder(orderData);
     Message.success("订单创建成功");
-    router.push(`/orders`);
+    router.push("/portal/orders");
   } catch (e) {
     Message.error(e.message || "创建订单失败");
   } finally {
@@ -238,14 +247,13 @@ onMounted(() => {
   display: flex;
   align-items: center;
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   padding: 16px 20px;
-  background: #fff;
+  background: white;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
   .page-title {
-    flex: 1;
     margin: 0;
     font-size: 20px;
     font-weight: 600;
@@ -253,32 +261,43 @@ onMounted(() => {
   }
 }
 
-.section-card {
-  border-radius: 12px;
-  margin-bottom: 16px;
+.confirm-content {
+  animation: fadeIn 0.3s ease;
+}
 
-  :deep(.arco-card-head-title) {
-    font-size: 15px;
-    font-weight: 600;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 
-  :deep(.arco-card-body) {
-    padding: 20px;
+.section-card {
+  margin-bottom: 16px;
+  border-radius: 12px;
+
+  :deep(.arco-card-header) {
+    font-weight: 600;
   }
 }
 
 .item-info-card {
   display: flex;
   gap: 16px;
+  padding: 8px 0;
 
   .item-image-wrapper {
     flex-shrink: 0;
   }
 
   .item-image {
-    width: 80px;
-    height: 80px;
-    border-radius: 10px;
+    width: 100px;
+    height: 100px;
+    border-radius: 12px;
     object-fit: cover;
 
     &--empty {
@@ -286,7 +305,7 @@ onMounted(() => {
       align-items: center;
       justify-content: center;
       background: #f2f3f5;
-      font-size: 32px;
+      font-size: 40px;
     }
   }
 
@@ -299,23 +318,20 @@ onMounted(() => {
       font-size: 16px;
       font-weight: 500;
       color: #1d2129;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
 
     .item-meta {
       display: flex;
       align-items: center;
       gap: 8px;
-    }
 
-    .item-category {
-      font-size: 12px;
-      color: #86909c;
-      background: #f2f3f5;
-      padding: 2px 8px;
-      border-radius: 4px;
+      .item-category {
+        font-size: 12px;
+        color: #86909c;
+        background: #f2f3f5;
+        padding: 2px 8px;
+        border-radius: 4px;
+      }
     }
   }
 }
@@ -323,11 +339,12 @@ onMounted(() => {
 .price-info {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding-top: 16px;
+  justify-content: flex-end;
+  padding-top: 12px;
   border-top: 1px solid #f0f0f0;
-  margin-top: 16px;
+  margin-top: 12px;
   font-size: 14px;
+  gap: 12px;
 
   .price-label {
     color: #86909c;
@@ -340,7 +357,6 @@ onMounted(() => {
 
   .quantity-info {
     color: #86909c;
-    margin: 0 4px;
   }
 
   .subtotal {
@@ -351,92 +367,76 @@ onMounted(() => {
 }
 
 .address-card {
-  :deep(.arco-card-head-extra) {
-    font-size: 13px;
-  }
-}
-
-.default-address {
-  :deep(.address-card) {
-    cursor: pointer;
-  }
-}
-
-.no-address {
-  text-align: center;
-  padding: 24px;
-  color: #86909c;
-
-  :deep(.arco-icon) {
-    font-size: 40px;
-    color: #c9cdd4;
-    margin-bottom: 8px;
+  .default-address {
+    padding: 4px 0;
   }
 
-  p {
-    margin: 0 0 12px;
-    font-size: 14px;
+  .no-address {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 32px 0;
+    color: #86909c;
+
+    :deep(.arco-icon) {
+      font-size: 40px;
+    }
+
+    p {
+      margin: 0;
+    }
   }
 }
 
 .summary-card {
-  position: sticky;
-  top: 20px;
-
-  :deep(.arco-card-body) {
-    padding: 20px;
+  :deep(.arco-card-header) {
+    font-weight: 600;
   }
 }
 
 .summary-list {
-  margin-bottom: 20px;
-}
+  .summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    font-size: 14px;
+    color: #4e5969;
 
-.summary-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 0;
-  font-size: 14px;
-  color: #4e5969;
+    &.summary-total {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1d2129;
+
+      .total-amount {
+        color: #f53f3f;
+        font-size: 22px;
+      }
+    }
+  }
 
   .free-shipping {
     color: #00b42a;
     font-weight: 500;
   }
-}
 
-.summary-divider {
-  height: 1px;
-  background: #f0f0f0;
-  margin: 4px 0;
-}
-
-.summary-total {
-  font-size: 15px;
-  font-weight: 600;
-  color: #1d2129;
-  padding-top: 12px;
-
-  .total-amount {
-    font-size: 22px;
-    font-weight: 700;
-    color: #f53f3f;
+  .summary-divider {
+    height: 1px;
+    background: #f0f0f0;
+    margin: 8px 0;
   }
 }
 
 .submit-btn {
-  height: 48px;
+  margin-top: 24px;
   font-size: 16px;
-  background: linear-gradient(135deg, #165dff 0%, #4080ff 100%);
-  border: none;
-  border-radius: 8px;
+  font-weight: 500;
 }
 
 .address-tip {
-  margin: 12px 0 0;
   text-align: center;
-  font-size: 13px;
-  color: #f53f3f;
+  margin-top: 12px;
+  color: #86909c;
+  font-size: 12px;
 }
 </style>

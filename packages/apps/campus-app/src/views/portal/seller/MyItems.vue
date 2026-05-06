@@ -6,7 +6,7 @@
         返回
       </a-button>
       <h2 class="page-title">我的商品</h2>
-      <a-button type="primary" @click="$router.push('/seller/publish')">
+      <a-button type="primary" @click="$router.push('/portal/seller/publish')">
         <template #icon><icon-plus /></template>
         发布新商品
       </a-button>
@@ -90,7 +90,7 @@
           <template #image>
             <icon-apps size="64" />
           </template>
-          <a-button type="primary" @click="$router.push('/seller/publish')">
+          <a-button type="primary" @click="$router.push('/portal/seller/publish')">
             发布商品
           </a-button>
         </a-empty>
@@ -194,8 +194,8 @@ function handlePageSizeChange(size) {
   loadData();
 }
 
-function viewDetail(item) { router.push(`/item/${item.id}`); }
-function editItem(item, needReaudit = false) { router.push(`/seller/publish?id=${item.id}${needReaudit ? '&reaudit=1' : ''}`); }
+function viewDetail(item) { router.push(`/portal/item/${item.id}`); }
+function editItem(item, needReaudit = false) { router.push(`/portal/seller/publish?id=${item.id}${needReaudit ? '&reaudit=1' : ''}`); }
 
 async function publishDraft(item) {
   try {

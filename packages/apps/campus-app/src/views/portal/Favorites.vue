@@ -5,7 +5,7 @@
       <div class="header-content">
         <h1 class="header-title">我的收藏页</h1>
         <p class="header-subtitle">这里汇集了您心仪的所有宝贝，随时查看或管理</p>
-        <a-button type="primary" shape="round" class="header-btn" @click="$router.push('/')">
+        <a-button type="primary" shape="round" class="header-btn" @click="$router.push('/portal/home')">
           去逛逛
         </a-button>
       </div>
@@ -165,7 +165,7 @@
         <template #image>
           <icon-heart size="64" />
         </template>
-        <a-button type="primary" shape="round" @click="$router.push('/')">
+        <a-button type="primary" shape="round" @click="$router.push('/portal/home')">
           去逛逛
         </a-button>
       </a-empty>
@@ -343,7 +343,7 @@ async function batchAddToCart() {
       await addToCart(fav.itemId, 1);
     }
     Message.success(`已将 ${selected.length} 件商品加入购物车`);
-    router.push("/cart");
+    router.push("/portal/cart");
   } catch (e) {
     Message.error(e.message || "操作失败");
   }

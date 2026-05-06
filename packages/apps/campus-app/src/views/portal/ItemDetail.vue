@@ -146,7 +146,7 @@
         subtitle="该商品可能已下架或被删除"
       >
         <template #extra>
-          <a-button type="primary" @click="$router.push('/home')">返回首页</a-button>
+          <a-button type="primary" @click="$router.push('/portal/home')">返回首页</a-button>
         </template>
       </a-result>
     </a-spin>
@@ -251,7 +251,7 @@ function handleBuy() {
     Message.warning('该商品暂不可购买');
     return;
   }
-  router.push(`/orders/confirm/${detail.value.id}`);
+  router.push(`/portal/orders/confirm/${detail.value.id}`);
 }
 
 function handleViewShop() {

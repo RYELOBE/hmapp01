@@ -137,7 +137,7 @@
           <template #image>
             <icon-list size="64" />
           </template>
-          <a-button type="primary" @click="$router.push('/home')">
+          <a-button type="primary" @click="$router.push('/portal/home')">
             去逛逛
           </a-button>
         </a-empty>
@@ -288,8 +288,11 @@ function checkout() {
     Message.warning("请选择要结算的商品");
     return;
   }
-  const firstItem = selectedItems[0];
-  router.push(`/orders/confirm/${firstItem.itemId}`);
+  if (selectedItems.length > 1) {
+    Message.warning("暂不支持多商品批量结算，请选择单个商品进行结算");
+    return;
+  }
+  router.push(`/portal/orders/confirm/${selectedItems[0].itemId}`);
 }
 
 onMounted(loadCart);

@@ -33,7 +33,7 @@
           <template #image>
             <icon-list size="64" />
           </template>
-          <a-button type="primary" @click="$router.push('/home')">
+          <a-button type="primary" @click="$router.push('/portal/home')">
             去逛逛
           </a-button>
         </a-empty>
@@ -139,7 +139,7 @@ function handlePageSizeChange(pageSize) {
 }
 
 function goItem(order) {
-  if (order.itemId) router.push(`/item/${order.itemId}`);
+  if (order.itemId) router.push(`/portal/item/${order.itemId}`);
 }
 
 async function handleAction(action, order) {

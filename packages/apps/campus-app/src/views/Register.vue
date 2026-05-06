@@ -299,14 +299,14 @@ function startCountdown() {
     countdown.value--;
     if (countdown.value <= 0) {
       clearInterval(timer);
-      router.push('/home');
+      router.push('/portal/home');
     }
   }, 1000);
 }
 
 function goToLogin() {
   clearInterval(timer);
-  router.push('/home');
+  router.push('/portal/home');
 }
 
 function goToProfile() {
