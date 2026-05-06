@@ -1,23 +1,24 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Layout from "../views/Layout.vue";
-import Login from "../views/Login.vue";
-import ForbiddenView from "../views/ForbiddenView.vue";
-import Dashboard from "../views/dashboard/index.vue";
-import Reviews from "../views/reviews/index.vue";
-import ReviewDetail from "../views/ReviewDetail.vue";
-import Orders from "../views/orders/index.vue";
-import Vendor from "../views/vendor/index.vue";
-import Buyer from "../views/buyer/index.vue";
-import AppRegisterView from "../views/AppRegisterView.vue";
-import PortalDesign from "../views/PortalDesign.vue";
-import RoleManage from "../views/RoleManage.vue";
-import RouteManage from "../views/RouteManage.vue";
-import ResourceManage from "../views/ResourceManage.vue";
-import UserManage from "../views/UserManage.vue";
-import VendorManage from "../views/VendorManage.vue";
-import BuyerManage from "../views/BuyerManage.vue";
 import { getOpsCurrentUser as getCurrentUser } from "commonprovide/auth-sdk";
 import { hasAnyRole } from "@campus/common/roles";
+
+const Layout = () => import(/* webpackChunkName: "ops-layout" */ "../views/Layout.vue");
+const Login = () => import(/* webpackChunkName: "ops-login" */ "../views/Login.vue");
+const ForbiddenView = () => import(/* webpackChunkName: "ops-forbidden" */ "../views/ForbiddenView.vue");
+const Dashboard = () => import(/* webpackChunkName: "ops-dashboard" */ "../views/dashboard/index.vue");
+const Reviews = () => import(/* webpackChunkName: "ops-reviews" */ "../views/reviews/index.vue");
+const ReviewDetail = () => import(/* webpackChunkName: "ops-review-detail" */ "../views/ReviewDetail.vue");
+const Orders = () => import(/* webpackChunkName: "ops-orders" */ "../views/orders/index.vue");
+const Vendor = () => import(/* webpackChunkName: "ops-vendor" */ "../views/vendor/index.vue");
+const Buyer = () => import(/* webpackChunkName: "ops-buyers" */ "../views/buyer/index.vue");
+const AppRegisterView = () => import(/* webpackChunkName: "ops-apps" */ "../views/AppRegisterView.vue");
+const PortalDesign = () => import(/* webpackChunkName: "ops-portal-design" */ "../views/PortalDesign.vue");
+const RoleManage = () => import(/* webpackChunkName: "ops-roles" */ "../views/RoleManage.vue");
+const RouteManage = () => import(/* webpackChunkName: "ops-routes" */ "../views/RouteManage.vue");
+const ResourceManage = () => import(/* webpackChunkName: "ops-resources" */ "../views/ResourceManage.vue");
+const UserManage = () => import(/* webpackChunkName: "ops-users" */ "../views/UserManage.vue");
+const VendorManage = () => import(/* webpackChunkName: "ops-vendors" */ "../views/VendorManage.vue");
+const BuyerManage = () => import(/* webpackChunkName: "ops-buyer-manage" */ "../views/BuyerManage.vue");
 
 const routes = [
   { path: "/", redirect: "/login" },

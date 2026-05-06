@@ -34,6 +34,50 @@ const STATUS_MSG_MAP = {
   505: "HTTP版本不受支持(505)",
 };
 
+// ── 重复请求取消管理 ──────────────────────────────
+const pendingRequests = new Map();
+
+function getPendingKey(config) {
+  const { method, url, params } = config;
+  return `${method}:${url}:${JSON.stringify(params || {})}`;
+}
+
+function removePendingRequest(config) {
+  const key = getPendingKey(config);
+  if (pendingRequests.has(key)) {
+    pendingRequests.get(key).cancel('取消重复请求');
+    pendingRequests.delete(key);
+  }
+}
+
+// ── 简单缓存策略 ──────────────────────────────
+const apiCache = new Map();
+const CACHE_TTL = 5 * 60 * 1000; // 5分钟缓存
+
+export function cachedFetch(cacheKey, fetcher, ttl = CACHE_TTL) {
+  const cached = apiCache.get(cacheKey);
+  if (cached && Date.now() - cached.time < ttl) {
+    return Promise.resolve(cached.data);
+  }
+
+  return fetcher().then(data => {
+    apiCache.set(cacheKey, { data, time: Date.now() });
+    return data;
+  });
+}
+
+export function clearApiCache(pattern) {
+  if (pattern) {
+    for (const key of apiCache.keys()) {
+      if (key.includes(pattern)) {
+        apiCache.delete(key);
+      }
+    }
+  } else {
+    apiCache.clear();
+  }
+}
+
 function isOpsPath(url) {
   return url.startsWith("/ops/") || url.includes("/ops/");
 }
@@ -75,6 +119,15 @@ export function createHttp({
         showErrorMsg("network", "网络已断开，请检查网络！");
         return Promise.reject(new Error("网络已断开，请检查网络！"));
       }
+
+      // 取消之前的相同请求（防止重复提交）
+      if (!conf.isAllowDuplicate) {
+        removePendingRequest(conf);
+        const source = axios.CancelToken.source();
+        conf.cancelToken = source.token;
+        pendingRequests.set(getPendingKey(conf), source);
+      }
+
       if (conf.method === "get") {
         conf.params = { t: Date.now(), ...conf.params };
       }
@@ -87,11 +140,17 @@ export function createHttp({
       }
       return conf;
     },
-    (error) => Promise.reject(error)
+    (error) => {
+      return Promise.reject(error);
+    }
   );
 
   instance.interceptors.response.use(
     (response) => {
+      // 清除已完成的请求
+      const key = getPendingKey(response.config);
+      pendingRequests.delete(key);
+
       const data = response.data;
       const url = response.config.url;
 
@@ -148,13 +207,25 @@ export function createHttp({
         if (gotoLoginCallback && typeof gotoLoginCallback === "function") {
           gotoLoginCallback(error.response);
         } else {
-          // 检查当前是否已经在登录页
           const currentPath = window.location.pathname;
           const loginPath = (appType === 'ops' || isOpsPath(url)) ? "/ops/login" : "/login";
           if (currentPath !== loginPath) {
             window.location.href = loginPath;
           }
         }
+      }
+
+      const isNetworkError = !error?.response && (
+        error?.code === 'ERR_NETWORK' ||
+        error?.code === 'ECONNREFUSED' ||
+        error?.code === 'ERR_CONNECTION_REFUSED' ||
+        error?.message?.includes('Network Error') ||
+        error?.message?.includes('connect')
+      );
+
+      if (isNetworkError && !error?.config?.isHideErrorMsg) {
+        console.warn(`[http] 后端服务不可用 (${baseURL}): ${url}`);
+        return Promise.reject({ ...error, isBackendUnavailable: true, code: 'BACKEND_UNAVAILABLE' });
       }
 
       if (status && status !== 401 && !error?.config?.isHideErrorMsg) {
@@ -189,4 +260,16 @@ export function put(url, data = {}, params = {}, optionConfig = {}) {
 
 export function _delete(url, params = {}, optionConfig = {}) {
   return http({ method: "delete", url, params, ...optionConfig });
+}
+
+// ── 防抖工具函数 ──────────────────────────────
+export function debounce(fn, delay = 300) {
+  let timer = null;
+  return function(...args) {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      fn.apply(this, args);
+      timer = null;
+    }, delay);
+  };
 }

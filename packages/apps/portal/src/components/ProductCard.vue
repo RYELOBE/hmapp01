@@ -11,6 +11,8 @@
         width="100%"
         height="180"
         fit="cover"
+        loading="lazy"
+        :referrer-policy="'no-referrer'"
         class="product-image"
       >
         <template #fallback>
@@ -148,11 +150,11 @@ export default {
 <style lang="scss" scoped>
 .product-card {
   position: relative;
-  background: #fff;
-  border-radius: 12px;
+  background: var(--color-bg-white, #FFF);
+  border-radius: 8px;
   overflow: hidden;
-  transition: transform 0.2s, box-shadow 0.2s;
-  border: 1px solid #f0f0f0;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  border: 1px solid var(--color-border-2, #E5E6EB);
 
   &--clickable {
     cursor: pointer;
@@ -172,7 +174,7 @@ export default {
     overflow: hidden;
 
     .product-image {
-      transition: transform 0.3s;
+      transition: transform 0.3s ease;
     }
   }
 
@@ -194,29 +196,35 @@ export default {
   &__title {
     margin: 0 0 8px;
     font-size: 14px;
-    color: #1f2937;
+    color: var(--color-text-1, #1D2129);
     line-height: 1.5;
+
+    :deep(.arco-typography) {
+      margin-bottom: 0 !important;
+    }
   }
 
   &__meta {
     display: flex;
-    gap: 8px;
-    margin-bottom: 8px;
+    gap: 6px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
 
     .meta-category,
     .meta-campus {
       font-size: 12px;
-      color: #6b7280;
-      background: #f3f4f6;
+      color: var(--color-text-3, #86909C);
+      background: var(--color-fill-2, #F5F6F7);
       padding: 2px 8px;
       border-radius: 4px;
+      line-height: 1.4;
     }
   }
 
   &__actions {
-    margin-top: 8px;
-    padding-top: 8px;
-    border-top: 1px solid #f0f0f0;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--color-border-1, #E5E6EB);
   }
 }
 
@@ -227,8 +235,8 @@ export default {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  background: #f9fafb;
-  color: #9ca3af;
+  background: var(--color-fill-1, #F7F8FA);
+  color: var(--color-text-4, #C9CDD4);
   gap: 8px;
 }
 </style>

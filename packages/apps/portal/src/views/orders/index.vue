@@ -1,83 +1,64 @@
 <template>
   <div class="orders-page">
-    <div class="orders-page__header">
-      <h2>{{ isSeller ? '已售订单' : '我的订单' }}</h2>
+    <div class="page-header">
+      <a-button @click="$router.back()" type="text">
+        <template #icon><icon-arrow-left /></template>
+        返回
+      </a-button>
+      <h2 class="page-title">{{ isSeller ? '已售订单' : '我的订单' }}</h2>
     </div>
 
-    <!-- 状态 Tab -->
-    <a-tabs v-model:active-key="activeStatus" @change="handleTabChange">
-      <a-tab-pane v-for="s in ORDER_STATUS_TABS" :key="s.value" :title="s.label" />
-    </a-tabs>
+    <a-card :bordered="false" class="orders-card">
+      <a-tabs v-model:active-key="activeStatus" @change="handleTabChange">
+        <a-tab-pane v-for="s in ORDER_STATUS_TABS" :key="s.value" :title="s.label">
+          <template #title>
+            {{ s.label }}
+          </template>
+        </a-tab-pane>
+      </a-tabs>
 
-    <!-- 订单列表 -->
-    <a-spin :loading="loading" style="width: 100%">
-      <div class="orders-list">
-        <div v-for="order in orders" :key="order.id" class="order-card">
-          <div class="order-card__header">
-            <span class="order-card__id">订单号：{{ order.orderNo || order.id }}</span>
-            <a-tag :color="STATUS_MAP[order.status]?.color || 'gray'" size="small">
-              {{ STATUS_MAP[order.status]?.label || order.status }}
-            </a-tag>
-          </div>
-          <div class="order-card__body" @click="goItem(order)">
-            <img v-if="order.itemImage" :src="order.itemImage" class="order-card__img" />
-            <div v-else class="order-card__img order-card__img--empty">📷</div>
-            <div class="order-card__info">
-              <div class="order-card__title">{{ order.itemTitle }}</div>
-              <div class="order-card__meta">
-                <span class="order-card__price">¥{{ order.totalAmount || order.price }}</span>
-                <span class="order-card__time">{{ order.createdAt }}</span>
-              </div>
-              <div v-if="order.expressCompany || order.expressNo" class="order-card__express">
-                <span v-if="order.expressCompany">{{ order.expressCompany }}</span>
-                <span v-if="order.expressNo"> {{ order.expressNo }}</span>
-              </div>
-            </div>
-          </div>
-          <div class="order-card__actions">
-            <!-- 待支付：买家可支付或取消 -->
-            <a-button v-if="order.status === 'PENDING_PAYMENT' && !isSeller" type="primary" size="small" @click="handlePay(order)">立即支付</a-button>
-            <a-button v-if="order.status === 'PENDING_PAYMENT' && !isSeller" size="small" @click="handleCancel(order)">取消订单</a-button>
-            
-            <!-- 已支付：卖家可发货 -->
-            <a-button v-if="order.status === 'PAID' && isSeller" type="primary" size="small" @click="handleShip(order)">发货</a-button>
-            
-            <!-- 已发货：买家可确认收货或申请退款 -->
-            <a-button v-if="order.status === 'SHIPPED' && !isSeller" type="primary" size="small" @click="handleConfirm(order)">确认收货</a-button>
-            <a-button v-if="order.status === 'SHIPPED' && !isSeller" size="small" @click="handleRequestRefund(order)">申请退款</a-button>
-            
-            <!-- 退款中：卖家可同意或拒绝退款 -->
-            <a-button v-if="order.status === 'REFUNDING' && isSeller" type="primary" size="small" status="success" @click="handleApproveRefund(order)">同意退款</a-button>
-            <a-button v-if="order.status === 'REFUNDING' && isSeller" size="small" status="danger" @click="handleRejectRefund(order)">拒绝退款</a-button>
-          </div>
+      <a-spin :loading="loading" style="width: 100%">
+        <div v-if="orders.length > 0" class="orders-list">
+          <OrderCard
+            v-for="order in orders"
+            :key="order.id"
+            :order="order"
+            clickable
+            @click="goItem(order)"
+            @action="handleAction"
+          />
         </div>
 
-        <!-- 空状态 -->
-        <div v-if="!loading && orders.length === 0" class="orders-list__empty">
-          <span class="orders-list__empty-icon">📦</span>
-          <p>暂无订单</p>
-        </div>
+        <a-empty v-else-if="!loading" description="暂无订单记录">
+          <template #image>
+            <icon-list size="64" />
+          </template>
+          <a-button type="primary" @click="$router.push('/home')">
+            去逛逛
+          </a-button>
+        </a-empty>
+      </a-spin>
+
+      <div v-if="pagination.total > pagination.pageSize" class="pagination-wrapper">
+        <a-pagination
+          v-model:current="pagination.current"
+          :total="pagination.total"
+          :page-size="pagination.pageSize"
+          show-total
+          show-page-size
+          size="small"
+          @change="handlePageChange"
+          @page-size-change="handlePageSizeChange"
+        />
       </div>
-    </a-spin>
+    </a-card>
 
-    <!-- 分页 -->
-    <div v-if="pagination.total > pagination.pageSize" class="orders-page__pagination">
-      <a-pagination
-        v-model:current="pagination.current"
-        :total="pagination.total"
-        :page-size="pagination.pageSize"
-        size="small"
-        @change="handlePageChange"
-      />
-    </div>
-
-    <!-- 发货弹窗 -->
     <a-modal v-model:visible="shipModalVisible" title="发货" @ok="submitShip">
       <a-form :model="shipForm" layout="vertical">
-        <a-form-item label="快递公司">
+        <a-form-item label="快递公司" required>
           <a-input v-model="shipForm.expressCompany" placeholder="请输入快递公司" />
         </a-form-item>
-        <a-form-item label="快递单号">
+        <a-form-item label="快递单号" required>
           <a-input v-model="shipForm.expressNo" placeholder="请输入快递单号" />
         </a-form-item>
       </a-form>
@@ -87,8 +68,10 @@
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { Message, Modal } from "@arco-design/web-vue";
+import { IconArrowLeft, IconList } from "@arco-design/web-vue/es/icon";
+import OrderCard from "../../components/OrderCard";
 import {
   getMyOrders,
   confirmOrder,
@@ -100,18 +83,18 @@ import {
   rejectRefund,
 } from "../../services/api";
 import { getCurrentUser } from "commonprovide/auth-sdk";
-import { ORDER_STATUS_TABS, STATUS_MAP } from "./const";
+import { ORDER_STATUS_TABS } from "./const";
 
 const router = useRouter();
+const route = useRoute();
 const currentUser = getCurrentUser();
 const isSeller = computed(() => (currentUser?.roles || []).includes("SELLER"));
 
 const orders = ref([]);
 const loading = ref(false);
-const activeStatus = ref("");
+const activeStatus = ref(route.query.tab || "");
 const pagination = ref({ current: 1, pageSize: 10, total: 0 });
 
-// 发货弹窗相关
 const shipModalVisible = ref(false);
 const currentShipOrder = ref(null);
 const shipForm = ref({
@@ -131,14 +114,16 @@ async function loadData() {
     orders.value = res?.orders || res?.rows || [];
     pagination.value.total = res?.totalCount ?? res?.total ?? 0;
   } catch (e) {
-    console.error("[Orders] load error:", e);
+    Message.error(e.message || "加载失败");
   } finally {
     loading.value = false;
   }
 }
 
-function handleTabChange() {
+function handleTabChange(key) {
+  activeStatus.value = key;
   pagination.value.current = 1;
+  router.replace({ query: { ...route.query, tab: key || undefined } });
   loadData();
 }
 
@@ -147,51 +132,125 @@ function handlePageChange(page) {
   loadData();
 }
 
+function handlePageSizeChange(pageSize) {
+  pagination.value.pageSize = pageSize;
+  pagination.value.current = 1;
+  loadData();
+}
+
 function goItem(order) {
   if (order.itemId) router.push(`/item/${order.itemId}`);
 }
 
-function handlePay(order) {
-  Modal.confirm({
-    title: "模拟支付",
-    content: "确认支付订单吗？",
-    onOk: async () => {
-      try {
-        await payOrder(order.id);
-        Message.success("支付成功");
-        loadData();
-      } catch (e) {
-        Message.error(e.message || "支付失败");
-      }
-    },
-  });
-}
+async function handleAction(action, order) {
+  switch (action) {
+    case "pay":
+      Modal.confirm({
+        title: "确认支付",
+        content: "确定要支付此订单吗？",
+        onOk: async () => {
+          try {
+            await payOrder(order.id);
+            Message.success("支付成功");
+            loadData();
+          } catch (e) {
+            Message.error(e.message || "支付失败");
+          }
+        },
+      });
+      break;
 
-function handleConfirm(order) {
-  Modal.confirm({
-    title: "确认收货",
-    content: "确认已收到商品吗？",
-    onOk: async () => {
-      try {
-        await confirmOrder(order.id);
-        Message.success("已确认收货");
-        loadData();
-      } catch (e) {
-        Message.error(e.message || "操作失败");
-      }
-    },
-  });
-}
+    case "cancel":
+      Modal.confirm({
+        title: "取消订单",
+        content: "确定要取消此订单吗？",
+        onOk: async () => {
+          try {
+            await cancelOrder(order.id);
+            Message.success("订单已取消");
+            loadData();
+          } catch (e) {
+            Message.error(e.message || "取消失败");
+          }
+        },
+      });
+      break;
 
-function handleShip(order) {
-  currentShipOrder.value = order;
-  shipForm.value = { expressCompany: "", expressNo: "" };
-  shipModalVisible.value = true;
+    case "confirm":
+      Modal.confirm({
+        title: "确认收货",
+        content: "确认已收到商品吗？",
+        onOk: async () => {
+          try {
+            await confirmOrder(order.id);
+            Message.success("已确认收货");
+            loadData();
+          } catch (e) {
+            Message.error(e.message || "操作失败");
+          }
+        },
+      });
+      break;
+
+    case "refund":
+      Modal.confirm({
+        title: "申请退款",
+        content: "确定要申请退款吗？",
+        onOk: async () => {
+          try {
+            await requestRefund(order.id);
+            Message.success("退款申请已提交");
+            loadData();
+          } catch (e) {
+            Message.error(e.message || "申请退款失败");
+          }
+        },
+      });
+      break;
+
+    case "ship":
+      currentShipOrder.value = order;
+      shipForm.value = { expressCompany: "", expressNo: "" };
+      shipModalVisible.value = true;
+      break;
+
+    case "approve-refund":
+      Modal.confirm({
+        title: "同意退款",
+        content: "确定同意退款吗？",
+        onOk: async () => {
+          try {
+            await approveRefund(order.id);
+            Message.success("退款成功");
+            loadData();
+          } catch (e) {
+            Message.error(e.message || "操作失败");
+          }
+        },
+      });
+      break;
+
+    case "reject-refund":
+      Modal.confirm({
+        title: "拒绝退款",
+        content: "确定拒绝退款吗？",
+        onOk: async () => {
+          try {
+            await rejectRefund(order.id);
+            Message.success("已拒绝退款");
+            loadData();
+          } catch (e) {
+            Message.error(e.message || "操作失败");
+          }
+        },
+      });
+      break;
+  }
 }
 
 async function submitShip() {
   if (!shipForm.value.expressCompany || !shipForm.value.expressNo) {
-    Message.error("请填写快递公司和快递单号");
+    Message.warning("请填写完整信息");
     return;
   }
   try {
@@ -204,177 +263,62 @@ async function submitShip() {
   }
 }
 
-function handleCancel(order) {
-  Modal.confirm({
-    title: "取消订单",
-    content: "确认取消该订单吗？",
-    onOk: async () => {
-      try {
-        await cancelOrder(order.id);
-        Message.success("订单已取消");
-        loadData();
-      } catch (e) {
-        Message.error(e.message || "操作失败");
-      }
-    },
-  });
-}
-
-function handleRequestRefund(order) {
-  Modal.confirm({
-    title: "申请退款",
-    content: "确认申请退款吗？",
-    onOk: async () => {
-      try {
-        await requestRefund(order.id);
-        Message.success("退款申请已提交");
-        loadData();
-      } catch (e) {
-        Message.error(e.message || "操作失败");
-      }
-    },
-  });
-}
-
-function handleApproveRefund(order) {
-  Modal.confirm({
-    title: "同意退款",
-    content: "确认同意退款吗？",
-    onOk: async () => {
-      try {
-        await approveRefund(order.id);
-        Message.success("退款成功");
-        loadData();
-      } catch (e) {
-        Message.error(e.message || "操作失败");
-      }
-    },
-  });
-}
-
-function handleRejectRefund(order) {
-  Modal.confirm({
-    title: "拒绝退款",
-    content: "确认拒绝退款吗？",
-    onOk: async () => {
-      try {
-        await rejectRefund(order.id);
-        Message.success("已拒绝退款申请");
-        loadData();
-      } catch (e) {
-        Message.error(e.message || "操作失败");
-      }
-    },
-  });
-}
-
 onMounted(loadData);
 </script>
 
 <style lang="scss" scoped>
 .orders-page {
-  background: #fff;
-  border-radius: 16px;
   padding: 24px;
-
-  &__header {
-    margin-bottom: 16px;
-    h2 { margin: 0; font-size: 20px; font-weight: 700; }
-  }
-
-  &__pagination {
-    margin-top: 20px;
-    text-align: center;
-  }
+  max-width: 1000px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, #f5f6f8 0%, #ffffff 100%);
+  min-height: 100vh;
 }
 
-.order-card {
-  border: 1px solid #f0f0f0;
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  background: #fff;
   border-radius: 12px;
-  padding: 16px;
-  margin-bottom: 12px;
-  transition: box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
-  &:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06); }
-
-  &__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 12px;
-  }
-
-  &__id {
-    font-size: 12px;
-    color: #86909c;
-  }
-
-  &__body {
-    display: flex;
-    gap: 12px;
-    cursor: pointer;
-  }
-
-  &__img {
-    width: 72px;
-    height: 72px;
-    border-radius: 8px;
-    object-fit: cover;
-    flex-shrink: 0;
-
-    &--empty {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f2f3f5;
-      color: #c9cdd4;
-      font-size: 28px;
-    }
-  }
-
-  &__info { flex: 1; min-width: 0; }
-
-  &__title {
-    font-size: 14px;
-    font-weight: 500;
+  .page-title {
+    flex: 1;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
     color: #1d2129;
-    margin-bottom: 4px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  &__meta {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  &__price { font-weight: 700; color: #f53f3f; }
-  &__time { font-size: 12px; color: #86909c; }
-
-  &__express {
-    margin-top: 4px;
-    font-size: 12px;
-    color: #666;
-  }
-
-  &__actions {
-    margin-top: 12px;
-    text-align: right;
-    display: flex;
-    gap: 8px;
-    justify-content: flex-end;
   }
 }
 
-.orders-list__empty {
+.orders-card {
+  border-radius: 12px;
+
+  :deep(.arco-tabs-nav) {
+    padding: 0 8px;
+  }
+
+  :deep(.arco-tabs-content) {
+    padding-top: 16px;
+  }
+}
+
+.orders-list {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  padding: 60px 0;
-  color: #86909c;
+  gap: 16px;
+}
 
-  &-icon { font-size: 48px; color: #c9cdd4; margin-bottom: 12px; }
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0 8px;
+}
+
+:deep(.arco-empty) {
+  padding: 80px 20px;
 }
 </style>

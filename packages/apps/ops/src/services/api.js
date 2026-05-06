@@ -75,6 +75,40 @@ export function deleteAppRegister(appCode) {
   return http.delete(`/frame/registers/${appCode}`);
 }
 
+// ── 子应用管理扩展 API ──────────────────────────────
+export function getSubApps(params = {}) {
+  return http.get("/frame/registers", { params });
+}
+
+export function registerSubApp(data) {
+  return http.post("/frame/registers", data);
+}
+
+export function updateSubApp(appCode, data) {
+  return http.put(`/frame/registers/${appCode}`, data);
+}
+
+export function deleteSubApp(appCode) {
+  return http.delete(`/frame/registers/${appCode}`);
+}
+
+// ── 门户路由管理 API ──────────────────────────────
+export function getPortalRoutes(portalCode) {
+  return http.get(`/portal/routes/${portalCode}`);
+}
+
+export function savePortalRoute(data) {
+  return http.post("/portal/routes", data);
+}
+
+export function updatePortalRoute(routeId, data) {
+  return http.put(`/portal/routes/${routeId}`, data);
+}
+
+export function deletePortalRoute(routeId) {
+  return http.delete(`/portal/routes/${routeId}`);
+}
+
 // ── 门户配置 API ──────────────────────────────
 export function getPortalConfigs() {
   return http.get("/portal/configs");

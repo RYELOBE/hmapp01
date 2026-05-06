@@ -9,8 +9,18 @@
       <template v-if="slots.extra" #extra>
         <slot name="extra" />
       </template>
-      <template v-if="slots.breadcrumb" #breadcrumb>
-        <slot name="breadcrumb" />
+      <template v-if="slots.breadcrumb || breadcrumbs.length > 0" #breadcrumb>
+        <slot name="breadcrumb">
+          <a-breadcrumb v-if="breadcrumbs.length > 0">
+            <a-breadcrumb-item
+              v-for="(crumb, index) in breadcrumbs"
+              :key="index"
+              :href="index < breadcrumbs.length - 1 ? crumb.path : undefined"
+            >
+              {{ crumb.label }}
+            </a-breadcrumb-item>
+          </a-breadcrumb>
+        </slot>
       </template>
       <template v-if="slots['back-icon']" #back-icon>
         <slot name="back-icon" />
@@ -50,6 +60,10 @@ const props = defineProps({
     type: Boolean,
     default: true,
   },
+  breadcrumbs: {
+    type: Array,
+    default: () => [],
+  },
 });
 
 const slots = useSlots();
@@ -64,6 +78,8 @@ function handleClickBack() {
 .page-container {
   min-height: 100%;
   background: var(--color-bg-white, #fff);
+  max-width: var(--container-max-width, 1280px);
+  margin: 0 auto;
 }
 
 .head-border {
@@ -79,6 +95,7 @@ function handleClickBack() {
   height: 100%;
   position: relative;
   overflow: auto;
+  max-width: none;
 }
 
 .page-container.full-content :deep(.arco-page-header) {
@@ -92,10 +109,14 @@ function handleClickBack() {
 }
 
 .page-content {
-  padding: 0 24px 8px 24px;
+  padding: var(--spacing-lg, 24px) var(--spacing-md, 16px);
 }
 
 :deep(.arco-page-header-wrapper) {
-  padding: 0 24px;
+  padding: 0 var(--spacing-md, 16px);
+}
+
+:deep(.arco-page-header) {
+  padding: var(--spacing-sm, 12px) var(--spacing-md, 16px);
 }
 </style>

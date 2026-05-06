@@ -2,6 +2,7 @@
   <a-tag
     :color="computedColor"
     :class="`status-tag status-tag--${status}`"
+    :size="size"
   >
     {{ computedLabel }}
   </a-tag>
@@ -27,7 +28,11 @@ const props = defineProps({
   label: {
     type: String,
     default: '',
-  }
+  },
+  size: {
+    type: String,
+    default: 'small',
+  },
 });
 
 const allMaps = {
@@ -68,10 +73,11 @@ const computedLabel = computed(() => {
 
 <style lang="scss" scoped>
 .status-tag {
-  border-radius: 4px;
+  border-radius: var(--border-radius-small, 4px);
   font-size: 12px;
   padding: 0 8px;
   line-height: 20px;
+  transition: all 150ms ease-out;
 
   &--PENDING,
   &--PENDING_REVIEW {
@@ -88,26 +94,32 @@ const computedLabel = computed(() => {
 
   &--REJECTED {
     background-color: #fff1f0;
-    color: #ff4d4f;
-    border-color: #ffa39e;
+    color: #f53f3f;
+    border-color: #fecaca;
   }
 
   &--OFF_SHELF {
-    background-color: #f5f5f5;
-    color: #8c8c8c;
-    border-color: #d9d9d9;
+    background-color: var(--color-fill-2, #f5f5f5);
+    color: var(--color-text-3, #86909c);
+    border-color: var(--color-border-3, #d9d9d9);
+  }
+
+  &--ON_SHELF {
+    background-color: #e6f7ff;
+    color: #165DFF;
+    border-color: #91d5ff;
   }
 
   &--PENDING_PAYMENT {
     background-color: #e6f7ff;
-    color: #1890ff;
+    color: #165DFF;
     border-color: #91d5ff;
   }
 
   &--PAID {
-    background-color: #f9f0ff;
-    color: #722ed1;
-    border-color: #d3adf7;
+    background-color: #f0f5ff;
+    color: #597ef7;
+    border-color: #adc6ff;
   }
 
   &--SHIPPED {
@@ -123,9 +135,9 @@ const computedLabel = computed(() => {
   }
 
   &--CANCELLED {
-    background-color: #f5f5f5;
-    color: #8c8c8c;
-    border-color: #d9d9d9;
+    background-color: var(--color-fill-2, #f5f5f5);
+    color: var(--color-text-3, #86909c);
+    border-color: var(--color-border-3, #d9d9d9);
   }
 
   &--REFUNDING {
@@ -136,8 +148,24 @@ const computedLabel = computed(() => {
 
   &--REFUNDED {
     background-color: #fff1f0;
-    color: #ff4d4f;
-    border-color: #ffa39e;
+    color: #f53f3f;
+    border-color: #fecaca;
+  }
+
+  &--PROCESSING {
+    background-color: #e6f7ff;
+    color: #165DFF;
+    border-color: #91d5ff;
+  }
+
+  &--FAILED {
+    background-color: #fff1f0;
+    color: #f53f3f;
+    border-color: #fecaca;
+  }
+
+  &:hover {
+    opacity: 0.85;
   }
 }
 </style>

@@ -1,106 +1,75 @@
 <template>
   <div class="order-monitor-page">
-    <a-row :gutter="[16, 16]" class="monitor-stats">
-      <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card stat-card--pending" :bordered="false">
-          <a-skeleton :loading="statsLoading" :animation="true">
-            <a-statistic
-              title="待支付"
-              :value="stats.pendingPayment || 0"
-              :value-from="0"
-              :duration="600"
-              :precision="0"
-            >
-              <template #prefix>
-                <icon-clock-circle class="stat-icon stat-icon--pending" />
-              </template>
-            </a-statistic>
-          </a-skeleton>
-        </a-card>
-      </a-col>
-      <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card stat-card--paid" :bordered="false">
-          <a-skeleton :loading="statsLoading" :animation="true">
-            <a-statistic
-              title="已支付"
-              :value="stats.paid || 0"
-              :value-from="0"
-              :duration="600"
-              :precision="0"
-            >
-              <template #prefix>
-                <icon-check-circle class="stat-icon stat-icon--paid" />
-              </template>
-            </a-statistic>
-          </a-skeleton>
-        </a-card>
-      </a-col>
-      <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card stat-card--shipped" :bordered="false">
-          <a-skeleton :loading="statsLoading" :animation="true">
-            <a-statistic
-              title="已发货"
-              :value="stats.shipped || 0"
-              :value-from="0"
-              :duration="600"
-              :precision="0"
-            >
-              <template #prefix>
-                <icon-truck class="stat-icon stat-icon--shipped" />
-              </template>
-            </a-statistic>
-          </a-skeleton>
-        </a-card>
-      </a-col>
-      <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card stat-card--refund" :bordered="false">
-          <a-skeleton :loading="statsLoading" :animation="true">
-            <a-statistic
-              title="退款中/已退款"
-              :value="stats.refunding || 0"
-              :value-from="0"
-              :duration="600"
-              :precision="0"
-            >
-              <template #prefix>
-                <icon-safe class="stat-icon stat-icon--refund" />
-              </template>
-            </a-statistic>
-          </a-skeleton>
+    <div class="page-header">
+      <h2 class="page-title">订单监控</h2>
+    </div>
+
+    <a-row :gutter="[16, 16]" class="stats-row">
+      <a-col :xs="24" :sm="12" :lg="6" v-for="(stat, index) in statsCards" :key="index">
+        <a-card :bordered="false" class="stat-card" :class="`stat-card--${stat.type}`">
+          <a-statistic
+            :title="stat.title"
+            :value="stats[stat.key] ?? 0"
+            :value-from="0"
+            :duration="600"
+            :precision="stat.precision || 0"
+          >
+            <template #prefix>
+              <component :is="stat.icon" class="stat-icon" />
+            </template>
+          </a-statistic>
         </a-card>
       </a-col>
     </a-row>
 
-    <a-card :bordered="false" class="list-card">
+    <FilterBar
+      :filters="filterConfig"
+      v-model="filterParams"
+      @search="handleSearch"
+      @reset="handleReset"
+    >
+      <template #extra-buttons>
+        <a-button @click="handleExport" :loading="exporting">
+          <template #icon><icon-download /></template>
+          导出
+        </a-button>
+        <a-button @click="loadData">
+          <template #icon><icon-refresh /></template>
+          刷新
+        </a-button>
+      </template>
+    </FilterBar>
+
+    <a-card :bordered="false" class="table-card">
       <template #title>
         <div class="card-title">
-          <icon-list class="title-icon" />
           <span>订单列表</span>
+          <a-tag color="arcoblue" size="small" v-if="paginationConfig.total > 0">
+            共 {{ paginationConfig.total }} 条
+          </a-tag>
         </div>
       </template>
-
-      <SearchFilter
-        v-model="filterParams"
-        :filter-items="filterItems"
-        @search="handleSearch"
-        @reset="handleReset"
-      />
 
       <a-table
         :data="rows"
         :loading="loading"
         :pagination="paginationConfig"
         :row-key="(record) => record.id"
+        :stripe="true"
+        :scroll="{ x: 1300 }"
         @page-change="handlePageChange"
         @page-size-change="handlePageSizeChange"
       >
         <template #columns>
-          <a-table-column title="订单号" data-index="orderNo" :width="160">
+          <a-table-column title="订单号" data-index="orderNo" :width="170" fixed="left">
             <template #cell="{ record }">
-              <a-typography-text code>{{ record.orderNo || record.id }}</a-typography-text>
+              <a-typography-text code copyable style="font-size: 13px;">
+                {{ record.orderNo || record.id }}
+              </a-typography-text>
             </template>
           </a-table-column>
-          <a-table-column title="商品信息" :width="280">
+
+          <a-table-column title="商品信息" :width="260">
             <template #cell="{ record }">
               <div class="order-item-cell">
                 <a-image
@@ -115,51 +84,56 @@
                   <icon-image />
                 </div>
                 <div class="item-info">
-                  <a-typography-text ellipsis class="item-title">
+                  <a-typography-text ellipsis :style="{ fontWeight: 500, fontSize: '13px' }">
                     {{ record.itemTitle || record.title || '商品' }}
                   </a-typography-text>
-                  <a-typography-text type="secondary" class="item-price">
-                    ¥{{ record.price || record.totalAmount }}
+                  <a-typography-text type="secondary" style="font-size: 12px;">
+                    ¥{{ formatPrice(record.price) }}
                   </a-typography-text>
                 </div>
               </div>
             </template>
           </a-table-column>
-          <a-table-column title="买家" data-index="buyerName" :width="120">
+
+          <a-table-column title="买家" data-index="buyerName" :width="110">
             <template #cell="{ record }">
               <a-typography-text>{{ record.buyerName || record.userName || '-' }}</a-typography-text>
             </template>
           </a-table-column>
-          <a-table-column title="卖家" data-index="sellerName" :width="120">
+
+          <a-table-column title="卖家" data-index="sellerName" :width="110">
             <template #cell="{ record }">
               <a-typography-text>{{ record.sellerName || '-' }}</a-typography-text>
             </template>
           </a-table-column>
-          <a-table-column title="订单金额" data-index="totalAmount" :width="120" align="right">
+
+          <a-table-column title="金额" data-index="totalAmount" :width="100" align="right">
             <template #cell="{ record }">
-              <a-typography-text type="danger" strong>
-                ¥{{ record.totalAmount || record.price }}
+              <a-typography-text type="danger" strong style="font-size: 14px;">
+                ¥{{ formatPrice(record.totalAmount || record.price) }}
               </a-typography-text>
             </template>
           </a-table-column>
-          <a-table-column title="订单状态" :width="100" align="center">
+
+          <a-table-column title="状态" data-index="status" :width="100" align="center">
             <template #cell="{ record }">
-              <StatusTag :status="record.status || record.orderStatus" type="order" />
+              <a-tag :color="getOrderStatusColor(record.status)" size="small">
+                {{ getOrderStatusLabel(record.status) }}
+              </a-tag>
             </template>
           </a-table-column>
+
           <a-table-column title="下单时间" data-index="createdAt" :width="160">
             <template #cell="{ record }">
               {{ formatDate(record.createdAt) }}
             </template>
           </a-table-column>
-          <a-table-column title="操作" :width="120" align="center">
+
+          <a-table-column title="操作" :width="90" fixed="right" align="center">
             <template #cell="{ record }">
-              <a-space direction="vertical" size="mini">
-                <a-button type="text" size="small" @click="viewDetail(record)">
-                  <template #icon><icon-eye /></template>
-                  详情
-                </a-button>
-              </a-space>
+              <a-button type="text" size="small" @click="viewDetail(record)">
+                查看详情
+              </a-button>
             </template>
           </a-table-column>
         </template>
@@ -168,44 +142,47 @@
 
     <a-drawer
       v-model:visible="drawerVisible"
-      :width="560"
+      :width="640"
       title="订单详情"
+      placement="right"
       unmount-on-close
     >
-      <a-descriptions v-if="currentOrder" :column="2" bordered size="small">
-        <a-descriptions-item label="订单号" :span="2">
-          <a-typography-text code>{{ currentOrder.orderNo || currentOrder.id }}</a-typography-text>
-        </a-descriptions-item>
-        <a-descriptions-item label="商品名称">
-          {{ currentOrder.itemTitle || currentOrder.title }}
-        </a-descriptions-item>
-        <a-descriptions-item label="商品价格">
-          ¥{{ currentOrder.price }}
-        </a-descriptions-item>
-        <a-descriptions-item label="买家">
-          {{ currentOrder.buyerName || currentOrder.userName }}
-        </a-descriptions-item>
-        <a-descriptions-item label="卖家">
-          {{ currentOrder.sellerName }}
-        </a-descriptions-item>
-        <a-descriptions-item label="订单金额">
-          <a-typography-text type="danger" strong>
-            ¥{{ currentOrder.totalAmount || currentOrder.price }}
-          </a-typography-text>
-        </a-descriptions-item>
-        <a-descriptions-item label="订单状态">
-          <StatusTag :status="currentOrder.status || currentOrder.orderStatus" type="order" />
-        </a-descriptions-item>
-        <a-descriptions-item label="下单时间" :span="2">
-          {{ formatDate(currentOrder.createdAt) }}
-        </a-descriptions-item>
-        <a-descriptions-item label="收货地址" :span="2">
-          {{ currentOrder.shippingAddress || currentOrder.address || '-' }}
-        </a-descriptions-item>
-        <a-descriptions-item label="买家留言" :span="2" v-if="currentOrder.remark">
-          {{ currentOrder.remark }}
-        </a-descriptions-item>
-      </a-descriptions>
+      <a-spin :loading="detailLoading">
+        <a-descriptions v-if="currentOrder" :column="2" bordered size="medium">
+          <a-descriptions-item label="订单号" :span="2">
+            <a-typography-text code>{{ currentOrder.orderNo || currentOrder.id }}</a-typography-text>
+          </a-descriptions-item>
+          <a-descriptions-item label="商品名称" :span="2">
+            {{ currentOrder.itemTitle || currentOrder.title }}
+          </a-descriptions-item>
+          <a-descriptions-item label="商品价格">
+            ¥{{ formatPrice(currentOrder.price) }}
+          </a-descriptions-item>
+          <a-descriptions-item label="订单金额">
+            <a-typography-text type="danger" strong>¥{{ formatPrice(currentOrder.totalAmount || currentOrder.price) }}</a-typography-text>
+          </a-descriptions-item>
+          <a-descriptions-item label="买家">
+            {{ currentOrder.buyerName || currentOrder.userName }}
+          </a-descriptions-item>
+          <a-descriptions-item label="卖家">
+            {{ currentOrder.sellerName }}
+          </a-descriptions-item>
+          <a-descriptions-item label="订单状态">
+            <a-tag :color="getOrderStatusColor(currentOrder.status)" size="small">
+              {{ getOrderStatusLabel(currentOrder.status) }}
+            </a-tag>
+          </a-descriptions-item>
+          <a-descriptions-item label="下单时间">
+            {{ formatDate(currentOrder.createdAt) }}
+          </a-descriptions-item>
+          <a-descriptions-item label="收货地址" :span="2">
+            {{ currentOrder.shippingAddress || currentOrder.address || '-' }}
+          </a-descriptions-item>
+          <a-descriptions-item label="买家留言" :span="2" v-if="currentOrder.remark">
+            {{ currentOrder.remark }}
+          </a-descriptions-item>
+        </a-descriptions>
+      </a-spin>
     </a-drawer>
   </div>
 </template>
@@ -213,13 +190,23 @@
 <script setup>
 import { ref, reactive, onMounted } from "vue";
 import { Message } from "@arco-design/web-vue";
-import { IconClockCircle, IconCheckCircle, IconTruck, IconSafe, IconEye, IconImage, IconList } from "@arco-design/web-vue/es/icon";
-import StatusTag from "commonprovide/status-tag";
-import SearchFilter from "commonprovide/SearchFilter";
-import { getOpsOrders, getStatistics } from "../services/api";
+import {
+  IconClockCircle,
+  IconCheckCircle,
+  IconTruck,
+  IconSafe,
+  IconEye,
+  IconImage,
+  IconDownload,
+  IconRefresh,
+} from "@arco-design/web-vue/es/icon";
+import FilterBar from "../components/FilterBar.vue";
+import { getOpsOrders, getStatistics, exportOrders } from "../services/api";
 
 const rows = ref([]);
 const loading = ref(false);
+const exporting = ref(false);
+const detailLoading = ref(false);
 const statsLoading = ref(false);
 const stats = ref({});
 const drawerVisible = ref(false);
@@ -228,23 +215,27 @@ const currentOrder = ref(null);
 const filterParams = reactive({
   keyword: "",
   status: "",
+  dateRange: [],
 });
 
-const filterItems = [
+const filterConfig = [
   {
-    type: "input",
     field: "keyword",
-    placeholder: "搜索订单号/商品名称",
+    label: "关键词",
+    type: "input",
+    placeholder: "搜索订单号/买家/卖家/商品名",
+    span: 8,
   },
   {
-    type: "select",
     field: "status",
     label: "订单状态",
+    type: "select",
     placeholder: "全部状态",
+    span: 6,
     options: [
       { value: "", label: "全部状态" },
-      { value: "PENDING_PAYMENT", label: "待支付" },
-      { value: "PAID", label: "已支付" },
+      { value: "PENDING_PAYMENT", label: "待付款" },
+      { value: "PAID", label: "已付款" },
       { value: "SHIPPED", label: "已发货" },
       { value: "COMPLETED", label: "已完成" },
       { value: "CANCELLED", label: "已取消" },
@@ -252,16 +243,29 @@ const filterItems = [
       { value: "REFUNDED", label: "已退款" },
     ],
   },
+  {
+    field: "dateRange",
+    label: "时间范围",
+    type: "daterange",
+    span: 10,
+  },
 ];
 
 const paginationConfig = reactive({
   current: 1,
-  pageSize: 10,
+  pageSize: 15,
   total: 0,
   showTotal: true,
   showPageSize: true,
-  pageSizeOptions: [10, 20, 50],
+  pageSizeOptions: [10, 15, 20, 50],
 });
+
+const statsCards = [
+  { key: "totalOrders", title: "总订单数", icon: IconSafe, type: "primary" },
+  { key: "todayNew", title: "今日新增", icon: IconCheckCircle, type: "success" },
+  { key: "totalAmount", title: "交易总额", icon: IconTruck, type: "warning", precision: 2 },
+  { key: "refundCount", title: "退款订单数", icon: IconClockCircle, type: "danger" },
+];
 
 function getImageUrl(record) {
   const urls = record.imageUrls || record.itemImageUrl || record.images || [];
@@ -276,6 +280,11 @@ function getImageUrl(record) {
   return Array.isArray(urls) && urls.length > 0 ? urls[0] : "";
 }
 
+function formatPrice(price) {
+  if (!price && price !== 0) return "0.00";
+  return Number(price).toFixed(2);
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return "-";
   const date = new Date(dateStr);
@@ -288,16 +297,42 @@ function formatDate(dateStr) {
   });
 }
 
+function getOrderStatusColor(status) {
+  const colors = {
+    PENDING_PAYMENT: "orangered",
+    PAID: "arcoblue",
+    SHIPPED: "cyan",
+    COMPLETED: "green",
+    CANCELLED: "gray",
+    REFUNDING: "red",
+    REFUNDED: "#ffccc7",
+  };
+  return colors[status] || "gray";
+}
+
+function getOrderStatusLabel(status) {
+  const labels = {
+    PENDING_PAYMENT: "待付款",
+    PAID: "已付款",
+    SHIPPED: "已发货",
+    COMPLETED: "已完成",
+    CANCELLED: "已取消",
+    REFUNDING: "退款中",
+    REFUNDED: "已退款",
+  };
+  return labels[status] || status;
+}
+
 async function loadStats() {
   statsLoading.value = true;
   try {
     const result = await getStatistics();
     const statsData = result?.statistics || result || {};
     stats.value = {
-      pendingPayment: statsData.todayPendingPaymentOrders || 0,
-      paid: statsData.todayPaidOrders || 0,
-      shipped: statsData.todayShippedOrders || 0,
-      refunding: statsData.refundingOrders || 0
+      totalOrders: statsData.totalOrders || 0,
+      todayNew: statsData.todayNewOrders || 0,
+      totalAmount: statsData.totalAmount || 0,
+      refundCount: statsData.refundCount || 0,
     };
   } catch (error) {
     console.error("加载订单统计失败", error);
@@ -315,15 +350,45 @@ async function loadData() {
       keyword: filterParams.keyword || undefined,
       status: filterParams.status || undefined,
     };
+
+    if (filterParams.dateRange && filterParams.dateRange.length === 2) {
+      params.startDate = filterParams.dateRange[0];
+      params.endDate = filterParams.dateRange[1];
+    }
+
     const result = await getOpsOrders(params);
-    const data = result || {};
-    rows.value = data.rows || data.items || [];
-    paginationConfig.total = data.totalCount || data.total || 0;
+    rows.value = result.rows || result.items || [];
+    paginationConfig.total = result.totalCount || result.total || 0;
   } catch (error) {
     Message.error(error.message || "加载订单列表失败");
     rows.value = [];
   } finally {
     loading.value = false;
+  }
+}
+
+async function handleExport() {
+  exporting.value = true;
+  try {
+    const params = {
+      keyword: filterParams.keyword || undefined,
+      status: filterParams.status || undefined,
+    };
+    if (filterParams.dateRange && filterParams.dateRange.length === 2) {
+      params.startDate = filterParams.dateRange[0];
+      params.endDate = filterParams.dateRange[1];
+    }
+
+    if (typeof exportOrders === 'function') {
+      await exportOrders(params);
+      Message.success('导出成功');
+    } else {
+      Message.warning('导出功能开发中');
+    }
+  } catch (error) {
+    Message.error(error.message || '导出失败');
+  } finally {
+    exporting.value = false;
   }
 }
 
@@ -333,8 +398,13 @@ function handleSearch() {
 }
 
 function handleReset() {
-  filterParams.keyword = "";
-  filterParams.status = "";
+  Object.keys(filterParams).forEach((key) => {
+    if (Array.isArray(filterParams[key])) {
+      filterParams[key] = [];
+    } else {
+      filterParams[key] = "";
+    }
+  });
   handleSearch();
 }
 
@@ -362,11 +432,24 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .order-monitor-page {
-  padding: 0;
+  background: #f5f6f7;
+  min-height: calc(100vh - 64px);
+  padding: 20px;
+
+  .page-header {
+    margin-bottom: 20px;
+
+    .page-title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: #1d2129;
+    }
+  }
 }
 
-.monitor-stats {
-  margin-bottom: 16px;
+.stats-row {
+  margin-bottom: 20px;
 }
 
 .stat-card {
@@ -374,75 +457,79 @@ onMounted(() => {
   transition: transform 0.2s, box-shadow 0.2s;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  &--primary {
+    background: linear-gradient(135deg, #e6f1ff 0%, #ffffff 100%);
+    border-left: 4px solid #165dff;
+  }
+
+  &--success {
+    background: linear-gradient(135deg, #e8ffef 0%, #ffffff 100%);
+    border-left: 4px solid #00b42a;
+  }
+
+  &--warning {
+    background: linear-gradient(135deg, #fff7e6 0%, #ffffff 100%);
+    border-left: 4px solid #ff7d00;
+  }
+
+  &--danger {
+    background: linear-gradient(135deg, #ffece8 0%, #ffffff 100%);
+    border-left: 4px solid #f53f3f;
   }
 
   :deep(.arco-card-body) {
-    padding: 16px;
+    padding: 18px 20px;
   }
 
   :deep(.arco-statistic) {
     .arco-statistic-title {
       font-size: 13px;
       color: #86909c;
-      margin-bottom: 6px;
+      margin-bottom: 8px;
     }
 
     .arco-statistic-value {
-      font-size: 24px;
-      font-weight: 600;
+      font-size: 26px;
+      font-weight: 700;
     }
   }
 
-  &--pending {
-    background: linear-gradient(135deg, #fff7e6 0%, #ffffff 100%);
-    border-left: 3px solid #fa8c16;
-  }
+  .stat-icon {
+    font-size: 22px;
+    margin-right: 10px;
 
-  &--paid {
-    background: linear-gradient(135deg, #f9f0ff 0%, #ffffff 100%);
-    border-left: 3px solid #722ed1;
-  }
-
-  &--shipped {
-    background: linear-gradient(135deg, #e6f7ff 0%, #ffffff 100%);
-    border-left: 3px solid #1890ff;
-  }
-
-  &--refund {
-    background: linear-gradient(135deg, #fff1f0 0%, #ffffff 100%);
-    border-left: 3px solid #ff4d4f;
+    .stat-card--primary & { color: #165dff; }
+    .stat-card--success & { color: #00b42a; }
+    .stat-card--warning & { color: #ff7d00; }
+    .stat-card--danger & { color: #f53f3f; }
   }
 }
 
-.stat-icon {
-  font-size: 20px;
-  margin-right: 8px;
+.table-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
-  &--pending { color: #fa8c16; }
-  &--paid { color: #722ed1; }
-  &--shipped { color: #1890ff; }
-  &--refund { color: #ff4d4f; }
-}
-
-.list-card {
   :deep(.arco-card-head) {
-    border-bottom: 1px solid #f0f0f0;
+    border-bottom: 1px solid #e5e6eb;
+    padding: 16px 20px;
+  }
+
+  :deep(.arco-card-body) {
+    padding: 0;
   }
 }
 
 .card-title {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 16px;
+  gap: 12px;
+  font-size: 15px;
   font-weight: 600;
-
-  .title-icon {
-    font-size: 20px;
-    color: #165dff;
-  }
+  color: #1d2129;
 }
 
 .order-item-cell {
@@ -466,17 +553,6 @@ onMounted(() => {
     flex-direction: column;
     gap: 4px;
     max-width: 180px;
-  }
-
-  .item-title {
-    font-size: 13px;
-    color: #1d2129;
-    max-width: 160px;
-  }
-
-  .item-price {
-    font-size: 13px;
-    font-weight: 500;
   }
 }
 </style>

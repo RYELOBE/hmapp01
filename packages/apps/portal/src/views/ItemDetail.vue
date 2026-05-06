@@ -1,115 +1,155 @@
 <template>
   <div class="item-detail-page">
-    <div class="item-detail-container">
-      <a-spin :loading="loading" style="width: 100%">
-        <div v-if="detail" class="item-detail">
-          <div class="item-gallery">
-            <ImageGallery :images="detail.imageUrls || []" />
-          </div>
+    <a-spin :loading="loading" class="detail-spin">
+      <template v-if="detail">
+        <div class="detail-layout">
+          <!-- 左侧区域 (70%) -->
+          <div class="detail-left">
+            <!-- 商品图片画廊 -->
+            <div class="gallery-section">
+              <ImageGallery :images="detail.imageUrls || []" />
+            </div>
 
-          <div class="item-info">
+            <!-- 商品基本信息卡片 -->
             <a-card :bordered="false" class="info-card">
-              <div class="item-header">
+              <div class="info-header">
                 <StatusTag :status="detail.reviewStatus" />
                 <a-tag v-if="detail.category" color="arcoblue">{{ detail.category }}</a-tag>
               </div>
 
-              <h1 class="item-title">{{ detail.title }}</h1>
+              <h1 class="item-title" :title="detail.title">{{ truncateTitle(detail.title) }}</h1>
 
-              <div class="item-price-box">
-                <div class="item-price">
+              <div class="price-section">
+                <div class="current-price">
                   <span class="price-symbol">¥</span>
-                  <span class="price-value">{{ detail.price }}</span>
+                  <span class="price-value">{{ formatPrice(detail.price) }}</span>
                 </div>
-                <a-typography-text v-if="detail.originalPrice" delete type="secondary" class="price-original">
-                  ¥{{ detail.originalPrice }}
-                </a-typography-text>
+                <span v-if="detail.originalPrice && detail.originalPrice > detail.price" class="original-price">
+                  ¥{{ formatPrice(detail.originalPrice) }}
+                </span>
+              </div>
+
+              <div class="condition-section">
+                <ConditionTag :condition="detail.conditionLevel || 'NEW'" />
               </div>
 
               <a-divider />
 
-              <div class="item-meta">
+              <div class="meta-info">
                 <div class="meta-item">
-                  <icon-location />
-                  <span>{{ detail.campus || '未知校区' }}</span>
+                  <icon-clock-circle />
+                  <span>发布于 {{ formatDate(detail.createdAt) }}</span>
                 </div>
                 <div class="meta-item">
                   <icon-eye />
-                  <span>{{ detail.viewCount || 0 }} 浏览</span>
+                  <span>{{ detail.viewCount || 0 }} 次浏览</span>
                 </div>
                 <div class="meta-item clickable" @click="handleFavorite">
                   <icon-heart :class="{ 'is-favorite': isFavorited }" />
-                  <span>{{ favoriteCount }} 收藏</span>
-                </div>
-              </div>
-
-              <a-divider />
-
-              <div class="item-description">
-                <a-typography-title :heading="5">商品描述</a-typography-title>
-                <a-typography-paragraph class="description-text">
-                  {{ detail.description || '暂无描述' }}
-                </a-typography-paragraph>
-              </div>
-
-              <a-divider />
-
-              <div class="seller-info">
-                <a-avatar :size="48" class="seller-avatar">
-                  <icon-user />
-                </a-avatar>
-                <div class="seller-details">
-                  <div class="seller-name">{{ detail.sellerName || '未知卖家' }}</div>
-                  <div class="seller-meta">卖家 · 发布于 {{ formatDate(detail.createdAt) }}</div>
+                  <span>{{ favoriteCount }} 次收藏</span>
                 </div>
               </div>
             </a-card>
 
-            <a-card :bordered="false" class="action-card">
-              <a-space direction="vertical" :size="12" style="width: 100%">
-                <a-button
-                  class="action-btn"
-                  :type="isFavorited ? 'primary' : 'outline'"
-                  :status="isFavorited ? 'warning' : 'normal'"
-                  long
-                  @click="handleFavorite"
-                >
-                  <template #icon>
-                    <icon-heart :class="{ 'is-favorite': isFavorited }" />
-                  </template>
-                  {{ isFavorited ? '已收藏' : '收藏' }}
+            <!-- 商品详细描述区 -->
+            <a-card :bordered="false" class="description-card">
+              <a-typography-title :heading="5">商品详细描述</a-typography-title>
+              <div class="description-content" v-html="detail.description || '<p style=\'color: #86909c\'>暂无描述</p>'"></div>
+            </a-card>
+          </div>
+
+          <!-- 右侧区域 (30%, sticky) -->
+          <div class="detail-right">
+            <div class="sidebar-sticky">
+              <!-- 卖家信息卡片 -->
+              <a-card title="卖家信息" class="seller-card">
+                <div class="seller-content">
+                  <a-avatar :size="48" class="seller-avatar">
+                    {{ (detail.sellerName || '卖')[0] }}
+                  </a-avatar>
+                  <div class="seller-details">
+                    <div class="seller-name">{{ detail.sellerName || '未知卖家' }}</div>
+                    <div class="seller-rate">
+                      <a-rate :model-value="detail.sellerRating || 5" readonly :count="5" allow-half />
+                      <span class="rate-text">{{ detail.sellerRating?.toFixed(1) || '5.0' }} 分</span>
+                    </div>
+                  </div>
+                </div>
+
+                <a-divider />
+
+                <div class="seller-stats">
+                  <div class="stat-item">
+                    <span class="stat-label">注册时间</span>
+                    <span class="stat-value">{{ formatDate(detail.sellerCreatedAt) }}</span>
+                  </div>
+                  <div class="stat-item">
+                    <span class="stat-label">累计售出</span>
+                    <span class="stat-value highlight">{{ detail.sellerSoldCount || 0 }} 件</span>
+                  </div>
+                </div>
+
+                <a-button type="outline" long class="view-shop-btn" @click="handleViewShop">
+                  <template #icon><icon-store /></template>
+                  查看店铺
                 </a-button>
-                <a-button class="action-btn action-btn--cart" long @click="handleAddToCart">
-                  <template #icon><icon-plus /></template>
-                  加入购物车
-                </a-button>
+              </a-card>
+
+              <!-- 操作按钮组 -->
+              <div class="action-group">
                 <a-button
                   type="primary"
-                  class="action-btn action-btn--buy"
+                  size="large"
                   long
+                  class="buy-btn"
                   :disabled="detail.reviewStatus !== 'APPROVED'"
                   @click="handleBuy"
                 >
-                  <template #icon><icon-list /></template>
+                  <template #icon><icon-shopping-cart /></template>
                   立即购买
                 </a-button>
-              </a-space>
-            </a-card>
+
+                <a-button size="large" long class="cart-btn" @click="handleAddToCart">
+                  <template #icon><icon-plus /></template>
+                  加入购物车
+                </a-button>
+
+                <div class="action-row">
+                  <a-button
+                    shape="circle"
+                    :class="['fav-btn', { 'is-favorited': isFavorited }]"
+                    @click="handleFavorite"
+                  >
+                    <template #icon><icon-heart-fill /></template>
+                  </a-button>
+                  <a-button shape="circle" class="contact-btn" @click="handleContactSeller">
+                    <template #icon><icon-message /></template>
+                  </a-button>
+                </div>
+              </div>
+
+              <!-- AI问答入口 -->
+              <div class="ai-entry" @click="handleAIChat">
+                <icon-robot class="ai-icon" />
+                <span>有疑问？问问 AI 助手</span>
+              </div>
+            </div>
           </div>
         </div>
+      </template>
 
-        <div v-else-if="!loading" class="item-detail-empty">
-          <a-result status="warning" title="商品不存在或已被删除">
-            <template #subtitle>
-              该商品可能已下架或被删除
-            </template>
-            <template #extra>
-              <a-button type="primary" @click="$router.push('/home')">返回首页</a-button>
-            </template>
-          </a-result>
-        </div>
-      </a-spin>
-    </div>
+      <!-- 空状态 -->
+      <a-result
+        v-else-if="!loading"
+        status="warning"
+        title="商品不存在或已被删除"
+        subtitle="该商品可能已下架或被删除"
+      >
+        <template #extra>
+          <a-button type="primary" @click="$router.push('/home')">返回首页</a-button>
+        </template>
+      </a-result>
+    </a-spin>
   </div>
 </template>
 
@@ -120,13 +160,17 @@ import { Message } from '@arco-design/web-vue';
 import {
   IconHeart,
   IconEye,
-  IconLocation,
-  IconUser,
-  IconList,
+  IconClockCircle,
+  IconShoppingCart,
   IconPlus,
+  IconStore,
+  IconMessage,
+  IconRobot,
+  IconHeartFill,
 } from '@arco-design/web-vue/es/icon';
 import StatusTag from "commonprovide/status-tag";
 import ImageGallery from "commonprovide/ImageGallery";
+import ConditionTag from "../components/sub/ConditionTag.vue";
 import {
   getItemDetail,
   checkFavorite,
@@ -141,6 +185,16 @@ const detail = ref(null);
 const loading = ref(true);
 const isFavorited = ref(false);
 const favoriteCount = ref(0);
+
+function truncateTitle(title) {
+  if (!title) return '';
+  return title.length > 30 ? title.substring(0, 30) + '...' : title;
+}
+
+function formatPrice(price) {
+  if (!price && price !== 0) return '0.00';
+  return Number(price).toFixed(2);
+}
 
 function formatDate(dateStr) {
   if (!dateStr) return '未知';
@@ -200,6 +254,18 @@ function handleBuy() {
   router.push(`/orders/confirm/${detail.value.id}`);
 }
 
+function handleViewShop() {
+  Message.info('店铺功能开发中');
+}
+
+function handleContactSeller() {
+  Message.info('联系卖家功能开发中');
+}
+
+function handleAIChat() {
+  Message.info('AI 助手功能开发中');
+}
+
 async function loadDetail() {
   loading.value = true;
   try {
@@ -220,46 +286,51 @@ onMounted(loadDetail);
 <style lang="scss" scoped>
 .item-detail-page {
   min-height: 100vh;
-  background: linear-gradient(180deg, #f5f6f8 0%, #ffffff 100%);
+  background: #F5F6F7;
   padding: 24px;
 }
 
-.item-detail-container {
-  max-width: 1100px;
-  margin: 0 auto;
+.detail-spin {
+  width: 100%;
+  min-height: 60vh;
 }
 
-.item-detail {
+.detail-layout {
+  max-width: 1280px;
+  margin: 0 auto;
   display: grid;
-  grid-template-columns: 420px 1fr;
-  gap: 24px;
+  grid-template-columns: 70% 30%;
+  gap: 20px;
+  align-items: start;
 
-  @media (max-width: 900px) {
+  @media (max-width: 992px) {
     grid-template-columns: 1fr;
   }
 }
 
-.item-gallery {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.item-info {
+.detail-left {
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
 
+.gallery-section {
+  background: #FFFFFF;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
 .info-card {
-  border-radius: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
   :deep(.arco-card-body) {
     padding: 24px;
   }
 }
 
-.item-header {
+.info-header {
   display: flex;
   gap: 8px;
   margin-bottom: 12px;
@@ -268,134 +339,201 @@ onMounted(loadDetail);
 .item-title {
   font-size: 22px;
   font-weight: 600;
-  color: #1d2129;
+  color: #1D2129;
   line-height: 1.4;
   margin: 0 0 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.item-price-box {
+.price-section {
   display: flex;
   align-items: baseline;
   gap: 12px;
+  margin-bottom: 16px;
 
-  .item-price {
-    display: flex;
-    align-items: baseline;
-    background: linear-gradient(135deg, #ff4d4f 0%, #ff7875 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-
+  .current-price {
     .price-symbol {
       font-size: 18px;
-      font-weight: 500;
+      font-weight: 600;
+      color: #F53F3F;
     }
 
     .price-value {
-      font-size: 36px;
+      font-size: 28px;
       font-weight: 700;
+      color: #F53F3F;
     }
   }
 
-  .price-original {
-    font-size: 16px;
+  .original-price {
+    font-size: 14px;
+    color: #86909C;
+    text-decoration: line-through;
   }
 }
 
-.item-meta {
+.condition-section {
+  margin-bottom: 12px;
+}
+
+.meta-info {
   display: flex;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 20px;
 
   .meta-item {
     display: flex;
     align-items: center;
     gap: 6px;
     font-size: 13px;
-    color: #4e5969;
-    cursor: pointer;
-    transition: color 0.2s;
+    color: #86909C;
 
-    &.clickable:hover {
-      color: #165dff;
-    }
+    &.clickable {
+      cursor: pointer;
+      transition: color 0.2s;
 
-    .is-favorite {
-      color: #ff4d4f;
-      fill: #ff4d4f;
+      &:hover {
+        color: #165DFF;
+      }
+
+      .is-favorite {
+        color: #F53F3F;
+      }
     }
   }
 }
 
-.item-description {
-  .description-text {
-    color: #4e5969;
-    line-height: 1.8;
-    white-space: pre-wrap;
-    margin: 0;
-  }
-}
-
-.seller-info {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px;
-  background: #f7f8fa;
+.description-card {
   border-radius: 8px;
-
-  .seller-avatar {
-    background: linear-gradient(135deg, #165dff 0%, #4080ff 100%);
-    color: #fff;
-  }
-
-  .seller-details {
-    flex: 1;
-
-    .seller-name {
-      font-size: 15px;
-      font-weight: 600;
-      color: #1d2129;
-    }
-
-    .seller-meta {
-      font-size: 12px;
-      color: #86909c;
-      margin-top: 4px;
-    }
-  }
-}
-
-.action-card {
-  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
   :deep(.arco-card-body) {
     padding: 20px;
   }
 }
 
-.action-btn {
-  height: 44px;
-  font-size: 15px;
-  border-radius: 8px;
+.description-content {
+  color: #4E5969;
+  line-height: 1.8;
+  word-wrap: break-word;
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+}
+
+.detail-right {
+  position: relative;
+}
+
+.sidebar-sticky {
+  position: sticky;
+  top: 80px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  flex-direction: column;
+  gap: 16px;
+}
 
-  &--cart {
-    border-color: #165dff;
-    color: #165dff;
+.seller-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 
-    &:hover {
-      background: rgba(22, 93, 255, 0.05);
-    }
+  :deep(.arco-card-head-title) {
+    font-weight: 600;
   }
 
-  &--buy {
-    background: linear-gradient(135deg, #165dff 0%, #4080ff 100%);
-    border: none;
+  :deep(.arco-card-body) {
+    padding: 20px;
+  }
+}
+
+.seller-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .seller-avatar {
+    background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
     color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .seller-details {
+    flex: 1;
+    min-width: 0;
+
+    .seller-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #1D2129;
+      margin-bottom: 4px;
+    }
+
+    .seller-rate {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+
+      .rate-text {
+        font-size: 12px;
+        color: #86909C;
+      }
+    }
+  }
+}
+
+.seller-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  .stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .stat-label {
+      font-size: 13px;
+      color: #86909C;
+    }
+
+    .stat-value {
+      font-size: 13px;
+      color: #4E5969;
+      font-weight: 500;
+
+      &.highlight {
+        color: #165DFF;
+        font-weight: 600;
+      }
+    }
+  }
+}
+
+.view-shop-btn {
+  margin-top: 12px;
+}
+
+.action-group {
+  background: #FFFFFF;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  .buy-btn {
+    height: 48px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 8px;
+    margin-bottom: 12px;
+    background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+    border: none;
 
     &:hover:not(:disabled) {
       transform: translateY(-1px);
@@ -408,16 +546,68 @@ onMounted(loadDetail);
     }
   }
 
-  .is-favorite {
-    color: #ff4d4f;
-    fill: #ff4d4f;
+  .cart-btn {
+    height: 44px;
+    font-size: 15px;
+    border-radius: 8px;
+    border-color: #165DFF;
+    color: #165DFF;
+    margin-bottom: 12px;
+
+    &:hover {
+      background: rgba(22, 93, 255, 0.05);
+    }
+  }
+
+  .action-row {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+
+    .fav-btn,
+    .contact-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      transition: all 0.2s;
+
+      &.is-favorited {
+        color: #F53F3F;
+        border-color: #F53F3F;
+        background: rgba(245, 63, 63, 0.05);
+      }
+
+      &:hover {
+        transform: scale(1.05);
+      }
+    }
   }
 }
 
-.item-detail-empty {
-  background: #fff;
-  border-radius: 16px;
-  padding: 40px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+.ai-entry {
+  background: linear-gradient(135deg, #f0f5ff 0%, #e8f3ff 100%);
+  border: 1px solid #b8d2ff;
+  border-radius: 8px;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease-out;
+  color: #165DFF;
+  font-size: 14px;
+  font-weight: 500;
+
+  .ai-icon {
+    font-size: 18px;
+  }
+
+  &:hover {
+    background: linear-gradient(135deg, #e8f3ff 0%, #d6ebff 100%);
+    border-color: #165DFF;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(22, 93, 255, 0.15);
+  }
 }
 </style>

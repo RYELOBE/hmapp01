@@ -44,6 +44,7 @@
                     width="80"
                     height="80"
                     fit="cover"
+                    loading="lazy"
                   />
                   <div v-else class="item-image--empty">
                     <icon-image />

@@ -1,318 +1,240 @@
 <template>
-  <a-layout class="layout">
-    <!-- 头部（根据门户配置动态渲染） -->
-    <a-layout-header
-      class="header"
-      :style="headerStyle"
-    >
-      <div class="header__left">
-        <a-button
-          v-if="authStore.isLoggedIn && showSider"
-          type="text"
-          class="header__trigger"
-          :style="{ color: isLightTheme ? '#fff' : '#4e5969' }"
-          @click="collapsed = !collapsed"
-        >
-          <template #icon>
-            <icon-menu-fold v-if="!collapsed" />
-            <icon-menu-unfold v-else />
-          </template>
-        </a-button>
-        <a-button
-          v-if="authStore.isLoggedIn && hideSider"
-          type="text"
-          class="header__trigger"
-          :style="{ color: isLightTheme ? '#fff' : '#4e5969' }"
-          @click="$router.push('/')"
-        >
-          <template #icon><icon-left /></template>
-        </a-button>
-        <div
-          class="brand"
-          :style="{ color: isLightTheme ? '#fff' : '#336ad8', cursor: 'pointer' }"
-          @click="$router.push('/')"
-        >
-          {{ brandName }}
+  <ErrorBoundary @retry="handleRetry">
+    <div class="app-main-container">
+      <!-- 加载状态 -->
+      <div v-if="isLoading" class="app-loading-overlay">
+        <div class="app-loading-content">
+          <a-spin :size="40" />
+          <p class="app-loading-text">正在加载 {{ currentAppName }}...</p>
+          <p v-if="loadTimeout" class="app-loading-timeout">加载较慢，请稍候...</p>
+        </div>
+        <div class="app-loading-bg"></div>
+      </div>
+
+      <!-- 错误状态 -->
+      <div v-else-if="hasError" class="app-error-state">
+        <div class="app-error-content">
+          <div class="app-error-icon">
+            <icon-close-circle-fill />
+          </div>
+          <h3 class="app-error-title">应用加载失败</h3>
+          <p class="app-error-message">{{ errorMessage }}</p>
+          <div class="app-error-actions">
+            <a-button type="primary" @click="retryLoad">
+              <template #icon><icon-refresh /></template>
+              重试
+            </a-button>
+            <a-button @click="$router.push('/')">
+              <template #icon><icon-home /></template>
+              返回首页
+            </a-button>
+          </div>
         </div>
       </div>
-      <a-space v-if="authStore.isLoggedIn" size="medium">
-        <a-tag :color="isLightTheme ? 'rgba(255,255,255,0.2)' : 'arcoblue'">
-          <span :style="{ color: isLightTheme ? '#fff' : undefined }">{{ roleLabel }}</span>
-        </a-tag>
-        <a-button
-          type="text"
-          status="danger"
-          :style="{ color: isLightTheme ? 'rgba(255,255,255,0.9)' : undefined }"
-          @click="logout"
-        >退出</a-button>
-      </a-space>
-    </a-layout-header>
 
-    <!-- 主体 -->
-    <a-layout class="body">
-      <!-- 左侧菜单（从后端门户配置控制是否显示） -->
-      <a-layout-sider
-        v-if="authStore.isLoggedIn && showSider"
-        class="sider"
-        :width="220"
-        :collapsed-width="48"
-        :collapsed="collapsed"
-        collapsible
-        breakpoint="lg"
-        @collapse-breakpoint="collapsed = true"
-      >
-        <!-- 优先使用后端菜单树 -->
-        <a-menu
-          v-if="myMenuTree.length > 0"
-          :selected-keys="[activeMenuKey]"
-          @menu-item-click="handleMenuClick"
-          :style="{ width: collapsed ? '48px' : '220px' }"
-        >
-          <a-menu-item key="home">
-            <template #icon><icon-home /></template>
-            <span v-if="!collapsed">首页</span>
-          </a-menu-item>
-          <a-menu-item
-            v-for="item in myMenuTree"
-            :key="item.path"
-          >
-            <template #icon><icon-apps /></template>
-            <span v-if="!collapsed">{{ item.menuName }}</span>
-          </a-menu-item>
-        </a-menu>
-        <!-- 回退：使用子应用列表 -->
-        <a-menu
-          v-else
-          :selected-keys="[activeMenuKey]"
-          @menu-item-click="handleMenuClick"
-          :style="{ width: collapsed ? '48px' : '220px' }"
-        >
-          <a-menu-item key="home">
-            <template #icon><icon-home /></template>
-            <span v-if="!collapsed">首页</span>
-          </a-menu-item>
-          <a-menu-item
-            v-for="app in authorizedApps"
-            :key="app.pathPrefix"
-          >
-            <template #icon><icon-apps /></template>
-            <span v-if="!collapsed">{{ app.title }}</span>
-          </a-menu-item>
-        </a-menu>
-      </a-layout-sider>
-
-      <!-- 内容区 -->
-    <a-layout-content class="content">
-      <div class="frameapp-main">
-        <router-view />
-      </div>
-    </a-layout-content>
-    </a-layout>
-  </a-layout>
-  <AiAssistant v-if="authStore.isLoggedIn" />
+      <!-- 子应用内容（带过渡动画） -->
+      <Transition name="app-fade">
+        <div v-show="!isLoading && !hasError" class="subapp-container" ref="containerRef">
+          <slot />
+        </div>
+      </Transition>
+    </div>
+  </ErrorBoundary>
 </template>
 
 <script setup>
-import { ref, computed, watch } from "vue";
-import { useRouter, useRoute } from "vue-router";
-import AiAssistant from "../../components/AiAssistant.vue";
-import { useAuthStore } from "../../stores/auth";
-import framePinia from "../../minFrame/pinia/framePinia";
-import { roleLabels } from "@campus/common/roles";
+import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import {
+  IconCloseCircleFill,
+  IconRefresh,
+  IconHome,
+} from '@arco-design/web-vue/es/icon';
+import ErrorBoundary from '../../components/ErrorBoundary.vue';
 
-const authStore = useAuthStore();
+const emit = defineEmits(['retry']);
+
 const router = useRouter();
 const route = useRoute();
-const frame = framePinia();
+const containerRef = ref(null);
 
-const collapsed = ref(false);
+const isLoading = ref(false);
+const hasError = ref(false);
+const errorMessage = ref('');
+const currentAppName = ref('应用');
+const loadTimeout = ref(false);
+let timeoutTimer = null;
+let loadingStartTime = 0;
 
-/** 当前用户有权限的子应用列表 */
-const authorizedApps = computed(() => frame.authorizedApps || []);
+function startLoading(appName) {
+  isLoading.value = true;
+  hasError.value = false;
+  errorMessage.value = '';
+  currentAppName.value = appName || '应用';
+  loadTimeout.value = false;
+  loadingStartTime = Date.now();
 
-/** 当前子应用的门户配置 */
-const portalConfig = computed(() => frame.currentPortalConfig || {});
-
-/** 当前路由匹配的子应用配置 */
-const currentApp = computed(() => {
-  if (route.path === '/' || route.name === 'home') return null;
-  return authorizedApps.value.find(
-    app => route.path.startsWith(app.pathPrefix)
-  ) || null;
-});
-
-/** 是否隐藏侧边栏（子应用配置全屏 或 门户配置关闭左侧菜单） */
-const hideSider = computed(() => {
-  return currentApp.value?.hideShellMenu === true;
-});
-
-/** 是否显示侧边栏 */
-const showSider = computed(() => {
-  if (hideSider.value) return false;
-  if (authorizedApps.value.length === 0) return false;
-  // 如果当前在子应用页面，检查该子应用对应的门户配置
-  if (currentApp.value) {
-    return portalConfig.value.showLeftMenu !== false;
-  }
-  return true;
-});
-
-/** 主题是否为浅色（文字用白色） */
-const isLightTheme = computed(() => {
-  return portalConfig.value?.theme?.textTheme === 'light';
-});
-
-/** 头部动态样式 */
-const headerStyle = computed(() => {
-  const bg = portalConfig.value?.theme?.background;
-  if (bg) return { background: bg };
-  return {};
-});
-
-/** 品牌名称（优先使用门户配置） */
-const brandName = computed(() => {
-  const logoConfig = portalConfig.value?.logoConfig;
-  if (logoConfig?.showLogoTitle && logoConfig.systemName) {
-    return logoConfig.systemName;
-  }
-  return 'CampusTrade';
-});
-
-/** 后端菜单树（从 resource_menu + 角色过滤获取），递归过滤当前子应用菜单 */
-const myMenuTree = computed(() => {
-  const tree = frame.myMenuTree || [];
-  if (currentApp.value) {
-    const appCode = currentApp.value.appCode;
-    function filterByApp(nodes) {
-      return nodes.filter(item => item.appCode === appCode).map(item => ({
-        ...item,
-        children: item.children ? filterByApp(item.children) : [],
-      }));
+  // 超过5秒显示超时提示
+  timeoutTimer = setTimeout(() => {
+    if (isLoading.value) {
+      loadTimeout.value = true;
     }
-    return filterByApp(tree);
-  }
-  return tree;
-});
+  }, 5000);
+}
 
-/** 菜单选中高亮 */
-const activeMenuKey = computed(() => {
-  if (route.path === '/' || route.name === 'home') return 'home';
-  // 先匹配后端菜单
-  const menuMatch = myMenuTree.value.find(item => route.path.startsWith(item.path));
-  if (menuMatch) return menuMatch.path;
-  // 回退匹配子应用 pathPrefix
-  const appMatch = authorizedApps.value.find(
-    app => route.path.startsWith(app.pathPrefix)
-  );
-  return appMatch ? appMatch.pathPrefix : 'home';
-});
-
-const roleLabel = computed(() => {
-  try {
-    const roles = authStore?.roles;
-    const role = Array.isArray(roles) && roles.length > 0 ? roles[0] : null;
-    if (!role) return "未登录";
-    return roleLabels[role] || role;
-  } catch {
-    return "未登录";
-  }
-});
-
-function handleMenuClick(key) {
-  if (key === 'home') {
-    router.push('/');
-  } else {
-    router.push(key);
+function stopLoading() {
+  isLoading.value = false;
+  if (timeoutTimer) {
+    clearTimeout(timeoutTimer);
+    timeoutTimer = null;
   }
 }
 
-function logout() {
-  authStore.logout();
-  router.push("/login");
+function showError(message) {
+  stopLoading();
+  hasError.value = true;
+  errorMessage.value = message || '未知错误，请稍后重试';
 }
 
-// 路由变化时，加载对应子应用的门户配置
-let lastPortalCode = null;
-watch(() => route.path, async (path) => {
-  if (!authStore.isLoggedIn) return;
-  const app = authorizedApps.value.find(a => path.startsWith(a.pathPrefix));
-  if (app) {
-    if (app.portalCode && app.portalCode !== lastPortalCode) {
-      lastPortalCode = app.portalCode;
-      await frame.loadPortalConfig(app.portalCode);
-    }
-  } else {
-    lastPortalCode = null;
-    frame.currentPortalConfig = null;
-  }
-}, { immediate: true });
+function retryLoad() {
+  hasError.value = false;
+  errorMessage.value = '';
+  emit('retry');
+  // 刷新当前路由
+  router.go(0);
+}
 
-// 登录后加载菜单树
-watch(() => authStore.isLoggedIn, async (loggedIn) => {
-  if (loggedIn) {
-    await frame.loadMyMenuTree();
+function handleRetry() {
+  retryLoad();
+}
+
+// 监听路由变化，模拟子应用加载状态
+onMounted(() => {
+  // 可以在这里集成实际的 Qiankun 子应用生命周期监听
+});
+
+onUnmounted(() => {
+  if (timeoutTimer) {
+    clearTimeout(timeoutTimer);
   }
-}, { immediate: true });
+});
+
+// 暴露方法供父组件调用
+defineExpose({
+  startLoading,
+  stopLoading,
+  showError,
+});
 </script>
 
 <style scoped>
-.layout {
-  min-height: 100vh;
-  background: transparent;
+.app-main-container {
+  position: relative;
+  width: 100%;
 }
 
-.header {
-  height: 56px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  position: fixed;
+/* ═══ 加载遮罩层 ═══ */
+.app-loading-overlay {
+  position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  z-index: 100;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-}
-
-.header__left {
+  bottom: 0;
+  z-index: var(--z-modal-backdrop, 400);
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
 }
 
-.header__trigger {
-  font-size: 18px;
+.app-loading-bg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(22, 93, 255, 0.03) 0%,
+    rgba(64, 128, 255, 0.05) 50%,
+    rgba(22, 93, 255, 0.03) 100%
+  );
+  animation: loadingBgPulse 2s ease-in-out infinite;
 }
 
-.brand {
-  font-size: 20px;
-  font-weight: 700;
+@keyframes loadingBgPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
 }
 
-.body {
-  margin-top: 56px;
-  min-height: calc(100vh - 56px);
-}
-
-.sider {
-  background: #fff;
-  border-right: 1px solid #e5e6eb;
-}
-
-.content {
-  min-height: calc(100vh - 56px);
-}
-
-.frameapp-main {
-  width: 100%;
-  min-height: calc(100vh - 56px);
+.app-loading-content {
   position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 40px;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: var(--radius-large, 12px);
+  box-shadow: var(--shadow-modal, 0 8px 32px rgba(29, 33, 41, 0.14));
 }
 
-#TO_FRAME_WINDOW {
-  width: 100%;
-  min-height: calc(100vh - 56px);
+.app-loading-text {
+  font-size: 14px;
+  color: var(--text-color-2, #4E5969);
+  margin: 0;
+}
+
+.app-loading-timeout {
+  font-size: 12px;
+  color: var(--color-warning, #FF7D00);
+  margin: 0;
+  animation: fadeInOut 1.5s ease-in-out infinite;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ═══ 错误状态 ═══ */
+.app-error-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 40px;
+  background: var(--bg-color-page, #F5F6F7);
+}
+
+.app-error-content {
+  text-align: center;
+  max-width: 400px;
+}
+
+.app-error-icon {
+  font-size: 48px;
+  color: var(--color-danger, #F53F3F);
+  margin-bottom: 16px;
+}
+
+.app-error-title {
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-color-1, #1D2129);
+  margin: 0 0 12px;
+}
+
+.app-error-message {
+  font-size: 14px;
+  color: var(--text-color-3, #86909C);
+  margin: 0 0 24px;
+  line-height: 1.6;
+}
+
+.app-error-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
 }
 </style>

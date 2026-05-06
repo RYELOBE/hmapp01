@@ -1,78 +1,104 @@
 <template>
   <div class="my-items-page">
-    <a-card title="我的商品" :bordered="false">
-      <template #extra>
-        <a-button type="primary" @click="$router.push('/publish')">
-          <template #icon><icon-plus /></template>
-          发布商品
-        </a-button>
-      </template>
+    <div class="page-header">
+      <a-button @click="$router.back()" type="text">
+        <template #icon><icon-arrow-left /></template>
+        返回
+      </a-button>
+      <h2 class="page-title">我的商品</h2>
+      <a-button type="primary" @click="$router.push('/seller/publish')">
+        <template #icon><icon-plus /></template>
+        发布新商品
+      </a-button>
+    </div>
 
-      <a-table
-        :data="rows"
-        :loading="loading"
-        :pagination="paginationConfig"
-        :row-key="(record) => record.id"
-        @page-change="handlePageChange"
-        @page-size-change="handlePageSizeChange"
-      >
-        <template #columns>
-          <a-table-column title="商品信息" :width="280">
-            <template #cell="{ record }">
-              <div class="item-cell">
-                <a-image
-                  :src="parseFirstImageUrl(record.imageUrls || record.images)"
-                  width="56"
-                  height="56"
-                  fit="cover"
-                  style="border-radius: 6px;"
-                />
-                <div class="item-info">
-                  <a-typography-text class="item-title" ellipsis>
-                    {{ record.title }}
-                  </a-typography-text>
-                  <a-typography-text type="danger" class="item-price">
-                    ¥{{ record.price }}
-                  </a-typography-text>
-                </div>
+    <a-card :bordered="false" class="items-card">
+      <a-tabs v-model:active-key="activeStatus" @change="handleTabChange">
+        <a-tab-pane key="" title="全部" />
+        <a-tab-pane key="DRAFT" title="草稿" />
+        <a-tab-pane key="PENDING_REVIEW" title="待审核" />
+        <a-tab-pane key="APPROVED" title="已通过" />
+        <a-tab-pane key="REJECTED" title="已拒绝" />
+        <a-tab-pane key="OFF_SHELF" title="已下架" />
+      </a-tabs>
+
+      <a-spin :loading="loading" style="width: 100%">
+        <div v-if="items.length > 0" class="items-list">
+          <div v-for="item in items" :key="item.id" class="item-card">
+            <div class="item-image-wrapper">
+              <img v-if="getImageUrl(item)" :src="getImageUrl(item)" class="item-image" />
+              <div v-else class="item-image item-image--empty">📷</div>
+            </div>
+
+            <div class="item-info">
+              <h3 class="item-title">{{ item.title }}</h3>
+              <div class="item-meta">
+                <span class="item-price">¥{{ item.price }}</span>
+                <ConditionTag v-if="item.conditionLevel" :condition="item.conditionLevel" size="small" />
+                <a-tag size="small">{{ categoryLabel(item.category) }}</a-tag>
+                <StatusTag :status="item.reviewStatus" size="small" />
               </div>
-            </template>
-          </a-table-column>
-          <a-table-column title="分类" data-index="category" :width="100" />
-          <a-table-column title="审核状态" :width="100" align="center">
-            <template #cell="{ record }">
-              <StatusTag :status="record.reviewStatus" />
-            </template>
-          </a-table-column>
-          <a-table-column title="驳回原因" data-index="rejectReason" :width="180">
-            <template #cell="{ record }">
-              <a-typography-text v-if="record.rejectReason" type="danger" ellipsis>
-                {{ record.rejectReason }}
-              </a-typography-text>
-              <span v-else class="text-muted">-</span>
-            </template>
-          </a-table-column>
-          <a-table-column title="发布时间" data-index="createdAt" :width="160">
-            <template #cell="{ record }">
-              {{ formatDate(record.createdAt) }}
-            </template>
-          </a-table-column>
-          <a-table-column title="操作" :width="160" align="center">
-            <template #cell="{ record }">
-              <a-space>
-                <a-button type="text" size="small" @click="viewDetail(record)">
-                  <template #icon><icon-eye /></template>
-                  查看
-                </a-button>
-                <a-button type="text" size="small" @click="editItem(record)">
-                  <template #icon><icon-edit /></template>
-                  编辑
-                </a-button>
-              </a-space>
-            </template>
-          </a-table-column>
-        </template>
-      </a-table>
+              <div class="item-stats">
+                <span>浏览 {{ item.viewCount || 0 }}</span>
+                <span>售出 {{ item.soldCount || 0 }}</span>
+                <span>{{ formatTime(item.createdAt) }}</span>
+              </div>
+            </div>
+
+            <div class="item-actions">
+              <template v-if="item.reviewStatus === 'DRAFT'">
+                <a-button type="primary" size="small" @click="$router.push(`/seller/publish?id=${item.id}`)">编辑</a-button>
+                <a-button size="small" @click="publishDraft(item)">发布</a-button>
+                <a-popconfirm content="确定要删除吗？" @ok="deleteItem(item)">
+                  <a-button type="text" status="danger" size="small">删除</a-button>
+                </a-popconfirm>
+              </template>
+
+              <template v-else-if="item.reviewStatus === 'PENDING_REVIEW'">
+                <a-button size="small" @click="$router.push(`/item/${item.id}`)">查看</a-button>
+                <a-button type="text" status="warning" size="small" @click="withdrawItem(item)">撤回</a-button>
+              </template>
+
+              <template v-else-if="item.reviewStatus === 'APPROVED'">
+                <a-button type="text" status="warning" size="small" @click="offlineItem(item)">下架</a-button>
+                <a-button size="small" @click="$router.push(`/seller/publish?id=${item.id}&reaudit=1`)">编辑需重审</a-button>
+              </template>
+
+              <template v-else-if="item.reviewStatus === 'REJECTED'">
+                <a-button type="primary" size="small" @click="$router.push(`/seller/publish?id=${item.id}`)">修改后重新提交</a-button>
+                <a-popconfirm content="确定要删除吗？" @ok="deleteItem(item)">
+                  <a-button type="text" status="danger" size="small">删除</a-button>
+                </a-popconfirm>
+              </template>
+
+              <template v-else-if="item.reviewStatus === 'OFF_SHELF'">
+                <a-button type="primary" size="small" @click="onlineItem(item)">上架</a-button>
+                <a-button size="small" @click="$router.push(`/seller/publish?id=${item.id}`)">编辑</a-button>
+                <a-popconfirm content="确定要删除吗？" @ok="deleteItem(item)">
+                  <a-button type="text" status="danger" size="small">删除</a-button>
+                </a-popconfirm>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <a-empty v-else-if="!loading" description="暂无商品，去发布第一个吧~">
+          <template #image><icon-apps size="64" /></template>
+          <a-button type="primary" @click="$router.push('/seller/publish')">发布商品</a-button>
+        </a-empty>
+      </a-spin>
+
+      <div v-if="pagination.total > pagination.pageSize" class="pagination-wrapper">
+        <a-pagination
+          :current="pagination.current"
+          :total="pagination.total"
+          :page-size="pagination.pageSize"
+          show-total
+          show-page-size
+          @change="handlePageChange"
+          @page-size-change="handlePageSizeChange"
+        />
+      </div>
     </a-card>
   </div>
 </template>
@@ -80,71 +106,124 @@
 <script setup>
 import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
-import { Message } from "@arco-design/web-vue";
-import { IconPlus, IconEye, IconEdit } from "@arco-design/web-vue/es/icon";
+import { Message, Modal } from "@arco-design/web-vue";
+import { IconArrowLeft, IconPlus, IconApps } from "@arco-design/web-vue/es/icon";
 import StatusTag from "commonprovide/status-tag";
-import { parseFirstImageUrl } from "commonprovide/image-utils";
-import { getMyItems } from "../services/api";
+import ConditionTag from "./components/sub/ConditionTag";
+import { getMyItems, offShelfItem, deleteItem as apiDeleteItem, updateItem } from "./services/api";
 
 const router = useRouter();
-
-const rows = ref([]);
 const loading = ref(false);
+const items = ref([]);
+const activeStatus = ref("");
+const pagination = reactive({ current: 1, pageSize: 10, total: 0 });
 
-const paginationConfig = reactive({
-  current: 1,
-  pageSize: 10,
-  total: 0,
-  showTotal: true,
-  showPageSize: true,
-  pageSizeOptions: [10, 20, 50],
-});
+const CATEGORY_MAP = {
+  digital: "数码", book: "教材", clothing: "服饰",
+  daily: "生活", sport: "运动", instrument: "乐器", other: "其他",
+};
 
-function formatDate(dateStr) {
-  if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  return date.toLocaleString("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+function getImageUrl(record) {
+  const urls = record.imageUrls || record.images || record.coverUrl || [];
+  if (typeof urls === "string") {
+    try { return JSON.parse(urls)[0]; } catch { return urls; }
+  }
+  return Array.isArray(urls) && urls.length > 0 ? urls[0] : null;
 }
+
+function formatTime(dateStr) {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString("zh-CN");
+}
+
+function categoryLabel(c) { return CATEGORY_MAP[c] || c || ""; }
 
 async function loadData() {
   loading.value = true;
   try {
-    const result = await getMyItems({
-      pageNo: paginationConfig.current,
-      pageSize: paginationConfig.pageSize,
-    });
-    rows.value = result.items || result.rows || [];
-    paginationConfig.total = result.total || result.totalCount || 0;
-  } catch (error) {
-    Message.error(error.message || "加载失败");
+    const params = {
+      mine: true,
+      status: activeStatus.value || undefined,
+      pageNo: pagination.current,
+      pageSize: pagination.pageSize,
+    };
+    const res = await getMyItems(params);
+    items.value = res?.items || res?.rows || [];
+    pagination.total = res?.totalCount ?? res?.total ?? 0;
+  } catch (e) {
+    Message.error(e.message || "加载失败");
   } finally {
     loading.value = false;
   }
 }
 
+function handleTabChange(key) {
+  activeStatus.value = key;
+  pagination.current = 1;
+  loadData();
+}
+
 function handlePageChange(page) {
-  paginationConfig.current = page;
+  pagination.current = page;
   loadData();
 }
 
 function handlePageSizeChange(size) {
-  paginationConfig.pageSize = size;
-  paginationConfig.current = 1;
+  pagination.pageSize = size;
+  pagination.current = 1;
   loadData();
 }
 
-function viewDetail(record) {
-  router.push(`/item/${record.id}`);
+async function publishDraft(item) {
+  try {
+    await updateItem(item.id, { reviewStatus: "PENDING_REVIEW" });
+    Message.success("已提交审核");
+    loadData();
+  } catch (e) { Message.error(e.message || "操作失败"); }
 }
 
-function editItem(record) {
-  router.push(`/publish?id=${record.id}`);
+async function offlineItem(item) {
+  Modal.confirm({
+    title: "确认下架",
+    content: `确定要下架「${item.title}」吗？`,
+    onOk: async () => {
+      try {
+        await offShelfItem(item.id);
+        Message.success("已下架");
+        loadData();
+      } catch (e) { Message.error(e.message || "操作失败"); }
+    },
+  });
+}
+
+async function onlineItem(item) {
+  try {
+    await updateItem(item.id, { reviewStatus: "PENDING_REVIEW" });
+    Message.success("已提交上架申请");
+    loadData();
+  } catch (e) { Message.error(e.message || "操作失败"); }
+}
+
+async function withdrawItem(item) {
+  Modal.confirm({
+    title: "确认撤回",
+    content: "确定要撤回审核吗？",
+    onOk: async () => {
+      try {
+        await updateItem(item.id, { reviewStatus: "DRAFT" });
+        Message.success("已撤回");
+        loadData();
+      } catch (e) { Message.error(e.message || "操作失败"); }
+    },
+  });
+}
+
+async function deleteItem(item) {
+  try {
+    await apiDeleteItem(item.id);
+    Message.success("已删除");
+    loadData();
+  } catch (e) { Message.error(e.message || "删除失败"); }
 }
 
 onMounted(loadData);
@@ -152,34 +231,123 @@ onMounted(loadData);
 
 <style lang="scss" scoped>
 .my-items-page {
-  padding: 0;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, #f5f6f8 0%, #ffffff 100%);
+  min-height: 100vh;
 }
 
-.item-cell {
+.page-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  .page-title {
+    flex: 1;
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #1d2129;
+  }
+}
+
+.items-card {
+  border-radius: 12px;
+
+  :deep(.arco-tabs-nav) { padding: 0 8px; }
+  :deep(.arco-tabs-content) { padding-top: 16px; }
+}
+
+.items-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.item-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  background: #fafafa;
+  border-radius: 10px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f5f7fa;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  .item-image-wrapper { flex-shrink: 0; }
+
+  .item-image {
+    width: 64px;
+    height: 64px;
+    border-radius: 8px;
+    object-fit: cover;
+
+    &--empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f0f0f0;
+      font-size: 28px;
+    }
+  }
 
   .item-info {
+    flex: 1;
+    min-width: 0;
+
+    .item-title {
+      margin: 0 0 8px;
+      font-size: 15px;
+      font-weight: 500;
+      color: #1d2129;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .item-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+
+      .item-price {
+        font-size: 17px;
+        font-weight: 700;
+        color: #f53f3f;
+      }
+    }
+
+    .item-stats {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: #86909c;
+    }
+  }
+
+  .item-actions {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-width: 180px;
-  }
-
-  .item-title {
-    font-size: 13px;
-    color: #1d2129;
-    max-width: 160px;
-  }
-
-  .item-price {
-    font-size: 14px;
-    font-weight: 600;
+    gap: 8px;
+    flex-shrink: 0;
   }
 }
 
-.text-muted {
-  color: #86909c;
+.pagination-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 24px 0 8px;
 }
+
+:deep(.arco-empty) { padding: 80px 20px; }
 </style>

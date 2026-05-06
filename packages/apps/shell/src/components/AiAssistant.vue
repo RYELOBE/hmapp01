@@ -1,117 +1,167 @@
 <template>
-  <div>
-    <a-button shape="circle" size="large" class="ai-assistant-trigger" @click="visible = true">
-      <template #icon><icon-question-circle /></template>
-    </a-button>
+  <div class="ai-assistant" :class="{ 'ai-assistant--open': visible }">
+    <!-- 悬浮触发按钮 -->
+    <div
+      class="ai-assistant__trigger"
+      role="button"
+      tabindex="0"
+      aria-label="打开 AI 助手"
+      @click="togglePanel"
+      @keydown.enter="togglePanel"
+      @keydown.space.prevent="togglePanel"
+    >
+      <a-badge :count="unreadCount" :max-count="99">
+        <div class="ai-trigger-btn">
+          <icon-message />
+        </div>
+      </a-badge>
+    </div>
 
     <!-- 对话窗口 -->
-    <div v-if="visible" class="ai-assistant-overlay" @click="visible = false"></div>
-    <div v-if="visible" class="ai-assistant-panel">
-      <!-- 头部 -->
-      <div class="ai-assistant-header">
-        <div class="ai-assistant-title">
-          <icon-question-circle />
-          <span>AI 助手</span>
-        </div>
-        <a-button type="text" class="ai-assistant-close" @click="visible = false">
-          <template #icon><icon-close /></template>
-        </a-button>
-      </div>
+    <Transition name="ai-panel">
+      <div v-if="visible" class="ai-assistant__panel">
+        <!-- 头部 -->
+        <header class="ai-panel__header">
+          <div class="ai-header-left">
+            <a-avatar :size="32" class="ai-avatar">
+              <template #icon><icon-robot /></template>
+            </a-avatar>
+            <span class="ai-title">AI 助手</span>
+          </div>
+          <div class="ai-header-right">
+            <a-button type="text" size="small" class="ai-header-btn" @click="minimizePanel">
+              <template #icon><icon-minus /></template>
+            </a-button>
+            <a-button type="text" size="small" class="ai-header-btn" @click="closePanel">
+              <template #icon><icon-close /></template>
+            </a-button>
+          </div>
+        </header>
 
-      <!-- 主体内容 -->
-      <div class="ai-assistant-body">
-        <!-- 会话列表侧边栏 -->
-        <div class="ai-assistant-sessions">
-          <a-button type="primary" long class="ai-new-session-btn" @click="createNewSession">
-            <template #icon><icon-plus /></template>
-            新对话
-          </a-button>
-          <a-menu v-model:selected-keys="selectedKeys" @menu-item-click="onMenuItemClick" class="ai-session-menu">
-            <a-menu-item v-for="session in sessions" :key="session.sessionId">
-              <template #icon><icon-message /></template>
-              {{ getSessionTitle(session) }}
-            </a-menu-item>
-          </a-menu>
-        </div>
-
-        <!-- 对话区域 -->
-        <div class="ai-assistant-chat">
-          <!-- 预设问题 -->
-          <div class="ai-presets" v-if="messages.length === 0">
-            <div class="ai-preset-title">试试问这些问题：</div>
-            <div class="ai-preset-list">
-              <a-button
-                v-for="preset in presets"
-                :key="preset"
-                type="outline"
-                long
-                class="ai-preset-btn"
-                @click="sendPresetMessage(preset)"
-              >
-                {{ preset }}
-              </a-button>
+        <!-- 消息列表区域 -->
+        <div class="ai-panel__body" ref="messagesContainer">
+          <!-- 空状态 -->
+          <div v-if="messages.length === 0 && !sending" class="ai-empty-state">
+            <a-avatar :size="56" class="ai-empty-avatar">
+              <template #icon><icon-robot /></template>
+            </a-avatar>
+            <p class="ai-empty-text">您好！我是校园二手平台的 AI 助手 😊</p>
+            <div class="ai-quick-questions">
+              <button
+                v-for="(q, idx) in quickQuestions"
+                :key="idx"
+                class="ai-quick-btn"
+                @click="sendQuickQuestion(q)"
+              >{{ q }}</button>
             </div>
           </div>
 
           <!-- 消息列表 -->
-          <div class="ai-messages" ref="messagesContainer">
-            <div v-for="(message, index) in messages" :key="index" :class="['ai-message', message.role]">
-              <div class="ai-message-avatar">
-                <icon-question-circle v-if="message.role === 'assistant'" />
-                <icon-user v-else />
-              </div>
-              <div class="ai-message-content">
+          <template v-else>
+            <div
+              v-for="(msg, index) in messages"
+              :key="index"
+              :class="['ai-message', `ai-message--${msg.role}`]"
+            >
+              <a-avatar v-if="msg.role === 'assistant'" :size="24" class="ai-msg-avatar">
+                <template #icon><icon-robot /></template>
+              </a-avatar>
+              <div class="ai-message__content">
                 <div
-                  v-if="message.role === 'assistant'"
-                  class="ai-markdown"
-                  v-html="renderMarkdown(message.content)"
+                  v-if="msg.role === 'assistant'"
+                  class="ai-bubble ai-bubble--assistant"
+                  v-html="renderMarkdown(msg.content)"
                 ></div>
-                <div v-else class="ai-text">{{ message.content }}</div>
+                <div v-else class="ai-bubble ai-bubble--user">{{ msg.content }}</div>
               </div>
+              <a-avatar v-if="msg.role === 'user'" :size="24" class="ai-msg-avatar">
+                <template #icon><icon-user /></template>
+              </a-avatar>
             </div>
-            <div v-if="sending" class="ai-message assistant">
-              <div class="ai-message-avatar">
-                <icon-question-circle />
-              </div>
-              <div class="ai-message-content">
-                <div class="ai-typing">
-                  <span></span>
-                  <span></span>
-                  <span></span>
+
+            <!-- 加载状态：打字动画 -->
+            <div v-if="sending" class="ai-message ai-message--assistant">
+              <a-avatar :size="24" class="ai-msg-avatar">
+                <template #icon><icon-robot /></template>
+              </a-avatar>
+              <div class="ai-message__content">
+                <div class="ai-bubble ai-bubble--typing">
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
+                  <span class="typing-dot"></span>
                 </div>
               </div>
             </div>
+          </template>
+        </div>
+
+        <!-- 输入区域 -->
+        <footer class="ai-panel__footer">
+          <!-- 快捷问题标签 -->
+          <div v-if="messages.length > 0 && !sending" class="ai-shortcuts">
+            <button
+              v-for="(q, idx) in quickQuestions.slice(0, 3)"
+              :key="'sc-' + idx"
+              class="ai-shortcut-tag"
+              @click="sendQuickQuestion(q)"
+            >{{ q }}</button>
           </div>
 
-          <!-- 输入区域 -->
-          <div class="ai-input-area">
+          <div class="ai-input-wrapper">
             <a-textarea
+              ref="inputRef"
               v-model="draft"
               :auto-size="{ minRows: 1, maxRows: 4 }"
-              placeholder="输入你的问题..."
-              class="ai-input-textarea"
-              @keydown.enter.prevent="sendMessage"
+              placeholder="输入您的问题..."
+              :max-length="500"
+              show-word-limit
+              class="ai-input"
+              @keydown.enter.exact.prevent="handleSend"
+              @focus="isInputFocused = true"
+              @blur="isInputFocused = false"
             />
             <a-button
               type="primary"
               shape="circle"
+              :size="32"
               class="ai-send-btn"
               :disabled="!draft.trim() || sending"
-              @click="sendMessage"
+              @click="handleSend"
             >
-              <template #icon><icon-right /></template>
+              <template #icon><icon-send /></template>
             </a-button>
           </div>
-        </div>
+
+          <!-- 功能按钮 -->
+          <div class="ai-footer-actions">
+            <a-button type="text" size="mini" @click="clearMessages">
+              <template #icon><icon-delete /></template>
+              清空对话
+            </a-button>
+          </div>
+        </footer>
       </div>
-    </div>
+    </Transition>
+
+    <!-- 遮罩层 -->
+    <Transition name="ai-overlay">
+      <div v-if="visible && isMobile" class="ai-assistant__overlay" @click="closePanel"></div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue';
 import MarkdownIt from 'markdown-it';
-import { IconQuestionCircle, IconClose, IconPlus, IconMessage, IconUser, IconRight } from '@arco-design/web-vue/es/icon';
+import {
+  IconMessage,
+  IconRobot,
+  IconMinus,
+  IconClose,
+  IconUser,
+  IconSend,
+  IconDelete,
+} from '@arco-design/web-vue/es/icon';
 import { chatWithAssistant, fetchAiPresets, fetchRecentSessions, fetchSessionMessages } from 'commonprovide/ai-sdk';
 import { getCurrentUser } from 'commonprovide/auth-sdk';
 
@@ -120,21 +170,64 @@ const md = new MarkdownIt({ html: false, breaks: true, linkify: true });
 const visible = ref(false);
 const draft = ref('');
 const sending = ref(false);
+const isInputFocused = ref(false);
 const currentSessionId = ref('');
 const messages = ref([]);
 const sessions = ref([]);
 const presets = ref([]);
-const selectedKeys = ref([]);
 const messagesContainer = ref(null);
+const inputRef = ref(null);
+const unreadCount = ref(0);
 
-watch(currentSessionId, (id) => {
-  selectedKeys.value = id ? [id] : [];
+const isMobile = computed(() => {
+  if (typeof window === 'undefined') return false;
+  return window.innerWidth < 768;
 });
+
+const quickQuestions = [
+  '商品如何发布？',
+  '如何申请退款？',
+  '平台有哪些分类？',
+  '卖家多久需要发货？',
+  '平台收取手续费吗？',
+];
 
 onMounted(() => {
   loadPresets();
   loadSessions();
+  window.addEventListener('resize', handleResize);
 });
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize);
+});
+
+function handleResize() {
+  if (isMobile.value && visible.value) {
+    // 移动端适配逻辑
+  }
+}
+
+function togglePanel() {
+  visible.value ? closePanel() : openPanel();
+}
+
+function openPanel() {
+  visible.value = true;
+  unreadCount.value = 0;
+  nextTick(() => {
+    inputRef.value?.focus();
+    scrollToBottom();
+  });
+}
+
+function closePanel() {
+  visible.value = false;
+}
+
+function minimizePanel() {
+  visible.value = false;
+}
 
 async function loadPresets() {
   try {
@@ -154,36 +247,17 @@ async function loadSessions() {
   }
 }
 
-function createNewSession() {
+function clearMessages() {
   currentSessionId.value = '';
   messages.value = [];
 }
 
-async function loadSession(sessionId) {
-  currentSessionId.value = sessionId;
-  try {
-    const result = await fetchSessionMessages(sessionId);
-    messages.value = result.messages || [];
-    scrollToBottom();
-  } catch (error) {
-    console.error('加载会话失败:', error.message);
-  }
+function sendQuickQuestion(question) {
+  draft.value = question;
+  handleSend();
 }
 
-function onMenuItemClick(key) {
-  loadSession(key);
-}
-
-function getSessionTitle(session) {
-  return session.title || `会话 ${session.sessionId.slice(-6)}`;
-}
-
-function sendPresetMessage(preset) {
-  draft.value = preset;
-  sendMessage();
-}
-
-async function sendMessage() {
+async function handleSend() {
   if (!draft.value.trim() || sending.value) return;
 
   const user = getCurrentUser();
@@ -232,371 +306,434 @@ function renderMarkdown(content) {
 function scrollToBottom() {
   nextTick(() => {
     if (messagesContainer.value) {
-      messagesContainer.value.scrollTop = messagesContainer.value.scrollHeight;
+      messagesContainer.value.scrollTo({
+        top: messagesContainer.value.scrollHeight,
+        behavior: 'smooth',
+      });
     }
   });
 }
 </script>
 
 <style scoped>
-.ai-assistant-trigger {
+.ai-assistant {
   position: fixed;
   right: 24px;
   bottom: 24px;
-  width: 56px;
-  height: 56px;
-  border: none;
+  z-index: var(--z-tooltip, 700);
+}
+
+/* ══════════════════════════════════════
+   触发按钮
+   ══════════════════════════════════════ */
+
+.ai-assistant__trigger {
+  cursor: pointer;
+  outline: none;
+}
+
+.ai-trigger-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: white;
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
-  z-index: 1000;
-  transition: transform 0.2s, box-shadow 0.2s;
+  font-size: 24px;
+  box-shadow: 0 4px 16px rgba(22, 93, 255, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
-.ai-assistant-trigger:deep(.arco-btn) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: transparent;
+.ai-trigger-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(22, 93, 255, 0.4);
 }
 
-.ai-assistant-trigger:deep(.arco-btn:hover) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: transparent;
+.ai-trigger-btn:active {
+  animation: pulse 0.3s ease;
 }
 
-.ai-assistant-trigger:hover {
-  transform: scale(1.1);
-  box-shadow: 0 6px 24px rgba(102, 126, 234, 0.5);
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(0.92); }
+  100% { transform: scale(1); }
 }
 
-.ai-assistant-overlay {
+/* ══════════════════════════════════════
+   对话面板
+   ══════════════════════════════════════ */
+
+.ai-assistant__panel {
+  position: fixed;
+  right: 24px;
+  bottom: 80px;
+  width: 380px;
+  height: 520px;
+  background: #FFFFFF;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 9999;
+}
+
+/* 头部 */
+.ai-panel__header {
+  height: 56px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--border-color-light, #F2F3F5);
+  flex-shrink: 0;
+}
+
+.ai-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ai-avatar {
+  background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+  flex-shrink: 0;
+}
+
+.ai-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-color-1, #1D2129);
+}
+
+.ai-header-right {
+  display: flex;
+  gap: 4px;
+}
+
+.ai-header-btn {
+  color: var(--text-color-3, #86909C);
+}
+
+.ai-header-btn:hover {
+  color: var(--text-color-1, #1D2129);
+  background: var(--fill-color-1, #F2F3F5);
+}
+
+/* 消息区域 */
+.ai-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  background: #FAFBFC;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* 空状态 */
+.ai-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.ai-empty-avatar {
+  background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+  margin-bottom: 16px;
+  flex-shrink: 0;
+}
+
+.ai-empty-text {
+  font-size: 15px;
+  color: var(--text-color-1, #1D2129);
+  margin: 0 0 24px;
+  line-height: 1.6;
+}
+
+.ai-quick-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.ai-quick-btn {
+  padding: 10px 16px;
+  background: #FFFFFF;
+  border: 1px solid var(--border-color, #E5E6EB);
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-color-2, #4E5969);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.ai-quick-btn:hover {
+  border-color: #165DFF;
+  color: #165DFF;
+  background: var(--color-primary-bg, #E8F3FF);
+}
+
+/* 消息气泡 */
+.ai-message {
+  display: flex;
+  gap: 8px;
+  max-width: 100%;
+  animation: fadeInUp 0.15s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.ai-message--user {
+  flex-direction: row-reverse;
+}
+
+.ai-msg-avatar {
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.ai-message--assistant .ai-msg-avatar {
+  background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+  color: white;
+}
+
+.ai-message--user .ai-msg-avatar {
+  background: var(--fill-color-1, #F2F3F5);
+  color: var(--text-color-3, #86909C);
+}
+
+.ai-message__content {
+  max-width: 75%;
+  min-width: 0;
+}
+
+/* 用户消息气泡 */
+.ai-bubble--user {
+  background: #165DFF;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 12px 12px 4px 12px;
+  font-size: 14px;
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+/* AI 回复气泡 */
+.ai-bubble--assistant {
+  background: #F2F3F5;
+  color: var(--text-color-1, #1D2129);
+  padding: 10px 14px;
+  border-radius: 12px 12px 12px 4px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.ai-bubble--assistant :deep(p) {
+  margin: 4px 0;
+}
+
+.ai-bubble--assistant :deep(p:first-child) {
+  margin-top: 0;
+}
+
+.ai-bubble--assistant :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+.ai-bubble--assistant :deep(strong) {
+  font-weight: 600;
+}
+
+.ai-bubble--assistant :deep(code) {
+  background: rgba(0, 0, 0, 0.05);
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-size: 13px;
+}
+
+/* 打字动画 */
+.ai-bubble--typing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 18px;
+}
+
+.typing-dot {
+  width: 7px;
+  height: 7px;
+  background: var(--text-color-3, #86909C);
+  border-radius: 50%;
+  animation: typingBounce 1.4s infinite ease-in-out;
+}
+
+.typing-dot:nth-child(1) { animation-delay: 0s; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typingBounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-6px);
+    opacity: 1;
+  }
+}
+
+/* 底部输入区 */
+.ai-panel__footer {
+  padding: 12px 16px;
+  border-top: 1px solid var(--border-color-light, #F2F3F5);
+  background: #FFFFFF;
+  flex-shrink: 0;
+}
+
+.ai-shortcuts {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ai-shortcuts::-webkit-scrollbar {
+  display: none;
+}
+
+.ai-shortcut-tag {
+  padding: 4px 12px;
+  background: var(--fill-color-1, #F2F3F5);
+  border: none;
+  border-radius: 16px;
+  font-size: 12px;
+  color: var(--text-color-2, #4E5969);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.ai-shortcut-tag:hover {
+  background: var(--color-primary-bg, #E8F3FF);
+  color: #165DFF;
+}
+
+.ai-input-wrapper {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+
+.ai-input {
+  flex: 1;
+}
+
+.ai-input :deep(.arco-textarea-wrapper) {
+  border-radius: 24px;
+  border: 1px solid var(--border-color, #E5E6EB);
+  transition: border-color 0.2s ease;
+}
+
+.ai-input :deep(.arco-textarea-wrapper:focus-within) {
+  border-color: #165DFF;
+  box-shadow: 0 0 0 2px rgba(22, 93, 255, 0.1);
+}
+
+.ai-send-btn {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  border: none;
+  transition: transform 0.15s ease;
+}
+
+.ai-send-btn:not(:disabled):active {
+  transform: scale(0.95);
+}
+
+.ai-footer-actions {
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* 遮罩层 */
+.ai-assistant__overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
   background: rgba(0, 0, 0, 0.3);
-  z-index: 1001;
+  z-index: 9998;
 }
 
-.ai-assistant-panel {
-  position: fixed;
-  right: 96px;
-  bottom: 24px;
-  width: 420px;
-  height: 600px;
-  background: white;
-  border-radius: 16px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-  z-index: 1002;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
+/* ══════════════════════════════════════
+   过渡动画
+   ══════════════════════════════════════ */
+
+.ai-panel-enter-active,
+.ai-panel-leave-active {
+  transition: transform 0.2s ease-out, opacity 0.2s ease-out;
 }
 
-.ai-assistant-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+.ai-panel-enter-from,
+.ai-panel-leave-to {
+  transform: scale(0.9) translateY(20px);
+  opacity: 0;
 }
 
-.ai-assistant-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  font-weight: 600;
+.ai-overlay-enter-active,
+.ai-overlay-leave-active {
+  transition: opacity 0.2s ease;
 }
 
-.ai-assistant-close {
-  color: white;
+.ai-overlay-enter-from,
+.ai-overlay-leave-to {
+  opacity: 0;
 }
 
-.ai-assistant-close:deep(.arco-btn) {
-  color: white;
-}
+/* ══════════════════════════════════════
+   响应式 - 移动端全屏模式
+   ══════════════════════════════════════ */
 
-.ai-assistant-close:hover:deep(.arco-btn) {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.ai-assistant-body {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-
-.ai-assistant-sessions {
-  width: 140px;
-  background: #f8f9fa;
-  border-right: 1px solid #e9ecef;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.ai-new-session-btn {
-  margin: 12px;
-  flex-shrink: 0;
-}
-
-.ai-session-menu {
-  flex: 1;
-  overflow-y: auto;
-  border: none;
-  background: transparent;
-  padding: 0 12px 12px;
-}
-
-.ai-session-menu:deep(.arco-menu-inner) {
-  padding: 0;
-}
-
-.ai-session-menu:deep(.arco-menu-item) {
-  padding: 10px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  color: #495057;
-  margin-bottom: 4px;
-  line-height: 1.4;
-}
-
-.ai-session-menu:deep(.arco-menu-item:hover) {
-  background: white;
-}
-
-.ai-session-menu:deep(.arco-menu-selected) {
-  background: white;
-  color: #667eea;
-  font-weight: 500;
-}
-
-.ai-assistant-chat {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.ai-presets {
-  padding: 16px;
-  border-bottom: 1px solid #e9ecef;
-}
-
-.ai-preset-title {
-  font-size: 13px;
-  color: #6c757d;
-  margin-bottom: 12px;
-}
-
-.ai-preset-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.ai-preset-btn {
-  text-align: left;
-  font-size: 13px;
-  color: #495057;
-}
-
-.ai-preset-btn:deep(.arco-btn) {
-  justify-content: flex-start;
-}
-
-.ai-messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.ai-message {
-  display: flex;
-  gap: 12px;
-  max-width: 100%;
-}
-
-.ai-message.user {
-  flex-direction: row-reverse;
-}
-
-.ai-message-avatar {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.ai-message.assistant .ai-message-avatar {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-}
-
-.ai-message.user .ai-message-avatar {
-  background: #e9ecef;
-  color: #495057;
-}
-
-.ai-message-content {
-  max-width: 260px;
-}
-
-.ai-message.assistant .ai-message-content {
-  background: #f8f9fa;
-  padding: 12px 16px;
-  border-radius: 12px 12px 12px 4px;
-}
-
-.ai-message.user .ai-message-content {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 12px 16px;
-  border-radius: 12px 12px 4px 12px;
-}
-
-.ai-markdown {
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.ai-markdown:deep(*:first-child) {
-  margin-top: 0;
-}
-
-.ai-markdown:deep(*:last-child) {
-  margin-bottom: 0;
-}
-
-.ai-markdown:deep(p) {
-  margin: 8px 0;
-}
-
-.ai-markdown:deep(strong) {
-  font-weight: 600;
-}
-
-.ai-markdown:deep(ul),
-.ai-markdown:deep(ol) {
-  padding-left: 20px;
-  margin: 8px 0;
-}
-
-.ai-markdown:deep(li) {
-  margin: 4px 0;
-}
-
-.ai-markdown:deep(blockquote) {
-  border-left: 3px solid #667eea;
-  padding-left: 12px;
-  margin: 8px 0;
-  color: #667eea;
-}
-
-.ai-markdown:deep(code) {
-  background: rgba(0, 0, 0, 0.05);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-size: 13px;
-}
-
-.ai-text {
-  font-size: 14px;
-  line-height: 1.6;
-  word-break: break-word;
-}
-
-.ai-input-area {
-  padding: 12px 16px;
-  border-top: 1px solid #e9ecef;
-  display: flex;
-  gap: 12px;
-  align-items: flex-end;
-}
-
-.ai-input-textarea {
-  flex: 1;
-}
-
-.ai-input-textarea:deep(.arco-textarea) {
-  border-radius: 20px;
-  font-size: 14px;
-  font-family: inherit;
-}
-
-.ai-input-textarea:deep(.arco-textarea:focus) {
-  border-color: #667eea;
-}
-
-.ai-send-btn {
-  flex-shrink: 0;
-  border: none;
-  transition: transform 0.2s, opacity 0.2s;
-}
-
-.ai-send-btn:deep(.arco-btn) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: transparent;
-}
-
-.ai-send-btn:deep(.arco-btn:hover) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-color: transparent;
-}
-
-.ai-send-btn:hover:not(:disabled) {
-  transform: scale(1.1);
-}
-
-.ai-send-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.ai-send-btn:disabled:deep(.arco-btn) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.ai-typing {
-  display: flex;
-  gap: 4px;
-  padding: 4px 0;
-}
-
-.ai-typing span {
-  width: 8px;
-  height: 8px;
-  background: #6c757d;
-  border-radius: 50%;
-  animation: typing 1.4s infinite ease-in-out;
-}
-
-.ai-typing span:nth-child(1) {
-  animation-delay: 0s;
-}
-
-.ai-typing span:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.ai-typing span:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-@keyframes typing {
-  0%, 80%, 100% {
-    transform: translateY(0);
-    opacity: 0.5;
+@media (max-width: 768px) {
+  .ai-assistant {
+    right: 0;
+    bottom: 0;
   }
-  40% {
-    transform: translateY(-6px);
-    opacity: 1;
+
+  .ai-assistant__panel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
+  }
+
+  .ai-trigger-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
   }
 }
 </style>

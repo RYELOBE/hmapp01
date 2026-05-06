@@ -7,6 +7,8 @@
         width="60"
         height="60"
         fit="cover"
+        loading="lazy"
+        :referrer-policy="'no-referrer'"
         class="order-goods__image"
       />
       <div class="order-goods__info">

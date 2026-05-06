@@ -1,15 +1,12 @@
 <template>
   <div class="portal-layout" :class="{ 'portal-layout--qiankun': isQiankunMode }">
-    <!-- 顶部导航栏 -->
     <header v-if="!isQiankunMode" class="portal-nav">
       <div class="portal-nav__inner">
-        <!-- Logo -->
         <div class="portal-nav__brand" @click="$router.push('/home')">
           <span class="portal-nav__logo">🎓</span>
-          <span class="portal-nav__title">校园集市</span>
+          <span class="portal-nav__title">校园二手平台</span>
         </div>
 
-        <!-- 搜索框 -->
         <div class="portal-nav__search">
           <a-input-search
             v-model="searchKeyword"
@@ -21,7 +18,6 @@
           />
         </div>
 
-        <!-- 导航链接 -->
         <nav class="portal-nav__links">
           <a
             v-for="link in navLinks"
@@ -35,7 +31,6 @@
           </a>
         </nav>
 
-        <!-- 用户区 -->
         <div class="portal-nav__user">
           <a-dropdown trigger="hover">
             <div class="portal-nav__avatar">
@@ -67,17 +62,23 @@
       </div>
     </header>
 
-    <!-- 内容区 -->
     <main class="portal-content">
       <router-view></router-view>
     </main>
 
-    <!-- 底部 -->
     <footer v-if="!isQiankunMode" class="portal-footer">
-      <p>© 2026 校园集市 — 让闲置转起来 ♻️</p>
+      <div class="portal-footer__inner">
+        <p class="portal-footer__copyright">© 2026 校园二手平台 — 让闲置转起来 ♻️</p>
+        <p class="portal-footer__links">
+          <a href="javascript:void(0)">关于我们</a>
+          <span class="portal-footer__divider">|</span>
+          <a href="javascript:void(0)">使用帮助</a>
+          <span class="portal-footer__divider">|</span>
+          <a href="javascript:void(0)">联系客服</a>
+        </p>
+      </div>
     </footer>
 
-    <!-- 迷你购物车 -->
     <MiniCart v-if="isBuyer" ref="miniCartRef" />
   </div>
 </template>
@@ -161,39 +162,39 @@ function logout() {
 </script>
 
 <style lang="scss" scoped>
-$portal-primary: #0fc6c2;
-$portal-primary-light: #e8faf9;
-$portal-orange: #f0a838;
-$portal-bg: #f5f5f5;
-$portal-card: #ffffff;
-$portal-text: #1d2129;
-$portal-text-secondary: #4e5969;
-$portal-text-muted: #86909c;
-$portal-nav-height: 64px;
+:root {
+  --shadow-nav: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+$primary-color: #165DFF;
+$bg-color: #F5F6F7;
+$card-bg: #FFFFFF;
+$text-primary: #1D2129;
+$text-secondary: #4E5969;
+$text-muted: #86909C;
+$nav-height: 64px;
 
 .portal-layout {
-  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: $portal-bg;
+  background: $bg-color;
 
-  &--qiankun .portal-content {
-    min-height: 100%;
+  &:not(.portal-layout--qiankun) {
+    min-height: 100vh;
   }
 }
 
-// ── 顶部导航 ────────────────────────────
 .portal-nav {
   position: sticky;
   top: 0;
   z-index: 999;
-  background: $portal-card;
-  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+  background: $card-bg;
+  box-shadow: var(--shadow-nav);
 
   &__inner {
     max-width: 1280px;
     margin: 0 auto;
-    height: $portal-nav-height;
+    height: $nav-height;
     padding: 0 24px;
     display: flex;
     align-items: center;
@@ -215,10 +216,7 @@ $portal-nav-height: 64px;
   &__title {
     font-size: 20px;
     font-weight: 700;
-    background: linear-gradient(135deg, #7c3aed 0%, #ec4899 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: $primary-color;
   }
 
   &__search {
@@ -227,10 +225,12 @@ $portal-nav-height: 64px;
 
     :deep(.arco-input-search) {
       border-radius: 24px;
-      border: 2px solid #e5e6eb;
-      transition: border-color 0.2s;
+      border: 2px solid #E5E6EB;
+      transition: border-color 0.2s ease;
 
-      &:focus-within { border-color: #7c3aed; }
+      &:focus-within {
+        border-color: $primary-color;
+      }
     }
   }
 
@@ -248,21 +248,23 @@ $portal-nav-height: 64px;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 500;
-    color: $portal-text-secondary;
+    color: $text-secondary;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s ease;
 
-    &-icon { font-size: 16px; }
+    &-icon {
+      font-size: 16px;
+    }
 
     &:hover {
-      color: #7c3aed;
-      background: rgba(124, 58, 237, 0.06);
+      color: $primary-color;
+      background: rgba(22, 93, 255, 0.06);
     }
 
     &--active {
-      color: #7c3aed;
-      background: rgba(124, 58, 237, 0.06);
-      font-weight: 600;
+      color: $primary-color;
+      background: rgba(22, 93, 255, 0.06);
+      font-weight: 700;
     }
   }
 
@@ -277,22 +279,23 @@ $portal-nav-height: 64px;
     cursor: pointer;
     padding: 4px 8px;
     border-radius: 20px;
-    transition: background 0.2s;
+    transition: background 0.2s ease;
 
-    &:hover { background: #f2f3f5; }
+    &:hover {
+      background: #F2F3F5;
+    }
   }
 
   &__username {
     font-size: 14px;
-    color: $portal-text;
+    color: $text-primary;
   }
 
   &__logout {
-    color: #f53f3f !important;
+    color: #F53F3F !important;
   }
 }
 
-// ── 内容区 ────────────────────────────
 .portal-content {
   flex: 1;
   max-width: 1280px;
@@ -301,13 +304,43 @@ $portal-nav-height: 64px;
   padding: 20px 24px;
 }
 
-// ── 底部 ────────────────────────────
 .portal-footer {
-  text-align: center;
-  padding: 20px;
-  color: $portal-text-muted;
-  font-size: 13px;
-  border-top: 1px solid #e5e6eb;
-  background: $portal-card;
+  background: $card-bg;
+  border-top: 1px solid #E5E6EB;
+  padding: 24px 0;
+
+  &__inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px;
+    text-align: center;
+  }
+
+  &__copyright {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: $text-muted;
+  }
+
+  &__links {
+    margin: 0;
+    font-size: 13px;
+    color: $text-secondary;
+
+    a {
+      color: $text-secondary;
+      text-decoration: none;
+      transition: color 0.2s ease;
+
+      &:hover {
+        color: $primary-color;
+      }
+    }
+  }
+
+  &__divider {
+    margin: 0 12px;
+    color: #E5E6EB;
+  }
 }
 </style>

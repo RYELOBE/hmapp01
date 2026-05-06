@@ -14,7 +14,6 @@ let piniaInstance = null;
 window.__FRAME_PROPS__ = null;
 
 function render(props = {}) {
-  console.log("[ops] rendering with props:", props);
   const { container, authStore } = props;
   window.__FRAME_PROPS__ = props;
 
@@ -24,7 +23,6 @@ function render(props = {}) {
 
   // 如果有从主应用传递的认证状态，初始化 Pinia store
   if (authStore) {
-    console.log("[ops] initializing with authStore from shell:", authStore);
     // 这里可以初始化一个本地的 auth store
   }
 
@@ -86,7 +84,6 @@ renderWithQiankun({
     }
   },
   update(props) {
-    console.log("[ops] update lifecycle called with props:", props);
     window.__FRAME_PROPS__ = props;
     // 可以在这里处理 props 更新
   },

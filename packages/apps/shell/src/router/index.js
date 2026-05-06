@@ -1,12 +1,13 @@
 import { createRouter, createWebHistory } from "vue-router";
-import LoginView from "../views/LoginView.vue";
-import ForbiddenView from "../views/ForbiddenView.vue";
-import ShellHomeView from "../views/ShellHomeView.vue";
-import LayoutView from "../views/container/Layout.vue";
-import MicroView from "../views/MicroView.vue";
 import { useAuthStore } from "../stores/auth";
 import { hasAnyRole } from "@campus/common/roles";
 import framePinia from "../minFrame/pinia/framePinia";
+
+const LoginView = () => import(/* webpackChunkName: "shell-login" */ "../views/LoginView.vue");
+const ForbiddenView = () => import(/* webpackChunkName: "shell-forbidden" */ "../views/ForbiddenView.vue");
+const ShellHomeView = () => import(/* webpackChunkName: "shell-home" */ "../views/ShellHomeView.vue");
+const LayoutView = () => import(/* webpackChunkName: "shell-layout" */ "../views/container/Layout.vue");
+const MicroView = () => import(/* webpackChunkName: "shell-micro" */ "../views/MicroView.vue");
 
 const MicroRoutePlaceholder = { template: "<div></div>" };
 
@@ -59,7 +60,7 @@ router.beforeEach(async (to) => {
   const lastRedirect = redirectCountMap.get(to.fullPath) || 0;
   if (now - lastRedirect < 3000) {
     console.warn("[router] Possible infinite redirect detected, stopping:", to.fullPath);
-    return true; // 停止重定向，留在当前页面
+    return true;
   }
   redirectCountMap.set(to.fullPath, now);
 
@@ -80,10 +81,16 @@ router.beforeEach(async (to) => {
       }
       return true;
     }
-    // 需认证页面 → 跳转登录，保存当前路径用于登录后重定向
-    if (to.meta.requiresAuth || to.meta.roles) {
+
+    // 需认证页面 → 检查当前路由及所有父路由的 meta
+    const requiresAuth = to.matched.some(record =>
+      record.meta.requiresAuth || record.meta.roles
+    );
+
+    if (requiresAuth) {
       return { name: "login", query: { redirect: to.fullPath } };
     }
+
     // 其他页面也不等待 configs 加载
     return true;
   }
@@ -92,6 +99,12 @@ router.beforeEach(async (to) => {
   if (authStore.isLoggedIn && !frame.loaded) {
     try {
       await frame.initFrameWithRoutes();
+      
+      // 如果访问的是首页，直接重定向到门户
+      if (to.path === '/' || to.name === 'home') {
+        return { path: '/portal/home', replace: true };
+      }
+      
       // 动态路由添加后，需要重新匹配
       if (to.matched.length === 0 || to.name === "fallback") {
         // 检查是否已经添加了对应的动态路由

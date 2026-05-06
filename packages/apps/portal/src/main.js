@@ -11,10 +11,9 @@ let appInstance = null;
 let piniaInstance = null;
 
 // 全局保存从主应用传递过来的 props
-window.__FRAME_PROPS__ = null;
+window.__FRAME_PROPS__ = null; 
 
 function render(props = {}) {
-  console.log("[portal] rendering with props:", props);
   const { container, authStore } = props;
   window.__FRAME_PROPS__ = props;
 
@@ -24,7 +23,6 @@ function render(props = {}) {
 
   // 如果有从主应用传递的认证状态，初始化 Pinia store
   if (authStore) {
-    console.log("[portal] initializing with authStore from shell:", authStore);
     // 这里可以初始化一个本地的 auth store
   }
 
@@ -54,14 +52,11 @@ function render(props = {}) {
 
 renderWithQiankun({
   mount(props) {
-    console.log("[portal] mount lifecycle called");
     render(props);
   },
   bootstrap() {
-    console.log("[portal] bootstrap lifecycle called");
   },
   async unmount(props) {
-    console.log("[portal] unmount lifecycle called");
     try {
       if (appInstance) {
         await nextTick();
@@ -86,7 +81,6 @@ renderWithQiankun({
     }
   },
   update(props) {
-    console.log("[portal] update lifecycle called with props:", props);
     window.__FRAME_PROPS__ = props;
     // 可以在这里处理 props 更新
   },

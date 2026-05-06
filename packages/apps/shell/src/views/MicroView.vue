@@ -3,7 +3,7 @@
     <!-- 加载状态 -->
     <div v-if="loadingState.isLoading" class="loading-container">
       <div class="loading-content">
-        <a-spin size="large" />
+        <a-spin :size="40" />
         <p class="loading-text">正在加载子应用...</p>
         <p v-if="loadingState.retryCount > 0" class="retry-info">
           第 {{ loadingState.retryCount }} 次重试中...
@@ -84,15 +84,11 @@ function goHome() {
 <style scoped>
 .subapp-shell {
   width: 100%;
-  height: 100%;
-  min-height: inherit;
   position: relative;
 }
 
 #FRAME_WINDOW {
   width: 100%;
-  height: 100%;
-  min-height: inherit;
 }
 
 #FRAME_WINDOW.hidden {

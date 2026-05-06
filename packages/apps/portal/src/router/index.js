@@ -1,20 +1,21 @@
 import { createRouter, createWebHistory } from "vue-router";
-import Layout from "../views/Layout.vue";
-import Login from "../views/Login.vue";
-import ForbiddenView from "../views/ForbiddenView.vue";
-import Home from "../views/home/index.vue";
-import ItemDetail from "../views/ItemDetail.vue";
-import SellerPublish from "../views/seller/PublishItem.vue";
-import SellerItems from "../views/seller/MyItems.vue";
-import Orders from "../views/orders/index.vue";
-import OrderConfirm from "../views/orders/OrderConfirm.vue";
 import { getCurrentUser } from "commonprovide/auth-sdk";
 import { hasAnyRole } from "@campus/common/roles";
+
+const Layout = () => import(/* webpackChunkName: "portal-layout" */ "../views/Layout.vue");
+const Login = () => import(/* webpackChunkName: "portal-login" */ "../views/Login.vue");
+const ForbiddenView = () => import(/* webpackChunkName: "portal-forbidden" */ "../views/ForbiddenView.vue");
+const Home = () => import(/* webpackChunkName: "portal-home" */ "../views/home/index.vue");
+const ItemDetail = () => import(/* webpackChunkName: "portal-item-detail" */ "../views/ItemDetail.vue");
+const SellerPublish = () => import(/* webpackChunkName: "portal-publish" */ "../views/seller/PublishItem.vue");
+const SellerItems = () => import(/* webpackChunkName: "portal-seller-items" */ "../views/seller/MyItems.vue");
+const Orders = () => import(/* webpackChunkName: "portal-orders" */ "../views/orders/index.vue");
+const OrderConfirm = () => import(/* webpackChunkName: "portal-order-confirm" */ "../views/orders/OrderConfirm.vue");
 
 const routes = [
   { path: "/", redirect: "/home" },
   { path: "/login", component: Login, meta: { hideMenu: true } },
-  { path: "/register", name: "Register", component: () => import("../views/Register.vue"), meta: { hideMenu: true } },
+  { path: "/register", name: "Register", component: () => import(/* webpackChunkName: "portal-register" */ "../views/Register.vue"), meta: { hideMenu: true } },
   { path: "/forbidden", component: ForbiddenView, meta: { hideMenu: true } },
   {
     path: "/",
@@ -30,11 +31,11 @@ const routes = [
       { path: "seller/items", component: SellerItems, meta: { roles: ["SELLER"] } },
       { path: "seller/orders", component: Orders, meta: { roles: ["SELLER"] } },
       { path: "orders", component: Orders, meta: { roles: ["BUYER", "SELLER"] } },
-      { path: "addresses", component: () => import("../views/AddressList.vue"), meta: { roles: ["BUYER", "SELLER"] } },
-      { path: "cart", component: () => import("../views/Cart.vue"), meta: { roles: ["BUYER"] } },
-      { path: "favorites", component: () => import("../views/Favorites.vue"), meta: { roles: ["BUYER"] } },
-      { path: "review/:orderId", component: () => import("../views/ReviewSubmit.vue"), meta: { roles: ["BUYER"] } },
-      { path: "seller/stats", component: () => import("../views/SellerStats.vue"), meta: { roles: ["SELLER"] } },
+      { path: "addresses", component: () => import(/* webpackChunkName: "portal-addresses" */ "../views/AddressList.vue"), meta: { roles: ["BUYER", "SELLER"] } },
+  { path: "cart", component: () => import(/* webpackChunkName: "portal-cart" */ "../views/Cart.vue"), meta: { roles: ["BUYER"] } },
+  { path: "favorites", component: () => import(/* webpackChunkName: "portal-favorites" */ "../views/Favorites.vue"), meta: { roles: ["BUYER"] } },
+  { path: "review/:orderId", component: () => import(/* webpackChunkName: "portal-review" */ "../views/ReviewSubmit.vue"), meta: { roles: ["BUYER"] } },
+  { path: "seller/stats", component: () => import(/* webpackChunkName: "portal-seller-stats" */ "../views/SellerStats.vue"), meta: { roles: ["SELLER"] } },
     ],
   },
 ];

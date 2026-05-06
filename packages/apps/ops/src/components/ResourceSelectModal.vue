@@ -71,13 +71,13 @@ const resources = ref([]);
 const selectedResource = ref(null);
 
 const mockResources = [
-  { id: 1, name: '校园Logo 1', type: 'image', url: 'https://picsum.photos/200/200?random=1', icon: '' },
-  { id: 2, name: '校园Logo 2', type: 'image', url: 'https://picsum.photos/200/200?random=2', icon: '' },
+  { id: 1, name: '校园Logo 1', type: 'image', url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTlmNWZmIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OTk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvZ28gMTwvdGV4dD48L3N2Zz4=', icon: '' },
+  { id: 2, name: '校园Logo 2', type: 'image', url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTlmNWZmIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OTk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPkxvZ28gMjwvdGV4dD48L3N2Zz4=', icon: '' },
   { id: 3, name: 'Logo 图标', type: 'icon', url: '', icon: '🏫' },
-  { id: 4, name: '背景图 1', type: 'image', url: 'https://picsum.photos/400/200?random=3', icon: '' },
+  { id: 4, name: '背景图 1', type: 'image', url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTlmNWZmIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OTk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuS6u+S6lOe6ouS6lw08L3RleHQ+PC9zdmc+', icon: '' },
   { id: 5, name: '图标 购物车', type: 'icon', url: '', icon: '🛒' },
   { id: 6, name: '图标 用户', type: 'icon', url: '', icon: '👤' },
-  { id: 7, name: '背景图 2', type: 'image', url: 'https://picsum.photos/400/200?random=4', icon: '' },
+  { id: 7, name: '背景图 2', type: 'image', url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iMTAwJSIgaGVpZ2h0PSIxMDAlIiBmaWxsPSIjZTlmNWZmIi8+PHRleHQgeD0iNTAlIiB5PSI1MCUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIxNCIgZmlsbD0iIzk5OTk5OSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZHk9Ii4zZW0iPuS6u+S6lOe6ouS6lwyPC90ZXh0Pjwvc3ZnPg==', icon: '' },
   { id: 8, name: '图标 消息', type: 'icon', url: '', icon: '📢' },
 ];
 

@@ -13,6 +13,8 @@
           :alt="item.title"
           :preview-props="{ infinite: true }"
           fit="cover"
+          loading="lazy"
+          :referrer-policy="'no-referrer'"
         />
         <div v-else class="item-card__image--empty">
           <icon-image />
@@ -20,7 +22,7 @@
         <a-tag
           v-if="item.conditionLevel"
           class="item-card__condition"
-          color="arcoblue"
+          :color="getConditionColor(item.conditionLevel)"
           size="small"
         >
           {{ conditionLabel(item.conditionLevel) }}
@@ -32,7 +34,10 @@
         {{ item.title }}
       </a-typography-text>
       <div class="item-card__meta">
-        <span class="item-card__price">¥{{ item.price }}</span>
+        <span class="item-card__price">
+          <span class="item-card__price-symbol">¥</span>
+          <span class="item-card__price-value">{{ formatPrice(item.price) }}</span>
+        </span>
         <a-tag v-if="item.category" size="small" class="item-card__category">
           {{ item.category }}
         </a-tag>
@@ -83,21 +88,46 @@ const CONDITION_MAP = {
   poor: "6成新",
 };
 
+const CONDITION_COLOR_MAP = {
+  new: "#52c41a",
+  brand_new: "#52c41a",
+  "99": "#165DFF",
+  like_new: "#165DFF",
+  "95": "#0fc6c2",
+  "9": "#fa8c16",
+  good: "#fa8c16",
+  "8": "#ff7d00",
+  fair: "#ff7d00",
+  "7": "#86909c",
+  poor: "#86909c",
+};
+
 function conditionLabel(level) {
   return CONDITION_MAP[level] || level || "";
+}
+
+function getConditionColor(level) {
+  return CONDITION_COLOR_MAP[level] || "arcoblue";
+}
+
+function formatPrice(price) {
+  if (!price && price !== 0) return "0.00";
+  return Number(price).toFixed(2);
 }
 </script>
 
 <style lang="scss" scoped>
 .item-card {
-  border-radius: 8px;
+  border-radius: var(--border-radius-medium, 8px);
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 150ms ease-out, box-shadow 250ms ease-out;
+  border: 1px solid var(--color-border-2, #e5e6eb);
 
   &:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(22, 93, 255, 0.15);
+    border-color: transparent;
   }
 
   :deep(.arco-card-body) {
@@ -108,7 +138,7 @@ function conditionLabel(level) {
     position: relative;
     width: 100%;
     padding-top: 100%;
-    background: #f7f8fa;
+    background: var(--color-fill-1, #f7f8fa);
     overflow: hidden;
 
     :deep(.arco-image) {
@@ -122,7 +152,7 @@ function conditionLabel(level) {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 0.3s ease;
+        transition: transform 250ms ease-out;
       }
     }
 
@@ -139,7 +169,7 @@ function conditionLabel(level) {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #c9cdd4;
+      color: var(--color-text-4, #c9cdd4);
       font-size: 36px;
     }
   }
@@ -150,6 +180,9 @@ function conditionLabel(level) {
     left: 8px;
     border: none;
     font-weight: 500;
+    border-radius: 4px;
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
   }
 
   &__info {
@@ -160,7 +193,7 @@ function conditionLabel(level) {
     display: block;
     font-size: 14px;
     font-weight: 500;
-    color: #1d2129;
+    color: var(--color-text-1, #1d2129);
     line-height: 1.4;
     margin-bottom: 8px;
   }
@@ -173,16 +206,29 @@ function conditionLabel(level) {
   }
 
   &__price {
-    font-size: 18px;
     font-weight: 700;
-    color: #ff4d4f;
+    color: var(--color-danger-6, #f53f3f);
+    display: flex;
+    align-items: baseline;
+    gap: 1px;
+  }
+
+  &__price-symbol {
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  &__price-value {
+    font-size: 18px;
+    line-height: 1.2;
   }
 
   &__category {
     font-size: 11px;
     border: none;
-    background: #f2f3f5;
-    color: #86909c;
+    background: var(--color-fill-2, #f2f3f5);
+    color: var(--color-text-3, #86909c);
+    border-radius: 4px;
   }
 
   &__footer {
@@ -190,7 +236,7 @@ function conditionLabel(level) {
     align-items: center;
     gap: 12px;
     font-size: 12px;
-    color: #86909c;
+    color: var(--color-text-3, #86909c);
   }
 
   &__seller,

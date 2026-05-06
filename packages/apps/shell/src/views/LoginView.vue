@@ -11,7 +11,13 @@ const router = useRouter();
 
 function handleLoginSuccess() {
   if (getToken()) {
-    router.push("/");
+    // 登录成功后直接跳转到门户首页
+    const redirect = router.currentRoute.value.query.redirect;
+    if (redirect && redirect !== '/') {
+      router.push(redirect);
+    } else {
+      router.push('/portal/home');
+    }
   }
 }
 </script>

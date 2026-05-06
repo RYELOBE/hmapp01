@@ -238,6 +238,36 @@ function handleUserMenuSelect(value) {
   &--qiankun {
     height: 100%;
   }
+
+  @media screen and (max-width: 768px) {
+    .ops-sider {
+      position: fixed;
+      left: -220px;
+      top: var(--ops-header-height, 56px);
+      bottom: 0;
+      z-index: 99;
+      transition: left 0.3s ease;
+
+      &.mobile-open {
+        left: 0;
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+      }
+    }
+
+    .ops-content {
+      padding: 16px;
+    }
+
+    .ops-header {
+      padding: 0 12px;
+
+      &__brand {
+        .brand-text {
+          display: none;
+        }
+      }
+    }
+  }
 }
 
 .ops-header {
@@ -337,6 +367,19 @@ function handleUserMenuSelect(value) {
   border-right: 1px solid #e5e6eb;
   overflow-y: auto;
   flex-shrink: 0;
+
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
 
 .ops-menu {
@@ -344,6 +387,7 @@ function handleUserMenuSelect(value) {
   padding: 12px 8px;
 
   :deep(.arco-menu-item) {
+    position: relative;
     height: 44px;
     line-height: 44px;
     margin: 4px 0;
@@ -383,6 +427,19 @@ function handleUserMenuSelect(value) {
   overflow-y: auto;
   padding: 20px;
   background: #f5f6f7;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 }
 
 .logout-option {

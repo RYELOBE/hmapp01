@@ -1,8 +1,8 @@
 <template>
-  <div class="filter-bar" :class="{ 'filter-bar--compact': compact }">
+  <div class="filter-bar" :class="{ 'filter-bar--compact': compact, 'filter-bar--collapsed': collapsed }">
     <a-row :gutter="[16, 12]" align="center">
       <a-col
-        v-for="(filter, index) in filters"
+        v-for="(filter, index) in visibleFilters"
         :key="filter.field"
         :xs="24"
         :sm="filter.span || 12"
@@ -23,6 +23,7 @@
         </div>
       </a-col>
 
+      <!-- 操作按钮 -->
       <a-col :xs="24" :sm="24" :md="actionsSpan || 24" class="filter-bar__actions">
         <a-space>
           <a-button type="primary" @click="handleSearch">
@@ -34,7 +35,27 @@
             重置
           </a-button>
           <slot name="extra-buttons"></slot>
+          
+          <!-- 折叠/展开按钮 -->
+          <a-button
+            v-if="filters.length > maxVisible"
+            type="text"
+            size="small"
+            @click="toggleCollapse"
+          >
+            {{ collapsed ? '展开' : '收起' }}
+            <icon-up v-if="!collapsed" />
+            <icon-down v-else />
+          </a-button>
         </a-space>
+
+        <!-- 条件数量badge -->
+        <a-badge
+          v-if="activeFilterCount > 0"
+          :count="activeFilterCount"
+          :max-count="99"
+          class="filter-count-badge"
+        />
       </a-col>
     </a-row>
   </div>
@@ -42,7 +63,7 @@
 
 <script setup>
 import { ref, reactive, watch, onMounted, computed } from 'vue';
-import { IconSearch, IconRefresh } from '@arco-design/web-vue/es/icon';
+import { IconSearch, IconRefresh, IconUp, IconDown } from '@arco-design/web-vue/es/icon';
 
 const props = defineProps({
   filters: {
@@ -60,12 +81,17 @@ const props = defineProps({
   actionsSpan: {
     type: Number,
     default: null
+  },
+  maxVisible: {
+    type: Number,
+    default: 6
   }
 });
 
 const emit = defineEmits(['update:modelValue', 'search', 'reset', 'change']);
 
 const filterValues = reactive({});
+const collapsed = ref(false);
 
 const filterComponents = {
   input: 'a-input',
@@ -74,6 +100,25 @@ const filterComponents = {
   date: 'a-date-picker',
   cascader: 'a-cascader',
 };
+
+const visibleFilters = computed(() => {
+  if (collapsed.value) {
+    return props.filters.slice(0, props.maxVisible);
+  }
+  return props.filters;
+});
+
+const activeFilterCount = computed(() => {
+  let count = 0;
+  Object.entries(filterValues).forEach(([key, value]) => {
+    if (value !== undefined && value !== null && value !== '') {
+      if (Array.isArray(value) ? value.length > 0 : true) {
+        count++;
+      }
+    }
+  });
+  return count;
+});
 
 function getFilterComponent(type) {
   return filterComponents[type] || 'a-input';
@@ -86,42 +131,44 @@ function getFilterProps(filter) {
     style: { width: '100%' }
   };
 
-  if (filter.type === 'input') {
-    return {
-      ...baseProps,
-      placeholder: filter.placeholder || `请输入${filter.label || ''}`,
-      allowClear: true,
-      searchButton: false
-    };
-  }
+  switch (filter.type) {
+    case 'input':
+      return {
+        ...baseProps,
+        placeholder: filter.placeholder || `请输入${filter.label || ''}`,
+        allowClear: true,
+        searchButton: false,
+        maxLength: filter.maxLength
+      };
 
-  if (filter.type === 'select') {
-    return {
-      ...baseProps,
-      placeholder: filter.placeholder || `请选择${filter.label || ''}`,
-      allowSearch: filter.allowSearch !== false,
-      options: filter.options || []
-    };
-  }
+    case 'select':
+      return {
+        ...baseProps,
+        placeholder: filter.placeholder || `请选择${filter.label || ''}`,
+        allowSearch: filter.allowSearch !== false,
+        options: filter.options || [],
+        multiple: filter.multiple || false
+      };
 
-  if (filter.type === 'daterange') {
-    return {
-      ...baseProps,
-      placeholder: filter.placeholder || ['开始日期', '结束日期'],
-      style: { width: '100%' }
-    };
-  }
+    case 'daterange':
+      return {
+        ...baseProps,
+        placeholder: filter.placeholder || ['开始日期', '结束日期'],
+        style: { width: '100%' }
+      };
 
-  if (filter.type === 'cascader') {
-    return {
-      ...baseProps,
-      placeholder: filter.placeholder || `请选择${filter.label || ''}`,
-      options: filter.options || [],
-      allowSearch: true
-    };
-  }
+    case 'cascader':
+      return {
+        ...baseProps,
+        placeholder: filter.placeholder || `请选择${filter.label || ''}`,
+        options: filter.options || [],
+        allowSearch: true,
+        multiple: filter.multiple || false
+      };
 
-  return baseProps;
+    default:
+      return baseProps;
+  }
 }
 
 function handleChange() {
@@ -143,6 +190,10 @@ function handleReset() {
   emit('reset');
 }
 
+function toggleCollapse() {
+  collapsed.value = !collapsed.value;
+}
+
 watch(() => props.modelValue, (newVal) => {
   if (newVal && Object.keys(newVal).length > 0) {
     Object.assign(filterValues, newVal);
@@ -160,17 +211,19 @@ onMounted(() => {
 defineExpose({
   reset: handleReset,
   search: handleSearch,
-  getValues: () => ({ ...filterValues })
+  getValues: () => ({ ...filterValues }),
+  getActiveCount: () => activeFilterCount.value
 });
 </script>
 
 <style lang="scss" scoped>
 .filter-bar {
-  background: #fff;
+  background: var(--color-bg-white, #FFF);
   padding: 20px;
   border-radius: 8px;
   margin-bottom: 16px;
-  border: 1px solid #e5e6eb;
+  border: 1px solid var(--color-border-1, #E5E6EB);
+  transition: all 0.25s ease;
 
   &--compact {
     padding: 16px;
@@ -184,6 +237,18 @@ defineExpose({
     display: flex;
     justify-content: flex-end;
     align-items: center;
+    position: relative;
+
+    .filter-count-badge {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+    }
+  }
+
+  &:hover {
+    border-color: var(--color-primary-light-3, #86b1ff);
   }
 }
 
@@ -195,9 +260,15 @@ defineExpose({
 
   &__label {
     font-size: 14px;
-    color: #4e5969;
+    color: var(--color-text-2, #4E5969);
     white-space: nowrap;
     min-width: 70px;
+    font-weight: 500;
+    
+    &::after {
+      content: ':';
+      margin-left: 2px;
+    }
   }
 }
 </style>

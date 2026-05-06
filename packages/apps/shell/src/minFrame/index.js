@@ -4,6 +4,14 @@ import MessageManager from "./Message";
 import ShellRouter from "./ShellRouter";
 import framePinia from "./pinia/framePinia";
 
+const IS_DEV = process.env.NODE_ENV === 'development';
+
+const logger = {
+  log: (...args) => { if (IS_DEV) console.log(...args); },
+  warn: (...args) => console.warn(...args),
+  error: (...args) => console.error(...args),
+};
+
 const shellRouter = new ShellRouter();
 let started = false;
 let registered = false;
@@ -163,22 +171,22 @@ export function startMinFrame() {
           emitStateChange();
         },
         beforeMount: (app) => {
-          console.log(`[minFrame] 子应用即将挂载: ${app.name}`);
+          logger.log(`[minFrame] 子应用即将挂载: ${app.name}`);
           clearLoadingTimeout();
         },
         afterMount: (app) => {
-          console.log(`[minFrame] 子应用挂载完成: ${app.name}`);
+          logger.log(`[minFrame] 子应用挂载完成: ${app.name}`);
           resetLoadingState();
         },
         beforeUnmount: (app) => {
-          console.log(`[minFrame] 子应用即将卸载: ${app.name}`);
+          logger.log(`[minFrame] 子应用即将卸载: ${app.name}`);
         },
         afterUnmount: (app) => {
-          console.log(`[minFrame] 子应用卸载完成: ${app.name}`);
+          logger.log(`[minFrame] 子应用卸载完成: ${app.name}`);
         },
       });
       registered = true;
-      console.log("[minFrame] 子应用注册成功");
+      logger.log("[minFrame] 子应用注册成功");
     } catch (error) {
       console.error("[minFrame] 子应用注册失败:", error);
       loadingState.error = "子应用注册失败: " + (error.message || String(error));
@@ -199,7 +207,7 @@ export function startMinFrame() {
         singular: false,
       });
       started = true;
-      console.log("[minFrame] qiankun 启动成功");
+      logger.log("[minFrame] qiankun 启动成功");
     } catch (error) {
       console.error("[minFrame] qiankun 启动失败:", error);
       loadingState.error = "微前端框架启动失败: " + (error.message || String(error));

@@ -8,10 +8,13 @@
     }"
     @click="handleClick"
   >
-    <div class="stats-card__icon">
-      <component :is="iconComponent" v-if="iconComponent" />
-      <span v-else class="stats-card__emoji">{{ icon }}</span>
+    <div class="stats-card__icon" :class="{ 'stats-card__icon--gradient': !!gradient }">
+      <slot name="icon">
+        <component :is="iconComponent" v-if="iconComponent" />
+        <span v-else class="stats-card__emoji">{{ icon }}</span>
+      </slot>
     </div>
+
     <div class="stats-card__content">
       <div class="stats-card__value">
         <a-statistic
@@ -21,7 +24,6 @@
           :duration="600"
           :precision="precision"
           :suffix="suffix"
-          :prefix="prefixComponent"
         >
           <template v-if="prefix" #prefix>
             <span class="stats-card__prefix">{{ prefix }}</span>
@@ -30,10 +32,16 @@
       </div>
       <div class="stats-card__label">{{ title }}</div>
     </div>
+
     <div v-if="trend" class="stats-card__trend" :class="`stats-card__trend--${trend}`">
       <icon-arrow-up v-if="trend === 'up'" />
       <icon-arrow-down v-else-if="trend === 'down'" />
       <span>{{ trendValue }}</span>
+    </div>
+
+    <!-- 加载遮罩 -->
+    <div v-if="loading" class="stats-card__loading">
+      <a-spin dot />
     </div>
   </div>
 </template>
@@ -74,11 +82,11 @@ const props = defineProps({
   },
   color: {
     type: String,
-    default: '#336ad8'
+    default: '#165DFF'
   },
   bgColor: {
     type: String,
-    default: '#e8f0ff'
+    default: '#E8F3FF'
   },
   gradient: {
     type: String,
@@ -108,12 +116,6 @@ const displayValue = computed(() => {
 const valueFrom = computed(() => 0);
 
 const iconComponent = computed(() => {
-  if (!props.icon) return null;
-  return null;
-});
-
-const prefixComponent = computed(() => {
-  if (props.prefix) return null;
   return null;
 });
 
@@ -128,11 +130,11 @@ function handleClick(e) {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 20px;
-  background: var(--color-bg-1);
+  padding: 20px 24px;
+  background: var(--color-bg-white, #FFF);
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.25s ease;
   cursor: pointer;
   overflow: hidden;
 
@@ -144,38 +146,48 @@ function handleClick(e) {
     width: 4px;
     height: 100%;
     background: var(--card-color);
+    border-radius: 4px 0 0 4px;
   }
 
   &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+
+    .stats-card__icon {
+      transform: scale(1.08) rotate(5deg);
+    }
+  }
+
+  &:active {
     transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   }
 
   &__icon {
-    width: 52px;
-    height: 52px;
-    border-radius: 12px;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
     background: var(--card-bg);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 24px;
+    font-size: 26px;
     color: var(--card-color);
     flex-shrink: 0;
-    transition: transform 0.2s;
+    transition: all 0.25s ease;
 
-    &:hover {
-      transform: scale(1.05);
+    &--gradient {
+      background: var(--card-gradient);
+      color: #FFF;
     }
 
     :deep(svg) {
-      font-size: 24px;
-      color: var(--card-color);
+      font-size: 26px;
+      color: inherit;
     }
   }
 
   &__emoji {
-    font-size: 24px;
+    font-size: 26px;
   }
 
   &__content {
@@ -188,53 +200,71 @@ function handleClick(e) {
       .arco-statistic-content {
         font-size: 28px;
         font-weight: 700;
-        color: var(--color-text-1);
+        color: var(--color-text-1, #1D2129);
         line-height: 1.2;
       }
 
       .arco-statistic-title {
         font-size: 13px;
-        color: var(--color-text-3);
-        margin-top: 4px;
+        color: var(--color-text-3, #86909C);
+        margin-top: 6px;
+        font-weight: 400;
       }
 
       .arco-statistic-suffix {
         font-size: 14px;
         margin-left: 2px;
+        color: var(--color-text-2, #4E5969);
       }
     }
   }
 
   &__label {
     font-size: 13px;
-    color: var(--color-text-3);
-    margin-top: 2px;
+    color: var(--color-text-3, #86909C);
+    margin-top: 4px;
+    font-weight: 500;
   }
 
   &__prefix {
     margin-right: 4px;
+    font-weight: 600;
+    color: var(--color-text-2, #4E5969);
   }
 
   &__trend {
     position: absolute;
-    top: 12px;
-    right: 12px;
+    top: 14px;
+    right: 16px;
     display: flex;
     align-items: center;
-    gap: 2px;
+    gap: 4px;
     font-size: 12px;
-    padding: 2px 8px;
-    border-radius: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
 
     &--up {
-      color: #00b42a;
-      background: rgba(0, 180, 42, 0.1);
+      color: #00B42A;
+      background: rgba(0, 180, 42, 0.08);
     }
 
     &--down {
-      color: #f53f3f;
-      background: rgba(245, 63, 63, 0.1);
+      color: #F53F3F;
+      background: rgba(245, 63, 63, 0.08);
     }
+  }
+
+  &__loading {
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.85);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
   }
 }
 </style>

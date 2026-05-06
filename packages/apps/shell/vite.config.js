@@ -30,12 +30,20 @@ export default defineConfig({
   resolve: {
     alias: {
       "@campus/common": path.resolve(__dirname, "../../common/src"),
+      "@": path.resolve(__dirname, "src"),
     },
+    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json', '.vue'],
+  },
+  optimizeDeps: {
+    include: ['vue', 'vue-router', '@arco-design/web-vue', 'axios', 'pinia'],
   },
   server: {
     host: "localhost",
     port: 7100,
     cors: true,
+    fs: {
+      strict: false, // 允许访问项目外文件
+    },
   },
   build: {
     target: "esnext",

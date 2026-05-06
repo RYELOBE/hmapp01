@@ -1,239 +1,155 @@
 <template>
   <div class="seller-center-page">
+    <div class="welcome-banner">
+      <div class="banner-content">
+        <div class="user-avatar">
+          <icon-store size="40" />
+        </div>
+        <div class="user-info">
+          <h1 class="welcome-text">卖家工作台</h1>
+          <p class="welcome-subtitle">管理您的商品和订单，轻松赚钱~</p>
+        </div>
+      </div>
+    </div>
+
     <a-row :gutter="[16, 16]" class="stats-row">
-      <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card" :bordered="false">
-          <a-skeleton :loading="loading" :animation="true">
-            <a-statistic
-              title="我的商品"
-              :value="stats.totalItems || 0"
-              :value-from="0"
-              :duration="600"
-            >
-              <template #prefix>
-                <icon-app class="stat-icon stat-icon--items" />
-              </template>
-            </a-statistic>
-          </a-skeleton>
+      <a-col :xs="12" :sm="12" :md="6">
+        <a-card class="stat-card stat-card--items" :bordered="false" hoverable @click="$router.push('/seller/items')">
+          <a-statistic title="在售商品数" :value="stats.onSaleCount || 0" :value-from="0">
+            <template #prefix><icon-apps /></template>
+          </a-statistic>
         </a-card>
       </a-col>
-      <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card" :bordered="false">
-          <a-skeleton :loading="loading" :animation="true">
-            <a-statistic
-              title="已上架"
-              :value="stats.approvedItems || 0"
-              :value-from="0"
-              :duration="600"
-            >
-              <template #prefix>
-                <icon-check-circle class="stat-icon stat-icon--approved" />
-              </template>
-            </a-statistic>
-          </a-skeleton>
+      <a-col :xs="12" :sm="12" :md="6">
+        <a-card class="stat-card stat-card--sold" :bordered="false" hoverable>
+          <a-statistic title="已售出件数" :value="stats.soldCount || 0" :value-from="0">
+            <template #prefix><icon-check-circle /></template>
+          </a-statistic>
         </a-card>
       </a-col>
-      <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card" :bordered="false">
-          <a-skeleton :loading="loading" :animation="true">
-            <a-statistic
-              title="待审核"
-              :value="stats.pendingItems || 0"
-              :value-from="0"
-              :duration="600"
-            >
-              <template #prefix>
-                <icon-clock-circle class="stat-icon stat-icon--pending" />
-              </template>
-            </a-statistic>
-          </a-skeleton>
+      <a-col :xs="12" :sm="12" :md="6">
+        <a-card class="stat-card stat-card--sales" :bordered="false" hoverable @click="$router.push('/seller/stats')">
+          <a-statistic title="本月销售额" :value="stats.monthSales || 0" prefix="¥" :precision="2" :value-from="0">
+            <template #prefix><icon-dollar /></template>
+          </a-statistic>
         </a-card>
       </a-col>
-      <a-col :xs="24" :sm="12" :lg="6">
-        <a-card class="stat-card" :bordered="false">
-          <a-skeleton :loading="loading" :animation="true">
-            <a-statistic
-              title="我的订单"
-              :value="stats.totalOrders || 0"
-              :value-from="0"
-              :duration="600"
-            >
-              <template #prefix>
-                <icon-shopping-cart class="stat-icon stat-icon--orders" />
-              </template>
-            </a-statistic>
-          </a-skeleton>
+      <a-col :xs="12" :sm="12" :md="6">
+        <a-card class="stat-card stat-card--pending" :bordered="false" hoverable @click="$router.push('/orders?tab=PAID')">
+          <a-statistic title="待处理订单" :value="stats.pendingOrders || 0" :value-from="0">
+            <template #prefix><icon-clock-circle /></template>
+          </a-statistic>
         </a-card>
       </a-col>
     </a-row>
 
-    <a-card :bordered="false" class="content-card">
-      <template #title>
-        <a-space>
-          <icon-store />
-          <span>卖家中心</span>
-        </a-space>
-      </template>
-      <template #extra>
-        <a-space>
-          <a-button type="primary" @click="$router.push('/publish')">
-            <template #icon><icon-plus /></template>
-            发布商品
-          </a-button>
-        </a-space>
-      </template>
+    <a-row :gutter="[16, 16]">
+      <a-col :xs="24" :lg="16">
+        <a-card title="快捷操作" :bordered="false" class="quick-actions-card">
+          <a-row :gutter="[16, 16]">
+            <a-col :span="6">
+              <div class="action-item" @click="$router.push('/seller/publish')">
+                <div class="action-icon action-icon--publish"><icon-plus /></div>
+                <span>发布新商品</span>
+              </div>
+            </a-col>
+            <a-col :span="6">
+              <div class="action-item" @click="$router.push('/seller/items')">
+                <div class="action-icon action-icon--items"><icon-list /></div>
+                <span>我的商品</span>
+              </div>
+            </a-col>
+            <a-col :span="6">
+              <div class="action-item" @click="$router.push('/seller/stats')">
+                <div class="action-icon action-icon--stats"><icon-line-chart /></div>
+                <span>销售统计</span>
+              </div>
+            </a-col>
+            <a-col :span="6">
+              <div class="action-item" @click="$router.push('/orders?tab=PAID')">
+                <div class="action-icon action-icon--shipping"><icon-car /></div>
+                <span>待发货订单</span>
+              </div>
+            </a-col>
+          </a-row>
+        </a-card>
 
-      <a-tabs default-active-key="items" @change="handleTabChange">
-        <a-tab-pane key="items" title="我的商品">
-          <a-table
-            :data="items"
-            :loading="loading"
-            :pagination="paginationConfig"
-            :row-key="(record) => record.id"
-            @page-change="handlePageChange"
-            @page-size-change="handlePageSizeChange"
-          >
-            <template #columns>
-              <a-table-column title="商品信息" :width="300">
-                <template #cell="{ record }">
-                  <div class="item-cell">
-                    <a-image
-                      :src="getImageUrl(record)"
-                      width="60"
-                      height="60"
-                      fit="cover"
-                      style="border-radius: 6px;"
-                    />
-                    <div class="item-info">
-                      <a-typography-text class="item-title" ellipsis>
-                        {{ record.title }}
-                      </a-typography-text>
-                      <a-typography-text type="danger" class="item-price">
-                        ¥{{ record.price }}
-                      </a-typography-text>
-                    </div>
-                  </div>
-                </template>
-              </a-table-column>
-              <a-table-column title="分类" data-index="category" :width="100" />
-              <a-table-column title="审核状态" :width="100" align="center">
-                <template #cell="{ record }">
-                  <StatusTag :status="record.reviewStatus" />
-                </template>
-              </a-table-column>
-              <a-table-column title="发布时间" data-index="createdAt" :width="160">
-                <template #cell="{ record }">
-                  {{ formatDate(record.createdAt) }}
-                </template>
-              </a-table-column>
-              <a-table-column title="操作" :width="160" align="center">
-                <template #cell="{ record }">
-                  <a-space>
-                    <a-button type="text" size="small" @click="viewDetail(record)">
-                      <template #icon><icon-eye /></template>
-                      查看
-                    </a-button>
-                    <a-button type="text" size="small" @click="editItem(record)">
-                      <template #icon><icon-edit /></template>
-                      编辑
-                    </a-button>
-                  </a-space>
-                </template>
-              </a-table-column>
-            </template>
-          </a-table>
-        </a-tab-pane>
+        <a-card title="最近订单" :bordered="false" class="recent-orders-card">
+          <template #extra>
+            <a-button type="text" @click="$router.push('/orders')">
+              查看全部
+              <template #icon><icon-right /></template>
+            </a-button>
+          </template>
 
-        <a-tab-pane key="orders" title="我的订单">
-          <a-table
-            :data="orders"
-            :loading="ordersLoading"
-            :pagination="ordersPaginationConfig"
-            :row-key="(record) => record.id"
-            @page-change="handleOrderPageChange"
-            @page-size-change="handleOrderPageSizeChange"
-          >
-            <template #columns>
-              <a-table-column title="订单号" data-index="orderNo" :width="160">
-                <template #cell="{ record }">
-                  <a-typography-text code>{{ record.orderNo || record.id }}</a-typography-text>
-                </template>
-              </a-table-column>
-              <a-table-column title="商品" :width="240">
-                <template #cell="{ record }">
-                  <div class="order-item">
-                    <span>{{ record.itemTitle || record.title }}</span>
-                    <span class="order-price">¥{{ record.price }}</span>
-                  </div>
-                </template>
-              </a-table-column>
-              <a-table-column title="买家" data-index="buyerName" :width="120" />
-              <a-table-column title="订单状态" :width="100" align="center">
-                <template #cell="{ record }">
-                  <StatusTag :status="record.status || record.orderStatus" type="order" />
-                </template>
-              </a-table-column>
-              <a-table-column title="下单时间" data-index="createdAt" :width="160">
-                <template #cell="{ record }">
-                  {{ formatDate(record.createdAt) }}
-                </template>
-              </a-table-column>
-              <a-table-column title="操作" :width="120" align="center">
-                <template #cell="{ record }">
-                  <a-space>
-                    <a-button
-                      v-if="record.status === 'PAID'"
-                      type="text"
-                      size="small"
-                      status="success"
-                      @click="shipOrder(record)"
-                    >
-                      <template #icon><icon-right /></template>
-                      发货
-                    </a-button>
-                    <a-button type="text" size="small" @click="viewOrder(record)">
-                      <template #icon><icon-eye /></template>
-                      详情
-                    </a-button>
-                  </a-space>
-                </template>
-              </a-table-column>
-            </template>
-          </a-table>
-        </a-tab-pane>
-      </a-tabs>
-    </a-card>
+          <a-spin :loading="ordersLoading">
+            <div v-if="recentOrders.length > 0" class="recent-list">
+              <div
+                v-for="order in recentOrders"
+                :key="order.id"
+                class="recent-order-item"
+                @click="$router.push(`/orders/${order.id}`)"
+              >
+                <div class="order-left">
+                  <StatusTag :status="order.status || order.orderStatus" type="order" />
+                  <span class="order-buyer">{{ order.buyerName || '买家' }}</span>
+                  <span class="order-title">{{ order.itemTitle || '商品' }}</span>
+                </div>
+                <div class="order-right">
+                  <span class="order-amount">¥{{ (order.totalAmount || order.amount || 0).toFixed(2) }}</span>
+                  <span class="order-time">{{ formatTime(order.createdAt) }}</span>
+                </div>
+              </div>
+            </div>
+            <a-empty v-else description="暂无订单记录" />
+          </a-spin>
+        </a-card>
+      </a-col>
 
-    <a-drawer
-      v-model:visible="drawerVisible"
-      :width="500"
-      title="订单详情"
-      unmount-on-close
-    >
-      <a-descriptions v-if="currentOrder" :column="2" bordered size="small">
-        <a-descriptions-item label="订单号" :span="2">
-          {{ currentOrder.orderNo || currentOrder.id }}
-        </a-descriptions-item>
-        <a-descriptions-item label="商品名称">
-          {{ currentOrder.itemTitle || currentOrder.title }}
-        </a-descriptions-item>
-        <a-descriptions-item label="商品价格">
-          ¥{{ currentOrder.price }}
-        </a-descriptions-item>
-        <a-descriptions-item label="买家">
-          {{ currentOrder.buyerName || currentOrder.userName }}
-        </a-descriptions-item>
-        <a-descriptions-item label="订单状态">
-          <StatusTag :status="currentOrder.status || currentOrder.orderStatus" type="order" />
-        </a-descriptions-item>
-        <a-descriptions-item label="收货地址" :span="2">
-          {{ currentOrder.shippingAddress || currentOrder.address || '-' }}
-        </a-descriptions-item>
-        <a-descriptions-item label="下单时间" :span="2">
-          {{ formatDate(currentOrder.createdAt) }}
-        </a-descriptions-item>
-      </a-descriptions>
-    </a-drawer>
+      <a-col :xs="24" :lg="8">
+        <a-card title="待处理事项" :bordered="false" class="pending-card">
+          <div v-if="pendingItems.length > 0" class="pending-list">
+            <div
+              v-for="(item, index) in pendingItems"
+              :key="index"
+              class="pending-item"
+              @click="handlePendingClick(item)"
+            >
+              <div class="pending-icon" :class="`pending-icon--${item.type}`">
+                <component :is="item.icon" />
+              </div>
+              <div class="pending-info">
+                <span class="pending-label">{{ item.label }}</span>
+                <span class="pending-count">{{ item.count }} 项</span>
+              </div>
+              <icon-right class="pending-arrow" />
+            </div>
+          </div>
+          <a-empty v-else description="暂无待处理事项" :image-size="48" />
+        </a-card>
+
+        <a-card title="商品概览" :bordered="false" class="overview-card">
+          <div class="overview-list">
+            <div class="overview-item">
+              <span class="label">全部商品</span>
+              <span class="value">{{ stats.totalItems || 0 }}</span>
+            </div>
+            <div class="overview-item">
+              <span class="label">已上架</span>
+              <span class="value value--success">{{ stats.approvedItems || 0 }}</span>
+            </div>
+            <div class="overview-item">
+              <span class="label">待审核</span>
+              <span class="value value--warning">{{ stats.pendingItems || 0 }}</span>
+            </div>
+            <div class="overview-item">
+              <span class="label">已下架</span>
+              <span class="value value--info">{{ stats.offlineItems || 0 }}</span>
+            </div>
+          </div>
+        </a-card>
+      </a-col>
+    </a-row>
   </div>
 </template>
 
@@ -243,61 +159,41 @@ import { useRouter } from "vue-router";
 import { Message } from "@arco-design/web-vue";
 import {
   IconStore,
-  IconPlus,
   IconApps,
   IconCheckCircle,
+  IconDollar,
   IconClockCircle,
+  IconPlus,
   IconList,
-  IconEye,
-  IconEdit,
+  IconLineChart,
+  IconCar,
   IconRight,
 } from "@arco-design/web-vue/es/icon";
 import StatusTag from "commonprovide/status-tag";
-import { getMyItems, getMyOrders, shipOrder as apiShipOrder } from "../services/api";
+import { getMyItems, getMyOrders, getSellerOverview } from "../services/api";
 
 const router = useRouter();
 
-const loading = ref(false);
+const stats = reactive({
+  totalItems: 0,
+  approvedItems: 0,
+  pendingItems: 0,
+  offlineItems: 0,
+  soldCount: 0,
+  monthSales: 0,
+  pendingOrders: 0,
+  onSaleCount: 0,
+});
+
+const recentOrders = ref([]);
 const ordersLoading = ref(false);
-const stats = ref({});
-const items = ref([]);
-const orders = ref([]);
-const drawerVisible = ref(false);
-const currentOrder = ref(null);
 
-const paginationConfig = reactive({
-  current: 1,
-  pageSize: 10,
-  total: 0,
-  showTotal: true,
-  showPageSize: true,
-});
+const pendingItems = ref([]);
 
-const ordersPaginationConfig = reactive({
-  current: 1,
-  pageSize: 10,
-  total: 0,
-  showTotal: true,
-  showPageSize: true,
-});
-
-function getImageUrl(record) {
-  const urls = record.imageUrls || record.images || [];
-  if (typeof urls === "string") {
-    try {
-      return JSON.parse(urls)[0] || "";
-    } catch {
-      return urls || "";
-    }
-  }
-  return Array.isArray(urls) && urls.length > 0 ? urls[0] : "";
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return "-";
+function formatTime(dateStr) {
+  if (!dateStr) return "";
   const date = new Date(dateStr);
   return date.toLocaleString("zh-CN", {
-    year: "numeric",
     month: "2-digit",
     day: "2-digit",
     hour: "2-digit",
@@ -306,122 +202,148 @@ function formatDate(dateStr) {
 }
 
 async function loadStats() {
-  stats.value = {
-    totalItems: items.value.length,
-    approvedItems: items.value.filter(i => i.reviewStatus === 'APPROVED').length,
-    pendingItems: items.value.filter(i => i.reviewStatus === 'PENDING_REVIEW').length,
-    totalOrders: orders.value.length,
-  };
-}
-
-async function loadItems() {
-  loading.value = true;
   try {
-    const result = await getMyItems({
-      pageNo: paginationConfig.current,
-      pageSize: paginationConfig.pageSize,
-    });
-    items.value = result.items || result.rows || [];
-    paginationConfig.total = result.total || result.totalCount || 0;
-    loadStats();
-  } catch (error) {
-    Message.error(error.message || "加载失败");
-  } finally {
-    loading.value = false;
+    const [itemsRes, ordersRes] = await Promise.all([
+      getMyItems({ pageSize: 100 }).catch(() => ({ items: [] })),
+      getMyOrders({ pageSize: 100 }).catch(() => ({ orders: [] })),
+    ]);
+
+    const items = itemsRes.items || itemsRes.rows || [];
+    const orders = ordersRes.orders || ordersRes.items || [];
+
+    stats.totalItems = items.length;
+    stats.approvedItems = items.filter((i) => i.reviewStatus === "APPROVED").length;
+    stats.pendingItems = items.filter((i) => i.reviewStatus === "PENDING_REVIEW").length;
+    stats.offlineItems = items.filter((i) => i.reviewStatus === "OFF_SHELF").length;
+    stats.onSaleCount = stats.approvedItems;
+
+    stats.soldCount = orders.filter((o) => o.status === "COMPLETED").length;
+    stats.monthSales = orders
+      .filter((o) => {
+        if (!o.createdAt) return false;
+        const date = new Date(o.createdAt);
+        const now = new Date();
+        return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+      })
+      .reduce((sum, o) => sum + (o.totalAmount || o.amount || 0), 0);
+
+    stats.pendingOrders = orders.filter((o) => o.status === "PAID").length;
+
+    pendingItems.value = [
+      {
+        type: "shipping",
+        label: "待发货订单",
+        count: stats.pendingOrders,
+        icon: "IconCar",
+        path: "/orders?tab=PAID",
+      },
+      {
+        type: "review",
+        label: "待审核商品",
+        count: stats.pendingItems,
+        icon: "IconClockCircle",
+        path: "/seller/items?status=PENDING_REVIEW",
+      },
+    ].filter((i) => i.count > 0);
+  } catch (e) {
+    console.error("加载统计数据失败", e);
   }
 }
 
-async function loadOrders() {
+async function loadRecentOrders() {
   ordersLoading.value = true;
   try {
-    const result = await getMyOrders({
-      pageNo: ordersPaginationConfig.current,
-      pageSize: ordersPaginationConfig.pageSize,
-    });
-    orders.value = result.items || result.rows || result.data || [];
-    ordersPaginationConfig.total = result.total || result.totalCount || 0;
-    loadStats();
-  } catch (error) {
-    Message.error(error.message || "加载订单失败");
+    const res = await getMyOrders({ pageSize: 5 });
+    recentOrders.value = res.orders || res.items || res.data || [];
+  } catch (e) {
+    console.error("加载最近订单失败", e);
   } finally {
     ordersLoading.value = false;
   }
 }
 
-function handleTabChange(key) {
-  if (key === "orders" && orders.value.length === 0) {
-    loadOrders();
-  }
+function handlePendingClick(item) {
+  router.push(item.path);
 }
 
-function handlePageChange(page) {
-  paginationConfig.current = page;
-  loadItems();
-}
-
-function handlePageSizeChange(size) {
-  paginationConfig.pageSize = size;
-  paginationConfig.current = 1;
-  loadItems();
-}
-
-function handleOrderPageChange(page) {
-  ordersPaginationConfig.current = page;
-  loadOrders();
-}
-
-function handleOrderPageSizeChange(size) {
-  ordersPaginationConfig.pageSize = size;
-  ordersPaginationConfig.current = 1;
-  loadOrders();
-}
-
-function viewDetail(record) {
-  router.push(`/item/${record.id}`);
-}
-
-function editItem(record) {
-  router.push(`/publish?id=${record.id}`);
-}
-
-function viewOrder(record) {
-  currentOrder.value = record;
-  drawerVisible.value = true;
-}
-
-async function shipOrder(record) {
-  try {
-    await apiShipOrder(record.id, { expressCompany: record.expressCompany || '顺丰快递', expressNo: '' });
-    Message.success("发货成功");
-    loadOrders();
-  } catch (error) {
-    Message.error(error.message || "发货失败");
-  }
-}
-
-onMounted(loadItems);
+onMounted(() => {
+  loadStats();
+  loadRecentOrders();
+});
 </script>
 
 <style lang="scss" scoped>
 .seller-center-page {
-  padding: 0;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: linear-gradient(180deg, #f5f6f8 0%, #ffffff 100%);
+  min-height: 100vh;
+}
+
+.welcome-banner {
+  background: linear-gradient(135deg, #722ed1 0%, #9254de 50%, #b37feb 100%);
+  border-radius: 16px;
+  padding: 28px 36px;
+  margin-bottom: 20px;
+  color: white;
+  box-shadow: 0 4px 20px rgba(114, 46, 209, 0.25);
+
+  .banner-content {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .user-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .user-info {
+    .welcome-text {
+      margin: 0;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .welcome-subtitle {
+      margin: 6px 0 0;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+  }
 }
 
 .stats-row {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 }
 
 .stat-card {
-  border-radius: 8px;
-  transition: transform 0.2s, box-shadow 0.2s;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s ease;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(114, 46, 209, 0.15);
   }
 
+  &--items { border-top: 3px solid #165dff; }
+  &--sold { border-top: 3px solid #00b42a; }
+  &--sales { border-top: 3px solid #ff7d00; }
+  &--pending { border-top: 3px solid #f53f3f; }
+
   :deep(.arco-card-body) {
-    padding: 16px;
+    padding: 20px;
   }
 
   :deep(.arco-statistic) {
@@ -432,67 +354,208 @@ onMounted(loadItems);
     }
 
     .arco-statistic-value {
-      font-size: 24px;
+      font-size: 22px;
       font-weight: 600;
     }
   }
 }
 
-.stat-icon {
-  font-size: 20px;
-  margin-right: 8px;
+.quick-actions-card,
+.recent-orders-card,
+.pending-card,
+.overview-card {
+  border-radius: 12px;
+  margin-bottom: 16px;
 
-  &--items { color: #165dff; }
-  &--approved { color: #52c41a; }
-  &--pending { color: #fa8c16; }
-  &--orders { color: #722ed1; }
-}
-
-.content-card {
-  border-radius: 8px;
-
-  :deep(.arco-card-head) {
-    border-bottom: 1px solid #f0f0f0;
-  }
-
-  :deep(.arco-tabs-nav) {
-    padding: 0 16px;
-  }
-}
-
-.item-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-
-  .item-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    max-width: 180px;
-  }
-
-  .item-title {
-    font-size: 13px;
-    color: #1d2129;
-    max-width: 160px;
-  }
-
-  .item-price {
-    font-size: 14px;
+  :deep(.arco-card-head-title) {
+    font-size: 15px;
     font-weight: 600;
   }
 }
 
-.order-item {
+.action-item {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 12px;
+  background: #fafafa;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s;
 
-  .order-price {
+  &:hover {
+    background: #f0f5ff;
+    transform: translateY(-2px);
+  }
+
+  span {
     font-size: 13px;
-    color: #ff4d4f;
     font-weight: 500;
+    color: #4e5969;
+  }
+}
+
+.action-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  color: white;
+
+  &--publish { background: linear-gradient(135deg, #165dff 0%, #4080ff 100%); }
+  &--items { background: linear-gradient(135deg, #00b42a 0%, #36cfc9 100%); }
+  &--stats { background: linear-gradient(135deg, #722ed1 0%, #b37feb 100%); }
+  &--shipping { background: linear-gradient(135deg, #ff7d00 0%, #ffc53d 100%); }
+}
+
+.recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.recent-order-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 14px;
+  background: #fafafa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #f0f5ff;
+  }
+
+  .order-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+
+    .order-buyer {
+      font-size: 12px;
+      color: #86909c;
+    }
+
+    .order-title {
+      font-size: 13px;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 200px;
+    }
+  }
+
+  .order-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+
+    .order-amount {
+      font-size: 15px;
+      font-weight: 600;
+      color: #f53f3f;
+    }
+
+    .order-time {
+      font-size: 11px;
+      color: #c9cdd4;
+    }
+  }
+}
+
+.pending-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pending-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: #fafafa;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    background: #fff7e6;
+  }
+
+  .pending-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: white;
+
+    &--shipping { background: linear-gradient(135deg, #ff7d00 0%, #ffc53d 100%); }
+    &--review { background: linear-gradient(135deg, #165dff 0%, #4080ff 100%); }
+  }
+
+  .pending-info {
+    flex: 1;
+
+    .pending-label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #1d2129;
+    }
+
+    .pending-count {
+      font-size: 12px;
+      color: #86909c;
+    }
+  }
+
+  .pending-arrow {
+    color: #c9cdd4;
+    font-size: 14px;
+  }
+}
+
+.overview-list {
+  .overview-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #f0f0f0;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .label {
+      font-size: 14px;
+      color: #4e5969;
+    }
+
+    .value {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1d2129;
+
+      &--success { color: #00b42a; }
+      &--warning { color: #ff7d00; }
+      &--info { color: #86909c; }
+    }
   }
 }
 </style>
