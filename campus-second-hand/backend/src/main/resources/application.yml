@@ -1,0 +1,41 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: campus-second-hand
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/campus_trade?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: root123456
+  redis:
+    host: localhost
+    port: 6379
+    password: 
+    database: 0
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+jwt:
+  secret: CampusSecondHandSecretKey2024VeryLongSecretKeyForJWTTokenGeneration
+  expiration: 86400000
+  header: Authorization
+  prefix: Bearer
+
+campus:
+  upload:
+    path: /uploads
+    base-url: http://localhost:8080/uploads
+  ai:
+    api-key: your-api-key-here
+    api-url: https://api.openai.com/v1/chat/completions
