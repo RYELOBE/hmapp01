@@ -139,7 +139,7 @@ function handlePageSizeChange(pageSize) {
 }
 
 function goItem(order) {
-  if (order.itemId) router.push(`/item/${order.itemId}`);
+  if (order.itemId) router.push(`/portal/item/${order.itemId}`);
 }
 
 async function handleAction(action, order) {

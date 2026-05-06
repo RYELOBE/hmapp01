@@ -242,18 +242,14 @@ async function submitReview() {
 
   submitting.value = true;
   try {
-    await createReview({
-      orderId: order.value.id,
+    const images = Array.isArray(form.value.images)
+      ? form.value.images.map(img => img.url || img.response?.url).filter(Boolean)
+      : [];
+    await createReview(order.value.id, {
       itemId: order.value.itemId,
       rating: Math.floor(form.value.rating),
-      qualityRating: form.value.qualityRating || undefined,
-      descriptionRating: form.value.descriptionRating || undefined,
-      logisticsRating: form.value.logisticsRating || undefined,
       content: form.value.content,
-      anonymous: form.value.anonymous,
-      images: Array.isArray(form.value.images)
-        ? form.value.images.map(img => img.url || img.response?.url).filter(Boolean)
-        : [],
+      images: images.length > 0 ? JSON.stringify(images) : '',
     });
     Message.success('评价提交成功');
     router.push('/portal/orders');

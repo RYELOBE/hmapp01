@@ -32,7 +32,7 @@ instance.interceptors.response.use((response) => {
 export async function uploadImage(file) {
   const formData = new FormData();
   formData.append("file", file);
-  return await instance.post("/upload/image", formData, {
+  return await instance.post("/upload", formData, {
     headers: {
       "Content-Type": "multipart/form-data",
     },
@@ -56,7 +56,7 @@ export async function updateItem(id, data) {
 }
 
 export async function offShelfItem(id) {
-  return await instance.put(`/items/${id}/off-shelf`);
+  return await instance.post(`/items/${id}/off-shelf`);
 }
 
 export async function deleteItem(id) {
@@ -64,7 +64,7 @@ export async function deleteItem(id) {
 }
 
 export async function getMyItems(params = {}) {
-  return await instance.get("/items/my", { params });
+  return await instance.get("/items/mine", { params });
 }
 
 export async function getSellerOverview() {
@@ -100,27 +100,27 @@ export async function cancelOrder(id) {
 }
 
 export async function getMyOrders(params = {}) {
-  return await instance.get("/orders/my", { params });
+  return await instance.get("/orders/mine", { params });
 }
 
-export async function payOrder(id, data) {
-  return await instance.post(`/orders/${id}/pay`, data);
+export async function payOrder(id) {
+  return await instance.post(`/orders/${id}/pay`);
 }
 
 export async function shipOrder(id, data) {
   return await instance.post(`/orders/${id}/ship`, data);
 }
 
-export async function requestRefund(id, data) {
-  return await instance.post(`/orders/${id}/refund`, data);
+export async function requestRefund(id) {
+  return await instance.post(`/orders/${id}/refund`);
 }
 
 export async function approveRefund(id) {
   return await instance.post(`/orders/${id}/refund/approve`);
 }
 
-export async function rejectRefund(id, data) {
-  return await instance.post(`/orders/${id}/refund/reject`, data);
+export async function rejectRefund(id) {
+  return await instance.post(`/orders/${id}/refund/reject`);
 }
 
 export async function addToCart(itemId, quantity = 1) {
@@ -150,7 +150,7 @@ export async function deleteCartItem(id) {
 export const removeCartItem = deleteCartItem;
 
 export async function addFavorite(itemId) {
-  return await instance.post("/favorites", { itemId });
+  return await instance.post(`/favorites/${itemId}`);
 }
 
 export async function removeFavorite(itemId) {
@@ -194,11 +194,11 @@ export async function deleteAddress(id) {
 }
 
 export async function submitReview(orderId, data) {
-  return await instance.post(`/reviews/submit/${orderId}`, data);
+  return await instance.post("/reviews", { orderId, ...data });
 }
 
 export async function createReview(orderId, data) {
-  return await instance.post(`/reviews/submit/${orderId}`, data);
+  return await instance.post("/reviews", { orderId, ...data });
 }
 
 export async function getReview(orderId) {

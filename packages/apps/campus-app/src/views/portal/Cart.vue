@@ -288,12 +288,11 @@ function checkout() {
     Message.warning("请选择要结算的商品");
     return;
   }
-  if (selectedItems.length === 1) {
-    router.push(`/portal/orders/confirm/${selectedItems[0].itemId}`);
-  } else {
-    const itemIds = selectedItems.map(item => item.itemId).join(',');
-    router.push({ path: '/portal/orders/confirm', query: { itemIds } });
+  if (selectedItems.length > 1) {
+    Message.warning("暂不支持多商品批量结算，请选择单个商品进行结算");
+    return;
   }
+  router.push(`/portal/orders/confirm/${selectedItems[0].itemId}`);
 }
 
 onMounted(loadCart);
