@@ -6,32 +6,12 @@
   "workspaces": {
     "packages": [
       "./packages/common",
-      "./packages/apps/*"
+      "./packages/apps/campus-app"
     ],
     "nohoist": []
   },
   "scripts": {
     "dev": "pnpm --filter campus-app dev",
-    "dev:all": "pnpm --filter campus-app dev",
-    "dev:shell": "pnpm --filter campus-shell dev",
-    "dev:portal": "pnpm --filter campus-portal dev",
-    "dev:ops": "pnpm --filter campus-ops dev",
-    "dev:commonprovide": "pnpm --filter campus-commonprovide dev",
-    "dev:campus-app": "pnpm --filter campus-app dev",
-    "build:front": "pnpm -r --filter campus-* build",
     "build": "pnpm --filter campus-app build"
-  },
-  "devDependencies": {
-    "@arco-design/web-vue": "^2.56.2",
-    "@vitejs/plugin-vue": "^5.2.1",
-    "axios": "^1.7.9",
-    "concurrently": "^9.1.2",
-    "less": "^4.6.4",
-    "markdown-it": "^14.1.1",
-    "pinia": "^2.1.7",
-    "sass": "^1.86.3",
-    "vite": "^6.4.2",
-    "vue": "^3.5.13",
-    "vue-router": "^4.5.0"
   }
 }
