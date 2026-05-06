@@ -157,7 +157,7 @@ import { Message, Modal } from "@arco-design/web-vue";
 import {
   IconList,
   IconFire,
-  IconBarChartCircle,
+  IconBarChart,
   IconCalendar,
   IconRefresh,
 } from "@arco-design/web-vue/es/icon";
@@ -203,7 +203,7 @@ const pagination = reactive({
 const statsCards = [
   { key: "totalBuyers", title: "买家总数", icon: IconList, type: "primary" },
   { key: "todayNew", title: "今日新增", icon: IconFire, type: "success" },
-  { key: "activeBuyers", title: "活跃买家（近30天）", icon: IconBarChartCircle, type: "warning" },
+  { key: "activeBuyers", title: "活跃买家（近30天）", icon: IconBarChart, type: "warning" },
 ];
 
 function formatPrice(price) {

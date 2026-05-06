@@ -57,6 +57,18 @@ export async function getMyItems(params = {}) {
   return await instance.get("/items/my", { params });
 }
 
+export async function getSellerOverview() {
+  return await instance.get("/seller/overview");
+}
+
+export async function getSellerTrend(days = 7) {
+  return await instance.get("/seller/trend", { params: { days } });
+}
+
+export async function getSellerRanking(params = {}) {
+  return await instance.get("/seller/ranking", { params });
+}
+
 export async function getOrders(params = {}) {
   return await instance.get("/orders", { params });
 }
@@ -185,6 +197,10 @@ export async function submitReview(orderId, data) {
   return await instance.post(`/reviews/submit/${orderId}`, data);
 }
 
+export async function createReview(orderId, data) {
+  return await instance.post(`/reviews/submit/${orderId}`, data);
+}
+
 export async function getReview(orderId) {
   return await instance.get(`/reviews/${orderId}`);
 }
@@ -225,6 +241,14 @@ export async function getUsers(params = {}) {
   return await instance.get("/ops/users", { params });
 }
 
+export async function getUserDetail(id) {
+  return await instance.get(`/ops/users/${id}`);
+}
+
+export async function updateUserRole(id, role) {
+  return await instance.put(`/ops/users/${id}/role`, { role });
+}
+
 export async function updateUserStatus(id, status) {
   return await instance.put(`/ops/users/${id}/status`, { status });
 }
@@ -237,7 +261,23 @@ export async function getBuyers(params = {}) {
   return await instance.get("/ops/buyers", { params });
 }
 
+export async function getBuyerDetail(id) {
+  return await instance.get(`/ops/buyers/${id}`);
+}
+
+export async function getVendors(params = {}) {
+  return await instance.get("/ops/vendors", { params });
+}
+
+export async function getVendorDetail(id) {
+  return await instance.get(`/ops/vendors/${id}`);
+}
+
 export async function getApps(params = {}) {
+  return await instance.get("/ops/apps", { params });
+}
+
+export async function getSubApps(params = {}) {
   return await instance.get("/ops/apps", { params });
 }
 
@@ -245,11 +285,23 @@ export async function createApp(data) {
   return await instance.post("/ops/apps", data);
 }
 
+export async function registerSubApp(data) {
+  return await instance.post("/ops/apps", data);
+}
+
 export async function updateApp(id, data) {
   return await instance.put(`/ops/apps/${id}`, data);
 }
 
+export async function updateSubApp(id, data) {
+  return await instance.put(`/ops/apps/${id}`, data);
+}
+
 export async function deleteApp(id) {
+  return await instance.delete(`/ops/apps/${id}`);
+}
+
+export async function deleteSubApp(id) {
   return await instance.delete(`/ops/apps/${id}`);
 }
 
@@ -265,6 +317,10 @@ export async function getRoles(params = {}) {
   return await instance.get("/ops/roles", { params });
 }
 
+export async function getAllRoles(params = {}) {
+  return await instance.get("/ops/roles", { params });
+}
+
 export async function createRole(data) {
   return await instance.post("/ops/roles", data);
 }
@@ -275,6 +331,18 @@ export async function updateRole(id, data) {
 
 export async function deleteRole(id) {
   return await instance.delete(`/ops/roles/${id}`);
+}
+
+export async function updateRoleStatus(id, status) {
+  return await instance.put(`/ops/roles/${id}/status`, { status });
+}
+
+export async function getRoleResources(id) {
+  return await instance.get(`/ops/roles/${id}/resources`);
+}
+
+export async function saveRoleResources(id, resources) {
+  return await instance.put(`/ops/roles/${id}/resources`, { resources });
 }
 
 export async function getResources(params = {}) {
@@ -297,7 +365,15 @@ export async function getRoutes(params = {}) {
   return await instance.get("/ops/routes", { params });
 }
 
+export async function getPortalRoutes(params = {}) {
+  return await instance.get("/ops/routes", { params });
+}
+
 export async function createRoute(data) {
+  return await instance.post("/ops/routes", data);
+}
+
+export async function savePortalRoute(data) {
   return await instance.post("/ops/routes", data);
 }
 
@@ -305,8 +381,59 @@ export async function updateRoute(id, data) {
   return await instance.put(`/ops/routes/${id}`, data);
 }
 
+export async function updatePortalRoute(id, data) {
+  return await instance.put(`/ops/routes/${id}`, data);
+}
+
 export async function deleteRoute(id) {
   return await instance.delete(`/ops/routes/${id}`);
+}
+
+export async function deletePortalRoute(id) {
+  return await instance.delete(`/ops/routes/${id}`);
+}
+
+export async function getResourceMenus(params = {}) {
+  return await instance.get("/ops/resources/menus", { params });
+}
+
+export async function saveResourceMenu(data) {
+  if (data.id) {
+    return await instance.put(`/ops/resources/menus/${data.id}`, data);
+  }
+  return await instance.post("/ops/resources/menus", data);
+}
+
+export async function deleteResourceMenu(id) {
+  return await instance.delete(`/ops/resources/menus/${id}`);
+}
+
+export async function getResourceMenuTree(params = {}) {
+  return await instance.get("/ops/resources/menus/tree", { params });
+}
+
+export async function getResourceDetail(id) {
+  return await instance.get(`/ops/resources/menus/${id}`);
+}
+
+export async function getResourceFunctions(menuId) {
+  return await instance.get(`/ops/resources/functions`, { params: { menuId } });
+}
+
+export async function updateResourceMenu(id, data) {
+  return await instance.put(`/ops/resources/menus/${id}`, data);
+}
+
+export async function saveResourceFunction(data) {
+  return await instance.post("/ops/resources/functions", data);
+}
+
+export async function updateResourceFunction(id, data) {
+  return await instance.put(`/ops/resources/functions/${id}`, data);
+}
+
+export async function deleteResourceFunction(id) {
+  return await instance.delete(`/ops/resources/functions/${id}`);
 }
 
 export default instance;

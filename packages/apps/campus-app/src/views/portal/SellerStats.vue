@@ -47,7 +47,7 @@
 
           <div class="stat-card stat-card--items">
             <div class="stat-icon">
-              <icon-box />
+              <icon-tag />
             </div>
             <div class="stat-info">
               <div class="stat-label">在售商品</div>
@@ -129,10 +129,9 @@ import { ref, onMounted } from "vue";
 import { Message } from "@arco-design/web-vue";
 import {
   IconArrowLeft,
-  IconToday,
   IconCalendar,
   IconApps,
-  IconBox,
+  IconTag,
 } from "@arco-design/web-vue/es/icon";
 import { parseFirstImageUrl } from "../../utils/image-utils";
 import {

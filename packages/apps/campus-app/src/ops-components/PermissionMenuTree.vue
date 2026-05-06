@@ -17,11 +17,11 @@
             组织用户
           </a-menu-item>
           <a-menu-item key="role-manage">
-            <template #icon><icon-user-group-2 /></template>
+            <template #icon><icon-user /></template>
             角色管理
           </a-menu-item>
           <a-menu-item key="resource-manage">
-            <template #icon><icon-folder-open /></template>
+            <template #icon><icon-folder /></template>
             资源管理
           </a-menu-item>
         </a-sub-menu>
@@ -36,7 +36,7 @@ import {
   IconSettings,
   IconSafe,
   IconUserGroup,
-  IconUserGroup2,
+  IconUser,
   IconFolder
 } from '@arco-design/web-vue/es/icon';
 
