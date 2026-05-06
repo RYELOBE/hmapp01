@@ -251,7 +251,7 @@ function handleBuy() {
     Message.warning('该商品暂不可购买');
     return;
   }
-  router.push(`/orders/confirm/${detail.value.id}`);
+  router.push(`/portal/orders/confirm/${detail.value.id}`);
 }
 
 function handleViewShop() {

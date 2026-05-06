@@ -1,6 +1,6 @@
 # 校园交易平台 - 微前端转单体架构重构 - 实现计划
 
-## [ ] Task 1: 创建单体应用基础结构
+## [x] Task 1: 创建单体应用基础结构
 - **Priority**: P0
 - **Depends On**: None
 - **Description**: 
@@ -13,7 +13,7 @@
   - `programmatic` TR-1.2: vite.config.js 配置正确，包含路径别名
 - **Notes**: 参考现有的 shell 应用结构
 
-## [ ] Task 2: 合并路由配置
+## [x] Task 2: 合并路由配置
 - **Priority**: P0
 - **Depends On**: Task 1
 - **Description**: 
@@ -26,7 +26,7 @@
   - `human-judgment` TR-2.2: 路由结构清晰，权限验证统一
 - **Notes**: 保留原有路径结构 /portal/* 和 /ops/*
 
-## [ ] Task 3: 整合状态管理
+## [x] Task 3: 整合状态管理
 - **Priority**: P0
 - **Depends On**: Task 1
 - **Description**: 
@@ -39,7 +39,7 @@
   - `human-judgment` TR-3.2: store 结构清晰，无冗余代码
 - **Notes**: 保留 authStore 的核心功能，移除 framePinia 中的微前端逻辑
 
-## [ ] Task 4: 迁移组件和页面
+## [x] Task 4: 迁移组件和页面
 - **Priority**: P0
 - **Depends On**: Task 1, Task 2
 - **Description**: 
@@ -79,7 +79,7 @@
   - `programmatic` TR-6.2: grep 'federation' 返回空
 - **Notes**: 仔细检查所有文件中的微前端相关代码
 
-## [ ] Task 7: Bug 排查和修复
+## [/] Task 7: Bug 排查和修复
 - **Priority**: P1
 - **Depends On**: Task 1-6
 - **Description**: 

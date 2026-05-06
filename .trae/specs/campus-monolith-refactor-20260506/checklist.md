@@ -1,10 +1,10 @@
-- [ ] Checkpoint 1: 单体应用基础结构创建完成
-- [ ] Checkpoint 2: 路由配置合并完成，所有路由可访问
-- [ ] Checkpoint 3: 状态管理整合完成
-- [ ] Checkpoint 4: 所有组件和页面迁移完成
+- [x] Checkpoint 1: 单体应用基础结构创建完成
+- [x] Checkpoint 2: 路由配置合并完成，所有路由可访问
+- [x] Checkpoint 3: 状态管理整合完成
+- [x] Checkpoint 4: 所有组件和页面迁移完成
 - [ ] Checkpoint 5: 配置文件更新完成，移除微前端依赖
 - [ ] Checkpoint 6: 微前端相关代码全部移除
-- [ ] Checkpoint 7: Bug 排查和修复完成
+- [/] Checkpoint 7: Bug 排查和修复完成
 - [ ] Checkpoint 8: 构建成功，开发服务器可正常启动
 - [ ] Checkpoint 9: 所有页面可正常访问和渲染
 - [ ] Checkpoint 10: 登录和权限验证功能正常工作

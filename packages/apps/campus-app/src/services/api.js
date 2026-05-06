@@ -121,29 +121,23 @@ export async function getCart() {
   return await instance.get("/cart");
 }
 
-export async function getCartList() {
-  return await instance.get("/cart");
-}
+export const getCartList = getCart;
 
 export async function updateCartItem(id, quantity) {
   return await instance.put(`/cart/${id}`, { quantity });
 }
 
-export async function updateCartQuantity(id, quantity) {
-  return await instance.put(`/cart/${id}`, { quantity });
-}
+export const updateCartQuantity = updateCartItem;
 
 export async function updateCartSelected(id, selected) {
   return await instance.put(`/cart/${id}/select`, { selected });
 }
 
-export async function removeCartItem(id) {
-  return await instance.delete(`/cart/${id}`);
-}
-
 export async function deleteCartItem(id) {
   return await instance.delete(`/cart/${id}`);
 }
+
+export const removeCartItem = deleteCartItem;
 
 export async function addFavorite(itemId) {
   return await instance.post("/favorites", { itemId });
@@ -161,17 +155,13 @@ export async function getFavorites(params = {}) {
   return await instance.get("/favorites", { params });
 }
 
-export async function getFavoriteList(params = {}) {
-  return await instance.get("/favorites", { params });
-}
+export const getFavoriteList = getFavorites;
 
 export async function getAddresses(params = {}) {
   return await instance.get("/addresses", { params });
 }
 
-export async function getAddressList(params = {}) {
-  return await instance.get("/addresses", { params });
-}
+export const getAddressList = getAddresses;
 
 export async function getDefaultAddress() {
   return await instance.get("/addresses/default");
@@ -285,25 +275,19 @@ export async function createApp(data) {
   return await instance.post("/ops/apps", data);
 }
 
-export async function registerSubApp(data) {
-  return await instance.post("/ops/apps", data);
-}
+export const registerSubApp = createApp;
 
 export async function updateApp(id, data) {
   return await instance.put(`/ops/apps/${id}`, data);
 }
 
-export async function updateSubApp(id, data) {
-  return await instance.put(`/ops/apps/${id}`, data);
-}
+export const updateSubApp = updateApp;
 
 export async function deleteApp(id) {
   return await instance.delete(`/ops/apps/${id}`);
 }
 
-export async function deleteSubApp(id) {
-  return await instance.delete(`/ops/apps/${id}`);
-}
+export const deleteSubApp = deleteApp;
 
 export async function getPortalConfig(portalCode) {
   return await instance.get(`/ops/portal/${portalCode}`);
@@ -317,9 +301,7 @@ export async function getRoles(params = {}) {
   return await instance.get("/ops/roles", { params });
 }
 
-export async function getAllRoles(params = {}) {
-  return await instance.get("/ops/roles", { params });
-}
+export const getAllRoles = getRoles;
 
 export async function createRole(data) {
   return await instance.post("/ops/roles", data);
@@ -373,25 +355,19 @@ export async function createRoute(data) {
   return await instance.post("/ops/routes", data);
 }
 
-export async function savePortalRoute(data) {
-  return await instance.post("/ops/routes", data);
-}
+export const savePortalRoute = createRoute;
 
 export async function updateRoute(id, data) {
   return await instance.put(`/ops/routes/${id}`, data);
 }
 
-export async function updatePortalRoute(id, data) {
-  return await instance.put(`/ops/routes/${id}`, data);
-}
+export const updatePortalRoute = updateRoute;
 
 export async function deleteRoute(id) {
   return await instance.delete(`/ops/routes/${id}`);
 }
 
-export async function deletePortalRoute(id) {
-  return await instance.delete(`/ops/routes/${id}`);
-}
+export const deletePortalRoute = deleteRoute;
 
 export async function getResourceMenus(params = {}) {
   return await instance.get("/ops/resources/menus", { params });

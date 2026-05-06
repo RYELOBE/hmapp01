@@ -143,6 +143,7 @@ import { IconSearch } from "@arco-design/web-vue/es/icon";
 import { getItems } from "../../../services/api";
 import ItemCard from "../../../shared-components/ItemCard/ItemCard.vue";
 import { CATEGORIES, SORT_OPTIONS } from "./const";
+import { debounce } from "@campus/common";
 
 const router = useRouter();
 const route = useRoute();
@@ -267,12 +268,16 @@ function loadMore() {
 }
 
 function goDetail(item) {
-  router.push(`/item/${item.id}`);
+  router.push(`/portal/item/${item.id}`);
 }
+
+const debouncedSearch = debounce((keyword) => {
+  router.push({ path: '/portal/home', query: { keyword } });
+}, 300);
 
 function handleSearch(value) {
   console.log('搜索:', value || searchQuery.value);
-  router.push({ path: '/home', query: { keyword: value || searchQuery.value } });
+  debouncedSearch(value || searchQuery.value);
 }
 
 function removeFilter(index) {

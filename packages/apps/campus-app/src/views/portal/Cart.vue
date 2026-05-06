@@ -288,8 +288,12 @@ function checkout() {
     Message.warning("请选择要结算的商品");
     return;
   }
-  const firstItem = selectedItems[0];
-  router.push(`/orders/confirm/${firstItem.itemId}`);
+  if (selectedItems.length === 1) {
+    router.push(`/portal/orders/confirm/${selectedItems[0].itemId}`);
+  } else {
+    const itemIds = selectedItems.map(item => item.itemId).join(',');
+    router.push({ path: '/portal/orders/confirm', query: { itemIds } });
+  }
 }
 
 onMounted(loadCart);

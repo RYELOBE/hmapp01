@@ -9,11 +9,11 @@
     </div>
 
     <a-spin :loading="loading" style="width: 100%">
-      <div v-if="item" class="confirm-content">
+      <div v-if="items.length > 0" class="confirm-content">
         <a-row :gutter="[16, 16]">
           <a-col :xs="24" :lg="16">
             <a-card title="商品信息" :bordered="false" class="section-card">
-              <div class="item-info-card">
+              <div class="item-info-card" v-for="item in items" :key="item.id">
                 <div class="item-image-wrapper">
                   <img
                     v-if="getItemImage(item)"
@@ -29,13 +29,18 @@
                     <span v-if="item.category" class="item-category">{{ getCategoryLabel(item.category) }}</span>
                   </div>
                 </div>
-              </div>
-
-              <div class="price-info">
-                <span class="price-label">单价</span>
-                <span class="price-value">¥{{ (item.price || 0).toFixed(2) }}</span>
-                <span class="quantity-info">× {{ quantity }}</span>
-                <span class="subtotal">= ¥{{ ((item.price || 0) * quantity).toFixed(2) }}</span>
+                <div class="item-quantity">
+                  <a-input-number
+                    :model-value="quantities[item.id] || 1"
+                    :min="1"
+                    :max="99"
+                    size="small"
+                    @change="(val) => updateQuantity(item.id, val)"
+                  />
+                </div>
+                <div class="item-subtotal">
+                  ¥{{ ((item.price || 0) * (quantities[item.id] || 1)).toFixed(2) }}
+                </div>
               </div>
             </a-card>
 
@@ -67,8 +72,8 @@
             <a-card title="订单明细" :bordered="false" class="summary-card">
               <div class="summary-list">
                 <div class="summary-item">
-                  <span>商品金额</span>
-                  <span>¥{{ ((item.price || 0) * quantity).toFixed(2) }}</span>
+                  <span>商品金额 ({{ totalCount }}件)</span>
+                  <span>¥{{ totalAmount }}</span>
                 </div>
                 <div class="summary-item">
                   <span>运费</span>
@@ -77,7 +82,7 @@
                 <div class="summary-divider"></div>
                 <div class="summary-item summary-total">
                   <span>应付总额</span>
-                  <span class="total-amount">¥{{ ((item.price || 0) * quantity).toFixed(2) }}</span>
+                  <span class="total-amount">¥{{ totalAmount }}</span>
                 </div>
               </div>
 
@@ -99,6 +104,17 @@
           </a-col>
         </a-row>
       </div>
+
+      <div v-else-if="!loading" class="empty-state">
+        <a-empty description="暂无商品信息">
+          <template #image>
+            <icon-shopping-cart size="64" />
+          </template>
+          <a-button type="primary" @click="$router.push('/portal/home')">
+            去逛逛
+          </a-button>
+        </a-empty>
+      </div>
     </a-spin>
 
     <EditAddressModal
@@ -116,6 +132,7 @@ import {
   IconArrowLeft,
   IconLocation,
   IconEdit,
+  IconShoppingCart,
 } from "@arco-design/web-vue/es/icon";
 import { parseFirstImageUrl } from "../../../utils/image-utils";
 import AddressCard from "../../../components/AddressCard.vue";
@@ -128,14 +145,15 @@ const route = useRoute();
 
 const loading = ref(false);
 const submitting = ref(false);
-const item = ref(null);
-const quantity = ref(1);
+const items = ref([]);
+const quantities = ref({});
 const defaultAddress = ref(null);
 const showAddressModal = ref(false);
 
 const CATEGORY_MAP = {
   digital: "数码", book: "教材", clothing: "服饰",
   daily: "生活", sport: "运动", instrument: "乐器", other: "其他",
+  electronics: "数码", textbooks: "教材",
 };
 
 function getImageUrl(record) {
@@ -154,9 +172,31 @@ function getCategoryLabel(category) {
   return CATEGORY_MAP[category] || category || "";
 }
 
-async function loadItem() {
+const totalAmount = computed(() => {
+  return items.value.reduce((sum, item) => {
+    const qty = quantities.value[item.id] || 1;
+    return sum + (item.price || 0) * qty;
+  }, 0).toFixed(2);
+});
+
+const totalCount = computed(() => {
+  return items.value.reduce((sum, item) => {
+    return sum + (quantities.value[item.id] || 1);
+  }, 0);
+});
+
+async function loadItems() {
   const itemId = route.params.id;
-  if (!itemId) {
+  const itemIdsParam = route.query.itemIds;
+  
+  let itemIds = [];
+  if (itemId) {
+    itemIds = [itemId];
+  } else if (itemIdsParam) {
+    itemIds = itemIdsParam.split(',');
+  }
+  
+  if (itemIds.length === 0) {
     Message.error("商品ID不存在");
     router.back();
     return;
@@ -164,13 +204,22 @@ async function loadItem() {
 
   loading.value = true;
   try {
-    const res = await getItemDetail(itemId);
-    item.value = res;
+    const itemList = await Promise.all(itemIds.map(id => getItemDetail(id)));
+    items.value = itemList.filter(Boolean);
+    items.value.forEach(item => {
+      if (!quantities.value[item.id]) {
+        quantities.value[item.id] = 1;
+      }
+    });
   } catch (e) {
     Message.error(e.message || "加载商品失败");
   } finally {
     loading.value = false;
   }
+}
+
+function updateQuantity(itemId, value) {
+  quantities.value[itemId] = value;
 }
 
 async function loadDefaultAddress() {
@@ -202,16 +251,23 @@ async function submitOrder() {
     return;
   }
 
+  if (items.value.length === 0) {
+    Message.warning("请选择商品");
+    return;
+  }
+
   submitting.value = true;
   try {
     const orderData = {
-      itemId: item.value.id,
-      quantity: quantity.value,
+      items: items.value.map(item => ({
+        itemId: item.id,
+        quantity: quantities.value[item.id] || 1,
+      })),
       addressId: defaultAddress.value.id,
     };
     const res = await createOrder(orderData);
     Message.success("订单创建成功");
-    router.push(`/orders`);
+    router.push(`/portal/orders`);
   } catch (e) {
     Message.error(e.message || "创建订单失败");
   } finally {
@@ -220,7 +276,7 @@ async function submitOrder() {
 }
 
 onMounted(() => {
-  loadItem();
+  loadItems();
   loadDefaultAddress();
 });
 </script>
@@ -270,6 +326,13 @@ onMounted(() => {
 .item-info-card {
   display: flex;
   gap: 16px;
+  align-items: center;
+  padding: 16px 0;
+  border-bottom: 1px solid #f0f0f0;
+
+  &:last-child {
+    border-bottom: none;
+  }
 
   .item-image-wrapper {
     flex-shrink: 0;
@@ -318,36 +381,24 @@ onMounted(() => {
       border-radius: 4px;
     }
   }
+
+  .item-quantity {
+    width: 100px;
+    text-align: center;
+  }
+
+  .item-subtotal {
+    width: 100px;
+    text-align: right;
+    font-weight: 600;
+    color: #f53f3f;
+    font-size: 15px;
+  }
 }
 
-.price-info {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 16px;
-  border-top: 1px solid #f0f0f0;
-  margin-top: 16px;
-  font-size: 14px;
-
-  .price-label {
-    color: #86909c;
-  }
-
-  .price-value {
-    font-weight: 600;
-    color: #1d2129;
-  }
-
-  .quantity-info {
-    color: #86909c;
-    margin: 0 4px;
-  }
-
-  .subtotal {
-    font-weight: 700;
-    color: #f53f3f;
-    font-size: 16px;
-  }
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
 }
 
 .address-card {
