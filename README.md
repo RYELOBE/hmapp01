@@ -1,40 +1,25 @@
-# Campus Trade Platform (Graduation Project)
+# 校园二手交易平台
 
-Vue3 + Java full-stack campus second-hand marketplace with Qiankun micro frontends and AI assistant.
+Vue3 + Java 全栈校园二手交易市场，包含买家/卖家门户及运营管理功能。
 
-## Tech Stack
+## 技术栈
 
-- Frontend: Vue3, JavaScript, Arco Design, Vite, Qiankun
-- Shared module: Module Federation remote (`mf-shared`)
-- Backend: Spring Boot, Sa-Token, MySQL (schema/data scripts included)
-- AI: OpenAI-compatible Chat Completions API
+- 前端：Vue 3, JavaScript, Arco Design, Vite, Pinia, Vue Router
+- 后端：Spring Boot, Sa-Token, MySQL
+- AI：OpenAI 兼容聊天 API
 
-## Monorepo Structure
+## 项目结构
 
-- `apps/shell`: main app shell (auth, role routing, micro app mount, AI drawer)
-- `apps/portal`: buyer/seller portal sub-app
-- `apps/ops`: operations center sub-app
-- `apps/mf-shared`: shared auth/http/theme/status-tag/ai-sdk remote module
-- `backend`: Java API for auth, items, review flow, orders, AI
+```
+/workspace
+├── backend/              # Java 后端
+├── packages/
+│   ├── common/           # 共享常量和工具
+│   └── apps/
+│       └── campus-app/   # 单应用前端
+```
 
-## CommonEngine-style Micro-frontend Mode
-
-The shell app follows a `dframes`-like architecture:
-
-- dynamic app registration from backend (`GET /api/frame/registers`)
-- dynamic route injection by role (`GET /api/frame/routes`)
-- qiankun startup after registration data is ready
-- cross-app communication via a message manager
-- shell router proxy object passed to sub-apps via qiankun `props`
-
-Key shell modules:
-
-- `apps/shell/src/minFrame/index.js`
-- `apps/shell/src/minFrame/pinia/framePinia.js`
-- `apps/shell/src/minFrame/Message.js`
-- `apps/shell/src/minFrame/ShellRouter.js`
-
-## Required Local Environment
+## 本地环境要求
 
 1. Node.js 20+
 2. pnpm 9+
@@ -42,65 +27,55 @@ Key shell modules:
 4. Maven 3.9+
 5. MySQL 8.x
 
-## Frontend Install and Run
+## 前端安装运行
 
 ```bash
 pnpm install
-pnpm dev:front
+pnpm dev
 ```
 
-`pnpm dev:front` builds `mf-shared` first, then starts `commonprovide`, `shell`, `portal`, and `ops`. This keeps `http://localhost:7199/assets/remoteEntry.js` available before the micro apps load it.
+前端访问地址：`http://localhost:5173`
 
-Frontend URLs:
-
-- shell: `http://localhost:7100`
-- portal: `http://localhost:7101`
-- ops: `http://localhost:7102`
-- mf-shared/commonprovide: `http://localhost:7199`
-
-## Backend Run
+## 后端运行
 
 ```bash
 cd backend
 mvn spring-boot:run
 ```
 
-Backend URL:
+后端 API：`http://localhost:8080/api`
 
-- API base: `http://localhost:8080/api`
+## 演示账号
 
-## Demo Accounts
+- 买家：buyer / 123456
+- 卖家：seller / 123456
+- 运营：ops / 123456
 
-- buyer / 123456
-- seller / 123456
-- ops / 123456
+## 主要功能
 
-## Implemented APIs
+### 买家端
+- 浏览商品列表
+- 查看商品详情
+- 加入购物车
+- 下单购买
+- 收藏商品
+- 收货地址管理
+- 我的订单
 
-- `POST /api/auth/login`
-- `POST /api/items`
-- `GET /api/items`
-- `GET /api/items/{id}`
-- `GET /api/ops/reviews`
-- `POST /api/ops/reviews/{itemId}/approve`
-- `POST /api/ops/reviews/{itemId}/reject`
-- `POST /api/orders`
-- `GET /api/orders/mine`
-- `POST /api/ai/chat`
-- `GET /api/ai/sessions/recent`
-- `GET /api/ai/sessions/{sessionId}/messages`
-- `GET /api/ai/presets`
-- `GET /api/frame/registers`
-- `GET /api/frame/routes`
+### 卖家端
+- 发布商品
+- 管理我的商品
+- 上下架商品
+- 订单处理
+- 卖家数据统计
 
-## One-click Start (Windows PowerShell)
+### 运营端
+- 用户管理
+- 商品审核
+- 订单监控
+- 评价管理
 
-```powershell
-./scripts/start-all.ps1
-```
+## 注意事项
 
-## Notes
-
-- Current backend skeleton uses in-memory seed store for quick local demo flow.
-- `schema.sql` and `data.sql` are prepared for MySQL migration.
-- AI assistant is read-only by design (Q&A and process guidance only).
+- 默认使用内存存储快速演示
+- 生产环境可使用 `schema.sql` 和 `data.sql` 迁移至 MySQL
