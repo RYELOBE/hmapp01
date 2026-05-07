@@ -216,6 +216,13 @@ const routes = [
           ),
         meta: { roles: ["BUYER", "SELLER"], title: "消息中心" },
       },
+      // ========== 关于我们路由 ==========
+      {
+        path: "about",
+        name: "about",
+        component: AboutUs,
+        meta: { title: "关于我们" },
+      },
     ],
   },
 
@@ -265,12 +272,6 @@ const routes = [
   },
 
   // ========== 其他页面 ==========
-  {
-    path: "/about",
-    name: "about",
-    component: AboutUs,
-    meta: { title: "关于我们" },
-  },
 ];
 
 const router = createRouter({

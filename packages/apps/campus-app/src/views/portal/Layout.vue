@@ -5,10 +5,21 @@
         <div class="header-left">
           <div class="logo" @click="router.push('/portal/home')">
             <div class="logo-icon">
-              <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="20" cy="20" r="20" fill="#165DFF"/>
-                <path d="M20 10L26 18H14L20 10Z" fill="white"/>
-                <rect x="14" y="19" width="12" height="11" rx="2" fill="white"/>
+              <svg
+                viewBox="0 0 40 40"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <circle cx="20" cy="20" r="20" fill="#165DFF" />
+                <path d="M20 10L26 18H14L20 10Z" fill="white" />
+                <rect
+                  x="14"
+                  y="19"
+                  width="12"
+                  height="11"
+                  rx="2"
+                  fill="white"
+                />
               </svg>
             </div>
             <span class="logo-text">校园二手平台</span>
@@ -36,17 +47,35 @@
         </div>
 
         <div class="header-right">
-          <button class="icon-btn search-btn" @click="handleSearch" aria-label="搜索">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="11" cy="11" r="8"/>
-              <path d="M21 21l-4.35-4.35"/>
+          <button
+            class="icon-btn search-btn"
+            @click="handleSearch"
+            aria-label="搜索"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
             </svg>
           </button>
 
           <button class="icon-btn notification-btn" aria-label="通知">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+            >
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
             </svg>
             <span class="notification-badge">3</span>
           </button>
@@ -61,30 +90,58 @@
                     :alt="authStore.user?.username || '用户'"
                   />
                   <span v-else class="avatar-placeholder">
-                    {{ (authStore.user?.username || 'U').charAt(0).toUpperCase() }}
+                    {{
+                      (authStore.user?.username || "U").charAt(0).toUpperCase()
+                    }}
                   </span>
                 </div>
-                <span class="username">{{ authStore.user?.username || '用户' }}</span>
-                <svg class="dropdown-arrow" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <polyline points="6 9 12 15 18 9"/>
+                <span class="username">{{
+                  authStore.user?.username || "用户"
+                }}</span>
+                <svg
+                  class="dropdown-arrow"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="6 9 12 15 18 9" />
                 </svg>
               </div>
               <template #content>
                 <a-doption @click="router.push('/portal/profile')">
                   <template #icon>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-                      <circle cx="12" cy="7" r="4"/>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
                     </svg>
                   </template>
                   个人中心
                 </a-doption>
                 <a-doption @click="router.push('/portal/orders')">
                   <template #icon>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-                      <line x1="3" y1="6" x2="21" y2="6"/>
-                      <path d="M16 10a4 4 0 0 1-8 0"/>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path
+                        d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"
+                      />
+                      <line x1="3" y1="6" x2="21" y2="6" />
+                      <path d="M16 10a4 4 0 0 1-8 0" />
                     </svg>
                   </template>
                   我的订单
@@ -94,9 +151,16 @@
                   @click="router.push('/portal/seller/publish')"
                 >
                   <template #icon>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <line x1="12" y1="5" x2="12" y2="19"/>
-                      <line x1="5" y1="12" x2="19" y2="12"/>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
                   </template>
                   发布商品
@@ -104,10 +168,17 @@
                 <a-doption divider />
                 <a-doption class="logout-option" @click="handleLogout">
                   <template #icon>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-                      <polyline points="16 17 21 12 16 7"/>
-                      <line x1="21" y1="12" x2="9" y2="12"/>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                      <polyline points="16 17 21 12 16 7" />
+                      <line x1="21" y1="12" x2="9" y2="12" />
                     </svg>
                   </template>
                   退出登录
@@ -138,89 +209,89 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
-import { useAuthStore } from '../../stores/auth'
-import { Message } from '@arco-design/web-vue'
-import AiAssistant from '../../components/common/AiAssistant.vue'
+import { ref, computed } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { useAuthStore } from "../../stores/auth";
+import { Message } from "@arco-design/web-vue";
+import AiAssistant from "../../components/common/AiAssistant.vue";
 
-const route = useRoute()
-const router = useRouter()
-const authStore = useAuthStore()
+const route = useRoute();
+const router = useRouter();
+const authStore = useAuthStore();
 
-const mobileMenuOpen = ref(false)
+const mobileMenuOpen = ref(false);
 
 const navItems = [
-  { label: '首页', path: '/portal/home' },
-  { label: '全部商品', path: '/portal/buyer/items' },
-  { label: '校园圈子', path: '/portal/circle' },
-  { label: '关于我们', path: '/about' }
-]
+  { label: "首页", path: "/portal/home" },
+  { label: "全部商品", path: "/portal/buyer/items" },
+  { label: "校园圈子", path: "/portal/circle" },
+  { label: "关于我们", path: "/portal/about" },
+];
 
 const isActive = (path) => {
-  if (!path || path === '#') return false;
-  
+  if (!path || path === "#") return false;
+
   const currentPath = route.path;
-  
-  const cleanPath = path.split('?')[0];
-  
+
+  const cleanPath = path.split("?")[0];
+
   if (currentPath === cleanPath) return true;
-  
-  if (currentPath.startsWith(cleanPath + '/')) return true;
-  
+
+  if (currentPath.startsWith(cleanPath + "/")) return true;
+
   return false;
-}
+};
 
 const toggleMobileMenu = () => {
-  mobileMenuOpen.value = !mobileMenuOpen.value
-}
+  mobileMenuOpen.value = !mobileMenuOpen.value;
+};
 
 const closeMobileMenu = () => {
-  mobileMenuOpen.value = false
-}
+  mobileMenuOpen.value = false;
+};
 
 const handleSearch = () => {
-  router.push('/portal/buyer/items?search=')
-}
+  router.push("/portal/buyer/items?search=");
+};
 
 const handleNavClick = (item) => {
-  console.log('[Portal Nav] 点击导航:', item.label, '→', item.path)
-  
+  console.log("[Portal Nav] 点击导航:", item.label, "→", item.path);
+
   // 关闭移动端菜单
-  closeMobileMenu()
-  
-  if (item.path === '#' || !item.path) {
-    Message.info(`${item.label}功能开发中，敬请期待！`)
-    return
+  closeMobileMenu();
+
+  if (item.path === "#" || !item.path) {
+    Message.info(`${item.label}功能开发中，敬请期待！`);
+    return;
   }
-  
+
   // 处理带参数的路由
-  if (item.path.includes('?')) {
-    const [path, query] = item.path.split('?')
-    const params = new URLSearchParams(query)
-    const queryObj = {}
+  if (item.path.includes("?")) {
+    const [path, query] = item.path.split("?");
+    const params = new URLSearchParams(query);
+    const queryObj = {};
     for (const [key, value] of params) {
-      queryObj[key] = value
+      queryObj[key] = value;
     }
-    
-    router.push({ path, query: queryObj })
+
+    router.push({ path, query: queryObj });
   } else {
-    router.push(item.path)
+    router.push(item.path);
   }
-}
+};
 
 const handleLogin = () => {
   router.push({
-    path: '/login',
-    query: { redirect: route.fullPath }
-  })
-}
+    path: "/login",
+    query: { redirect: route.fullPath },
+  });
+};
 
 const handleLogout = () => {
-  authStore.logout()
-  Message.success('已退出登录')
-  router.push('/portal/home')
-}
+  authStore.logout();
+  Message.success("已退出登录");
+  router.push("/portal/home");
+};
 </script>
 
 <style lang="scss" scoped>
@@ -295,13 +366,17 @@ const handleLogout = () => {
     font-weight: 400;
     color: var(--text-secondary);
     text-decoration: none;
-    padding: 4px 0;
+    padding: 20px 0;
     position: relative;
     transition: all var(--transition-fast);
     white-space: nowrap;
 
     &:hover {
       color: var(--primary-blue);
+
+      &::after {
+        opacity: 1;
+      }
     }
 
     &.active {
@@ -309,15 +384,22 @@ const handleLogout = () => {
       font-weight: 600;
 
       &::after {
-        content: '';
-        position: absolute;
-        bottom: -22px;
-        left: 0;
-        right: 0;
-        height: 2px;
-        background-color: var(--primary-blue);
-        border-radius: 1px;
+        opacity: 1;
       }
+    }
+
+    &::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 2px;
+      background-color: var(--primary-blue);
+      border-radius: 1px;
+      opacity: 0;
+      transition: all var(--transition-fast);
     }
   }
 }
@@ -350,13 +432,13 @@ const handleLogout = () => {
     transform: translate(-50%, -50%);
 
     &::before {
-      content: '';
+      content: "";
       top: -6px;
       left: 0;
     }
 
     &::after {
-      content: '';
+      content: "";
       top: 6px;
       left: 0;
     }
@@ -420,7 +502,7 @@ const handleLogout = () => {
     font-size: 11px;
     font-weight: 600;
     color: var(--text-white);
-    background-color: #F53F3F;
+    background-color: #f53f3f;
     border-radius: var(--radius-full);
     display: flex;
     align-items: center;
@@ -497,7 +579,6 @@ const handleLogout = () => {
 .portal-content {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 24px;
   min-height: calc(100vh - 64px);
 }
 
@@ -524,7 +605,7 @@ const handleLogout = () => {
     }
   }
 
-  .main-nav .nav-item:nth-child(n+4) {
+  .main-nav .nav-item:nth-child(n + 4) {
     display: none;
   }
 }
@@ -593,10 +674,6 @@ const handleLogout = () => {
 
   .user-info .username {
     display: none;
-  }
-
-  .portal-content {
-    padding: 16px;
   }
 }
 </style>

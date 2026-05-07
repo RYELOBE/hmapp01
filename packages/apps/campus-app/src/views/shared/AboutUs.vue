@@ -130,6 +130,7 @@ import {
 }
 
 .hero-section {
+  width: 100vw;
   height: 400px;
   background: linear-gradient(135deg, #165DFF 0%, #092DC2 100%);
   display: flex;
@@ -137,6 +138,7 @@ import {
   justify-content: center;
   text-align: center;
   color: #FFFFFF;
+  margin-left: calc(-50vw + 50%);
 }
 
 .hero-content {
@@ -344,7 +346,6 @@ import {
 }
 
 .cta-section {
-  background: linear-gradient(135deg, #F7F8FA 0%, #EDF1F7 100%);
   padding: 80px 24px;
   text-align: center;
 }
