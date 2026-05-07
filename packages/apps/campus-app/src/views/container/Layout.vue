@@ -13,7 +13,7 @@
         </div>
         <a-menu
           :selected-keys="currentMenuKeys"
-          :default-open-keys="['portal', 'seller', 'ops']"
+          :default-open-keys="['portal', 'seller']"
           mode="inline"
           class="sidebar-menu"
           @menu-item-click="handleMenuClick"
@@ -198,16 +198,46 @@ const menuItems = computed(() => {
 
   if (roles.includes("OPS")) {
     items.push({
-      key: "ops",
-      label: "运营中心",
+      key: "ops-dashboard",
+      label: "数据概览",
       icon: IconBarChart,
-      children: [
-        { key: "ops-dashboard", label: "数据概览", path: "/ops/dashboard" },
-        { key: "ops-orders", label: "订单管理", path: "/ops/orders" },
-        { key: "ops-reviews", label: "审核管理", path: "/ops/reviews" },
-        { key: "ops-vendor", label: "商家管理", path: "/ops/vendor" },
-        { key: "ops-buyer", label: "买家管理", path: "/ops/buyer" },
-      ],
+      path: "/ops/dashboard",
+    });
+    items.push({
+      key: "ops-orders",
+      label: "订单管理",
+      icon: IconList,
+      path: "/ops/orders",
+    });
+    items.push({
+      key: "ops-reviews",
+      label: "审核管理",
+      icon: IconList,
+      path: "/ops/reviews",
+    });
+    items.push({
+      key: "ops-vendor",
+      label: "商家管理",
+      icon: IconList,
+      path: "/ops/vendor",
+    });
+    items.push({
+      key: "ops-buyer",
+      label: "买家管理",
+      icon: IconList,
+      path: "/ops/buyer",
+    });
+    items.push({
+      key: "ops-user-manage",
+      label: "用户管理",
+      icon: IconList,
+      path: "/ops/user-manage",
+    });
+    items.push({
+      key: "ops-role-manage",
+      label: "角色管理",
+      icon: IconList,
+      path: "/ops/role-manage",
     });
   }
 

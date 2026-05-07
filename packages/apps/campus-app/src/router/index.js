@@ -219,16 +219,6 @@ const routes = [
             component: () => import("../views/ops/RoleManage.vue"),
             meta: { roles: ["OPS"] },
           },
-          {
-            path: "route-manage",
-            component: () => import("../views/ops/RouteManage.vue"),
-            meta: { roles: ["OPS"] },
-          },
-          {
-            path: "resource-manage",
-            component: () => import("../views/ops/ResourceManage.vue"),
-            meta: { roles: ["OPS"] },
-          },
         ],
       },
     ],

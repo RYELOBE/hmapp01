@@ -248,34 +248,16 @@ export async function getApps(params = {}) {
   return await http.get("/ops/apps", { params });
 }
 
-export async function getSubApps(params = {}) {
-  return await http.get("/ops/apps", { params });
-}
-
 export async function createApp(data) {
   return await http.post("/ops/apps", data);
 }
-
-export const registerSubApp = createApp;
 
 export async function updateApp(id, data) {
   return await http.put(`/ops/apps/${id}`, data);
 }
 
-export const updateSubApp = updateApp;
-
 export async function deleteApp(id) {
   return await http.delete(`/ops/apps/${id}`);
-}
-
-export const deleteSubApp = deleteApp;
-
-export async function getPortalConfig(portalCode) {
-  return await http.get(`/ops/portal/${portalCode}`);
-}
-
-export async function updatePortalConfig(portalCode, data) {
-  return await http.put(`/ops/portal/${portalCode}`, data);
 }
 
 export async function getRoles(params = {}) {
@@ -306,91 +288,6 @@ export async function getRoleResources(id) {
 
 export async function saveRoleResources(id, resources) {
   return await http.put(`/ops/roles/${id}/resources`, { resources });
-}
-
-export async function getResources(params = {}) {
-  return await http.get("/ops/resources", { params });
-}
-
-export async function createResource(data) {
-  return await http.post("/resources", data);
-}
-
-export async function updateResource(id, data) {
-  return await http.put(`/resources/${id}`, data);
-}
-
-export async function deleteResource(id) {
-  return await http.delete(`/resources/${id}`);
-}
-
-export async function getRoutes(params = {}) {
-  return await http.get("/ops/routes", { params });
-}
-
-export async function getPortalRoutes(params = {}) {
-  return await http.get("/ops/routes", { params });
-}
-
-export async function createRoute(data) {
-  return await http.post("/ops/routes", data);
-}
-
-export const savePortalRoute = createRoute;
-
-export async function updateRoute(id, data) {
-  return await http.put(`/routes/${id}`, data);
-}
-
-export const updatePortalRoute = updateRoute;
-
-export async function deleteRoute(id) {
-  return await http.delete(`/ops/routes/${id}`);
-}
-
-export const deletePortalRoute = deleteRoute;
-
-export async function getResourceMenus(params = {}) {
-  return await http.get("/ops/resources/menus", { params });
-}
-
-export async function saveResourceMenu(data) {
-  if (data.id) {
-    return await http.put(`/ops/resources/menus/${data.id}`, data);
-  }
-  return await http.post("/ops/resources/menus", data);
-}
-
-export async function deleteResourceMenu(id) {
-  return await http.delete(`/ops/resources/menus/${id}`);
-}
-
-export async function getResourceMenuTree(params = {}) {
-  return await http.get("/ops/resources/menus/tree", { params });
-}
-
-export async function getResourceDetail(id) {
-  return await http.get(`/ops/resources/menus/${id}`);
-}
-
-export async function getResourceFunctions(menuId) {
-  return await http.get(`/ops/resources/functions`, { params: { menuId } });
-}
-
-export async function updateResourceMenu(id, data) {
-  return await http.put(`/ops/resources/menus/${id}`, data);
-}
-
-export async function saveResourceFunction(data) {
-  return await http.post("/ops/resources/functions", data);
-}
-
-export async function updateResourceFunction(id, data) {
-  return await http.put(`/ops/resources/functions/${id}`, data);
-}
-
-export async function deleteResourceFunction(id) {
-  return await http.delete(`/ops/resources/functions/${id}`);
 }
 
 export default http;

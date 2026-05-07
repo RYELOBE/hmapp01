@@ -62,57 +62,6 @@ export function updateUserRole(userId, role) {
   return http.put(`/ops/users/${userId}/roles`, { roles: [role] });
 }
 
-// ── 子应用管理扩展 API ──────────────────────────────
-export function getSubApps(params = {}) {
-  return http.get("/frame/registers", { params });
-}
-
-export function registerSubApp(data) {
-  return http.post("/frame/registers", data);
-}
-
-export function updateSubApp(appCode, data) {
-  return http.put(`/frame/registers/${appCode}`, data);
-}
-
-export function deleteSubApp(appCode) {
-  return http.delete(`/frame/registers/${appCode}`);
-}
-
-// ── 门户路由管理 API ──────────────────────────────
-export function getPortalRoutes(portalCode) {
-  return http.get(`/portal/routes/${portalCode}`);
-}
-
-export function savePortalRoute(data) {
-  return http.post("/portal/routes", data);
-}
-
-export function updatePortalRoute(routeId, data) {
-  return http.put(`/portal/routes/${routeId}`, data);
-}
-
-export function deletePortalRoute(routeId) {
-  return http.delete(`/portal/routes/${routeId}`);
-}
-
-// ── 门户配置 API ──────────────────────────────
-export function getPortalConfigs() {
-  return http.get("/portal/configs");
-}
-
-export function getPortalConfig(portalCode) {
-  return http.get(`/portal/configs/${portalCode}`);
-}
-
-export function savePortalConfig(data) {
-  return http.post("/portal/configs", data);
-}
-
-export function deletePortalConfig(portalCode) {
-  return http.delete(`/portal/configs/${portalCode}`);
-}
-
 // ── 角色管理 API ──────────────────────────────
 export function getAllRoles() {
   return http.get("/resource/roles");
@@ -140,50 +89,4 @@ export function deleteRole(roleCode) {
 
 export function updateRoleStatus(roleCode, status) {
   return http.put(`/resource/roles/${roleCode}/status`, { status });
-}
-
-// ── 资源管理 API ──────────────────────────────
-export function getResourceMenus(params = {}) {
-  return http.get("/resource/menus", { params });
-}
-
-export function getResourceMenuTree() {
-  return http.get("/resource/menu-tree");
-}
-
-export function saveResourceMenu(data) {
-  return http.post("/resource/menus", data);
-}
-
-export function deleteResourceMenu(id) {
-  return http.delete(`/resource/menus/${id}`);
-}
-
-export function getResourceDetail(id) {
-  return http.get(`/resource/menus/${id}`);
-}
-
-export function updateResourceMenu(id, data) {
-  return http.put(`/resource/menus/${id}`, data);
-}
-
-export function getResourceFunctions(menuId) {
-  return http.get(`/resource/menus/${menuId}/functions`);
-}
-
-export function saveResourceFunction(data) {
-  return http.post("/resource/functions", data);
-}
-
-export function deleteResourceFunction(id) {
-  return http.delete(`/resource/functions/${id}`);
-}
-
-export function updateResourceFunction(id, data) {
-  return http.put(`/resource/functions/${id}`, data);
-}
-
-// ── 导航菜单 API ──────────────────────────────
-export function getMyNavigation() {
-  return http.get("/resource/my-menus");
 }
