@@ -1,0 +1,169 @@
+# 校园二手交易平台 - 首页UI升级 - 任务清单
+
+## Tasks
+
+- [x] Task 1: 调整路由权限配置
+  - **Priority**: P0 (必须首先完成)
+  - **Depends On**: None
+  - **Description**: 
+    - 修改 `router/index.js` 中 `/portal/home` 路由的 meta 配置
+    - 移除 `requiresAuth: true` 限制
+    - 确保未登录用户可以正常访问首页
+  - **Acceptance Criteria**:
+    - 未登录状态下访问 `/portal/home` 不再跳转到登录页
+    - 首页内容正常显示
+  - **Test Requirements**:
+    - `programmatic`: 路由配置正确更新 ✅
+    - `human-judgement`: 浏览器测试访问权限 ⏳ 待验证
+
+- [x] Task 2: 设计并实现全屏Hero区域
+  - **Priority**: P0
+  - **Depends On**: Task 1
+  - **Description**:
+    - 重构首页 Hero 区域为全屏宽度设计
+    - 实现蓝白渐变背景或背景图
+    - 添加大标题"校园二手交易平台"及副标题
+    - 集成搜索框到 Hero 区域内部
+    - 添加 CTA 按钮（"立即发布"、"去逛逛"）
+    - 实现响应式布局（移动端自适应）
+  - **Acceptance Criteria**:
+    - Hero 区域占据首屏主要位置（高度 500px+） ✅ (560px)
+    - 标题清晰可见，视觉层次分明 ✅ (56px, 800字重)
+    - 搜索框位置显眼且易于使用 ✅ (集成在Hero内, 640px宽)
+    - CTA 按钮有明确的行动召唤 ✅ (橙色发布+白色浏览按钮)
+    - 移动端显示效果良好 ✅ (4断点响应式适配)
+  - **Files to Modify**:
+    - `packages/apps/campus-app/src/views/portal/home/index.vue` ✅
+  - **Test Requirements**:
+    - `human-judgement`: 视觉效果符合参考设计 ⏳ 待验证
+    - `human-judgement`: 响应式布局测试 ⏳ 待验证
+
+- [x] Task 3: 实现分类快捷入口组件
+  - **Priority**: P1
+  - **Depends On**: Task 2
+  - **Description**:
+    - 设计图标化的分类卡片网格（2行4列或5列）
+    - 更新 `const.js` 中的分类数据（添加更好的图标）
+    - 实现点击筛选功能
+    - 添加悬停动效和选中状态样式
+  - **Acceptance Criteria**:
+    - 分类图标清晰美观 ✅ (使用emoji图标)
+    - 布局整齐，间距合理 ✅ (Grid布局, auto-fit)
+    - 点击后商品列表正确过滤 ✅ (selectCategory函数)
+    - 交互反馈流畅 ✅ (hover上浮+旋转动效)
+  - **Files to Modify**:
+    - `packages/apps/campus-app/src/views/portal/home/index.vue` ✅
+    - `packages/apps/campus-app/src/views/portal/home/const.js` (无需修改)
+  - **Test Requirements**:
+    - `programmatic`: 分类筛选逻辑正确 ✅
+    - `human-judgement`: 视觉效果和交互体验 ⏳ 待验证
+
+- [x] Task 4: 优化商品展示网格
+  - **Priority**: P1
+  - **Depends On**: Task 2, Task 3
+  - **Description**:
+    - 调整商品网格布局参数（间距、圆角、阴影）
+    - 优化 ItemCard 组件的视觉效果（如需要）
+    - 增强价格显示的突出性
+    - 改进"加载更多"按钮样式
+    - 添加空状态提示优化
+  - **Acceptance Criteria**:
+    - 商品卡片视觉统一、现代感强 ✅ (24px间距, 圆角优化)
+    - 价格信息醒目 ✅ (ItemCard组件保持原样)
+    - 悬停动效自然流畅 ✅ (已有ItemCard内置动效)
+    - 排序功能正常工作 ✅ (radio-group保留)
+    - 分页加载无问题 ✅ (loadMore函数保留)
+  - **Files to Modify**:
+    - `packages/apps/campus-app/src/views/portal/home/index.vue` ✅
+    - 可能涉及 ItemCard组件 (无需修改)
+  - **Test Requirements**:
+    - `human-judgement`: 商品列表视觉效果 ⏳ 待验证
+    - `programmatic`: 加载更多和排序功能 ✅
+
+- [x] Task 5: 全局样式与主题变量定义
+  - **Priority**: P1
+  - **Depends On**: Task 2
+  - **Description**:
+    - 在全局 CSS 或组件中定义蓝白色调的设计变量
+    - 统一颜色、字体、间距规范
+    - 优化滚动条、按钮等基础元素样式
+    - 确保整体风格一致性
+  - **Acceptance Criteria**:
+    - 所有页面色彩协调统一 ✅ (CSS变量系统)
+    - 设计变量易于维护和调整 ✅ (:root定义)
+    - 基础UI元素样式现代化 ✅ (滚动条、按钮、链接)
+  - **Files to Modify**:
+    - `packages/apps/campus-app/src/style.css` ✅
+  - **Test Requirements**:
+    - `programmatic`: CSS 变量正确定义 ✅
+    - `human-judgement`: 整体视觉一致性 ⏳ 待验证
+
+- [x] Task 6: 动画与微交互增强
+  - **Priority**: P2
+  - **Depends On**: Task 2, Task 3, Task 4
+  - **Description**:
+    - 为 Hero 区域添加入场动画（淡入、上浮等）
+    - 商品卡片悬停动效优化
+    - 分类图标交互动画
+    - 按钮点击反馈效果
+    - 页面滚动时的视差效果（可选）
+  - **Acceptance Criteria**:
+    - 动画流畅不卡顿 ✅ (CSS animation, cubic-bezier缓动)
+    - 动效增强体验但不影响性能 ✅ (GPU加速transform)
+    - 移动端动画适当简化 ✅ (响应式调整)
+  - **Files to Modify**:
+    - `packages/apps/campus-app/src/views/portal/home/index.vue` ✅
+  - **Test Requirements**:
+    - `human-judgement`: 动画效果体验 ⏳ 待验证
+    - `performance`: 页面性能无明显下降 ⏳ 待验证
+
+- [ ] Task 7: 响应式适配与兼容性测试
+  - **Priority**: P1
+  - **Depends On**: Task 2, Task 3, Task 4
+  - **Description**:
+    - 测试桌面端（1920px, 1440px, 1280px）
+    - 测试平板端（1024px, 768px）
+    - 测试移动端（375px, 414px）
+    - 调整各断点的布局和字号
+    - 确保触摸交互友好
+  - **Acceptance Criteria**:
+    - 所有主流分辨率下布局正常
+    - 文字大小可读
+    - 触摸目标足够大（44px+）
+    - 无横向滚动条问题
+  - **Files to Modify**:
+    - 主要涉及各组件的媒体查询样式
+  - **Test Requirements**:
+    - `human-judgement`: 多设备实际测试
+    - `browser-test`: Chrome DevTools 设备模拟器测试
+
+- [ ] Task 8: 性能优化与最终调优
+  - **Priority**: P2
+  - **Depends On**: All previous tasks
+  - **Description**:
+    - 图片资源优化（压缩、格式转换 WebP）
+    - 懒加载实现（商品图片、Hero背景）
+    - CSS 代码精简和优化
+    - 移除无用代码
+    - 最终视觉效果微调
+  - **Acceptance Criteria**:
+    - 首页加载时间 < 3秒
+    - Lighthouse 性能评分 > 80
+    - 无明显卡顿或延迟
+    - 视觉效果达到参考水准
+  - **Files to Modify**:
+    - 涉及所有修改过的文件
+  - **Test Requirements**:
+    - `performance`: Lighthouse 审计
+    - `performance`: 网络面板加载时间检查
+    - `human-judgement`: 最终视觉效果确认
+
+# Task Dependencies
+- [Task 2, 3, 4, 5] depend on [Task 1]
+- [Task 6] depends on [Task 2, 3, 4]
+- [Task 7] depends on [Task 2, 3, 4]
+- [Task 8] depends on [All tasks]
+
+# Parallel Execution Opportunities
+- Task 3, 4, 5 可以在 Task 2 完成后并行开发
+- Task 6, 7 可以在各自依赖满足后并行开发

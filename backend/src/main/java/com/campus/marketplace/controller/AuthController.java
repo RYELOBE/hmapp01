@@ -1,6 +1,7 @@
 package com.campus.marketplace.controller;
 
 import com.campus.marketplace.service.AuthService;
+import com.campus.marketplace.service.CurrentUserService;
 import com.campus.marketplace.service.OpsAuthService;
 import jakarta.validation.constraints.NotBlank;
 import java.util.List;
@@ -18,10 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
   private final AuthService authService;
   private final OpsAuthService opsAuthService;
+  private final CurrentUserService currentUserService;
 
-  public AuthController(AuthService authService, OpsAuthService opsAuthService) {
+  public AuthController(AuthService authService, OpsAuthService opsAuthService, CurrentUserService currentUserService) {
     this.authService = authService;
     this.opsAuthService = opsAuthService;
+    this.currentUserService = currentUserService;
   }
 
   @PostMapping("/login")
@@ -53,7 +56,7 @@ public class AuthController {
 
   @GetMapping("/current")
   public Map<String, Object> currentUser() {
-    return authService.getCurrentUser();
+    return authService.getCurrentUser(currentUserService.userId());
   }
 
   @GetMapping("/ops/current")

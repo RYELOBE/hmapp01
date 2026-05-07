@@ -1,7 +1,6 @@
 package com.campus.marketplace.controller;
 
-import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.annotation.SaCheckRole;
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.campus.marketplace.service.CurrentUserService;
 import com.campus.marketplace.service.ItemService;
 import jakarta.validation.constraints.Min;
@@ -20,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/items")
-@SaCheckLogin
+@PreAuthorize("isAuthenticated()")
 public class ItemController {
   private final ItemService itemService;
   private final CurrentUserService currentUserService;
@@ -31,7 +30,7 @@ public class ItemController {
   }
 
   @PostMapping
-  @SaCheckRole("SELLER")
+  @PreAuthorize("hasRole('SELLER')")
   public Map<String, Object> createItem(@RequestBody CreateItemRequest request) {
     return itemService.createItem(
         currentUserService.userId(),
@@ -81,14 +80,14 @@ public class ItemController {
 
   /** 下架商品 */
   @PostMapping("/{id}/off-shelf")
-  @SaCheckRole("SELLER")
+  @PreAuthorize("hasRole('SELLER')")
   public Map<String, Object> offShelf(@PathVariable("id") Long id) {
     itemService.offShelfItem(id, currentUserService.userId());
     return Map.of("code", 200, "message", "已下架");
   }
 
   @PutMapping("/{id}")
-  @SaCheckRole("SELLER")
+  @PreAuthorize("hasRole('SELLER')")
   public Map<String, Object> updateItem(@PathVariable("id") Long id, @RequestBody CreateItemRequest request) {
     return itemService.updateItem(
         id, currentUserService.userId(),
@@ -97,7 +96,7 @@ public class ItemController {
   }
 
   @DeleteMapping("/{id}")
-  @SaCheckRole("SELLER")
+  @PreAuthorize("hasRole('SELLER')")
   public Map<String, Object> deleteItem(@PathVariable("id") Long id) {
     itemService.deleteItem(id, currentUserService.userId());
     return Map.of("code", 200, "message", "已删除");

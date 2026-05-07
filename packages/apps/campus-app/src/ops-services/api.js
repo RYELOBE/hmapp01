@@ -62,19 +62,6 @@ export function updateUserRole(userId, role) {
   return http.put(`/ops/users/${userId}/roles`, { roles: [role] });
 }
 
-// ── 子应用管理 API ──────────────────────────────
-export function getAppRegisters() {
-  return http.get("/frame/registers");
-}
-
-export function saveAppRegister(data) {
-  return http.post("/frame/registers", data);
-}
-
-export function deleteAppRegister(appCode) {
-  return http.delete(`/frame/registers/${appCode}`);
-}
-
 // ── 子应用管理扩展 API ──────────────────────────────
 export function getSubApps(params = {}) {
   return http.get("/frame/registers", { params });

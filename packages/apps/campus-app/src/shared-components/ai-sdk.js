@@ -1,17 +1,17 @@
 import { http } from "./http.js";
 
-export async function fetchAiPresets() {
-  return http.get("/ai/presets");
+export async function fetchAiPresets(optionConfig = {}) {
+  return http.get("/ai/presets", {}, optionConfig);
 }
 
-export async function fetchRecentSessions() {
-  return http.get("/ai/sessions/recent");
+export async function fetchRecentSessions(optionConfig = {}) {
+  return http.get("/ai/sessions/recent", {}, optionConfig);
 }
 
-export async function fetchSessionMessages(sessionId) {
-  return http.get(`/ai/sessions/${sessionId}/messages`);
+export async function fetchSessionMessages(sessionId, optionConfig = {}) {
+  return http.get(`/ai/sessions/${sessionId}/messages`, {}, optionConfig);
 }
 
-export async function chatWithAssistant(message) {
-  return http.post("/ai/chat", message);
+export async function chatWithAssistant(message, optionConfig = {}) {
+  return http.post("/ai/chat", message, {}, optionConfig);
 }

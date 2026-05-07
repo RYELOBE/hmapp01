@@ -9,8 +9,23 @@
     </div>
 
     <div class="publish-content">
-      <a-card title="Step 1: 基本信息" :bordered="false" class="step-card" :class="{ 'step-card--active': currentStep >= 1 }">
-        <a-form ref="formRef1" :model="form" layout="vertical" :rules="rules1">
+      <!-- Arco Design 步骤条（官方示例） -->
+      <a-steps :current="current" changeable @change="setCurrent">
+        <a-step title="基本信息" description="填写商品标题、分类、价格">
+          <template #icon><icon-apps /></template>
+        </a-step>
+        <a-step title="商品图片" description="上传商品图片（最多9张）">
+          <template #icon><icon-image /></template>
+        </a-step>
+        <a-step title="详细描述" description="补充商品详情并提交审核">
+          <template #icon><icon-edit /></template>
+        </a-step>
+      </a-steps>
+
+      <!-- Step 1 Content -->
+      <div v-show="current === 1" class="step-content">
+        <a-card title="基本信息" :bordered="false" class="step-card">
+          <a-form ref="formRef1" :model="form" layout="vertical" :rules="rules1">
           <a-row :gutter="16">
             <a-col :span="24">
               <a-form-item field="title" label="商品标题" required>
@@ -88,55 +103,45 @@
           </a-row>
 
           <div class="step-actions">
-            <a-button type="primary" @click="goToStep(2)">下一步</a-button>
+            <a-space size="large">
+              <a-button type="primary" @click="onNext">
+                下一步 <icon-right />
+              </a-button>
+            </a-space>
           </div>
         </a-form>
       </a-card>
+      </div>
 
-      <a-card title="Step 2: 商品图片" :bordered="false" class="step-card" :class="{ 'step-card--active': currentStep >= 2 }">
+      <!-- Step 2 Content -->
+      <div v-show="current === 2" class="step-content">
+        <a-card title="商品图片" :bordered="false" class="step-card">
         <div class="upload-section">
-          <p class="upload-tip">支持 jpg/png/webp 格式，单张不超过 5MB，最多上传 9 张图片。第一张将作为主图。</p>
+          <p class="upload-tip">支持 JPG/PNG 格式，单张不超过 5MB，最多上传 9 张图片。第一张将作为主图。</p>
 
-          <div class="image-grid">
-            <div
-              v-for="(img, index) in form.imageUrls"
-              :key="index"
-              class="image-item"
-            >
-              <img :src="img" class="preview-image" />
-              <div v-if="index === 0" class="main-badge">主图</div>
-              <button class="remove-btn" @click="removeImage(index)">
-                <icon-close />
-              </button>
-            </div>
-
-            <div
-              v-if="form.imageUrls.length < 9"
-              class="upload-trigger"
-              @click="triggerUpload"
-            >
-              <icon-plus />
-              <span>上传图片</span>
-            </div>
-          </div>
-
-          <input
-            ref="fileInput"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            style="display: none"
-            @change="handleFileChange"
+          <ImageUploader
+            v-model="form.imageUrls"
+            :limit="9"
+            upload-url="/api/upload"
           />
         </div>
 
         <div class="step-actions">
-          <a-button @click="currentStep = 1">上一步</a-button>
-          <a-button type="primary" @click="goToStep(3)">下一步</a-button>
+          <a-space size="large">
+            <a-button type="secondary" @click="onPrev">
+              <icon-left /> 上一步
+            </a-button>
+            <a-button type="primary" @click="onNext">
+              下一步 <icon-right />
+            </a-button>
+          </a-space>
         </div>
       </a-card>
+      </div>
 
-      <a-card title="Step 3: 详细描述" :bordered="false" class="step-card" :class="{ 'step-card--active': currentStep >= 3 }">
+      <!-- Step 3 Content -->
+      <div v-show="current === 3" class="step-content">
+        <a-card title="详细描述" :bordered="false" class="step-card">
         <a-form :model="form" layout="vertical">
           <a-form-item field="description" label="详细描述">
             <a-textarea
@@ -149,14 +154,19 @@
           </a-form-item>
         </a-form>
 
-        <div class="submit-actions">
-          <a-button @click="currentStep = 2">上一步</a-button>
-          <a-button @click="handleSaveDraft" :loading="saving">保存草稿</a-button>
-          <a-button type="primary" size="large" :loading="submitting" @click="handleSubmit">
-            {{ editingItem ? '提交修改' : '提交审核' }}
-          </a-button>
+        <div class="step-actions">
+          <a-space size="large">
+            <a-button type="secondary" @click="onPrev">
+              <icon-left /> 上一步
+            </a-button>
+            <a-button @click="handleSaveDraft" :loading="saving">保存草稿</a-button>
+            <a-button type="primary" :loading="submitting" @click="handleSubmit">
+              {{ editingItem ? '提交修改' : '提交审核' }}
+            </a-button>
+          </a-space>
         </div>
       </a-card>
+      </div>
     </div>
   </div>
 </template>
@@ -167,17 +177,20 @@ import { useRouter, useRoute } from "vue-router";
 import { Message } from "@arco-design/web-vue";
 import {
   IconArrowLeft,
-  IconPlus,
-  IconClose,
+  IconApps,
+  IconImage,
+  IconEdit,
+  IconLeft,
+  IconRight,
 } from "@arco-design/web-vue/es/icon";
-import { publishItem, updateItem, getItemDetail, uploadImage } from "../../../services/api";
+import { publishItem, updateItem, getItemDetail } from "../../../services/api";
+import ImageUploader from "../../../shared-components/ImageUploader/ImageUploader.vue";
 
 const router = useRouter();
 const route = useRoute();
 
-const currentStep = ref(1);
+const current = ref(1);
 const formRef1 = ref(null);
-const fileInput = ref(null);
 const submitting = ref(false);
 const saving = ref(false);
 const editingItem = ref(null);
@@ -242,55 +255,48 @@ async function loadEditingItem() {
   }
 }
 
-function goToStep(step) {
-  if (step === 2) {
-    formRef1.value?.validate().then(() => {
-      currentStep.value = step;
-    }).catch(() => {
-      Message.warning("请先完善基本信息");
-    });
-  } else {
-    currentStep.value = step;
+function onPrev() {
+  if (current.value > 1) {
+    current.value = Math.max(1, current.value - 1);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 }
 
-function triggerUpload() {
-  fileInput.value?.click();
-}
-
-async function handleFileChange(e) {
-  const files = Array.from(e.target.files);
-  if (files.length === 0) return;
-
-  const validFiles = files.filter((f) => f.size <= 5 * 1024 * 1024);
-  if (validFiles.length !== files.length) {
-    Message.warning("部分图片超过5MB限制，已自动过滤");
-  }
-
-  for (const file of validFiles) {
-    if (form.imageUrls.length >= 9) {
-      Message.warning("最多上传9张图片");
-      break;
-    }
-
+async function onNext() {
+  if (current.value === 1) {
     try {
-      const res = await uploadImage(file);
-      if (res?.url) {
-        form.imageUrls.push(res.url);
-      } else if (typeof res === 'string') {
-        form.imageUrls.push(res);
+      const errors = await formRef1.value?.validate();
+      if (errors) {
+        Message.error("请先完善所有必填项（商品标题、分类、价格、数量）");
+        return;
       }
-    } catch (err) {
-      console.error("上传失败:", err);
+    } catch (validationError) {
+      Message.error("请先完善所有必填项（商品标题、分类、价格、数量）");
+      return;
     }
+    current.value = Math.min(3, current.value + 1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else if (current.value < 3) {
+    current.value = current.value + 1;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-
-  e.target.value = "";
 }
 
-function removeImage(index) {
-  form.imageUrls.splice(index, 1);
+async function setCurrent(step) {
+  if (step > current.value && step >= 2) {
+    try {
+      const errors = await formRef1.value?.validate();
+      if (errors) {
+        Message.error("请先完善所有必填项（商品标题、分类、价格、数量）");
+        return;
+      }
+    } catch (validationError) {
+      Message.error("请先完善所有必填项（商品标题、分类、价格、数量）");
+      return;
+    }
+  }
+  current.value = step;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 async function handleSaveDraft() {
@@ -375,6 +381,82 @@ onMounted(loadEditingItem);
   gap: 20px;
 }
 
+.steps-wrapper {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 24px 32px;
+
+  .publish-steps {
+    margin-bottom: 8px;
+
+    :deep(.arco-steps-item) {
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover:not(.arco-steps-item-active) {
+        .arco-steps-item-icon {
+          border-color: #165dff !important;
+          color: #165dff;
+        }
+        .arco-steps-item-title {
+          color: #165dff;
+        }
+      }
+    }
+
+    :deep(.arco-steps-item-icon) {
+      width: 32px;
+      height: 32px;
+      font-size: 15px;
+      font-weight: 600;
+      border-radius: 50%;
+      transition: all 0.3s;
+    }
+
+    :deep(.arco-steps-item-active) {
+      .arco-steps-item-icon {
+        transform: scale(1.1);
+        box-shadow: 0 2px 10px rgba(22, 93, 255, 0.35);
+      }
+    }
+
+    :deep(.arco-steps-item-finish) {
+      .arco-steps-item-icon {
+        background-color: #165dff;
+        border-color: #165dff;
+      }
+    }
+
+    :deep(.arco-steps-item-title) {
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    :deep(.arco-steps-item-description) {
+      font-size: 12px;
+      color: #86909c;
+      margin-top: 4px;
+    }
+  }
+
+  .steps-hint {
+    text-align: center;
+    font-size: 13px;
+    color: #86909c;
+    padding-top: 12px;
+    border-top: 1px solid var(--color-border-2);
+
+    span {
+      background: linear-gradient(135deg, #e8f3ff 0%, #f0f5ff 100%);
+      color: #165dff;
+      padding: 4px 16px;
+      border-radius: 20px;
+      font-weight: 500;
+    }
+  }
+}
+
 .step-card {
   border-radius: 12px;
   opacity: 0.6;
@@ -400,81 +482,7 @@ onMounted(loadEditingItem);
   margin-bottom: 16px;
 }
 
-.image-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 14px;
-}
-
-.image-item {
-  position: relative;
-  aspect-ratio: 1;
-  border-radius: 10px;
-  overflow: hidden;
-  border: 2px solid #f0f0f0;
-
-  .preview-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-
-  .main-badge {
-    position: absolute;
-    top: 6px;
-    left: 6px;
-    padding: 2px 8px;
-    background: #165dff;
-    color: white;
-    font-size: 11px;
-    border-radius: 4px;
-  }
-
-  .remove-btn {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: rgba(245, 63, 63, 0.9);
-    color: white;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-
-    &:hover { background: #f53f3f; }
-  }
-}
-
-.upload-trigger {
-  aspect-ratio: 1;
-  border: 2px dashed #d9d9d9;
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  cursor: pointer;
-  color: #86909c;
-  font-size: 14px;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: #165dff;
-    color: #165dff;
-    background: #f0f5ff;
-  }
-
-  :deep(.arco-icon) { font-size: 28px; }
-}
-
-.step-actions,
-.submit-actions {
+.step-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;

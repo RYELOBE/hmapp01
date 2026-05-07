@@ -1,8 +1,6 @@
 package com.campus.marketplace.controller;
 
-import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.annotation.SaCheckRole;
-import cn.dev33.satoken.annotation.SaMode;
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.campus.marketplace.service.CurrentUserService;
 import com.campus.marketplace.service.OrderService;
 import java.util.Map;
@@ -17,7 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/orders")
-@SaCheckLogin
+@PreAuthorize("isAuthenticated()")
 public class OrderController {
   private final OrderService orderService;
   private final CurrentUserService currentUserService;
@@ -29,7 +27,7 @@ public class OrderController {
 
   /** 创建订单 */
   @PostMapping
-  @SaCheckRole(value = { "BUYER", "OPS" }, mode = SaMode.OR)
+  @PreAuthorize("hasAnyRole('BUYER', 'OPS')")
   public Map<String, Object> createOrder(@RequestBody CreateOrderRequest request) {
     Map<String, Object> order = orderService.createOrder(
         currentUserService.userId(),

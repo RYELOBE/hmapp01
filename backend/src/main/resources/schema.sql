@@ -1,15 +1,18 @@
 SET FOREIGN_KEY_CHECKS = 0;
 
-DROP TABLE IF EXISTS favorite;
-DROP TABLE IF EXISTS cart;
-DROP TABLE IF EXISTS address;
-DROP TABLE IF EXISTS uploaded_file;
-DROP TABLE IF EXISTS ops_role;
-DROP TABLE IF EXISTS resource_function;
+-- 删除微前端/子应用相关旧表（无Entity对应，需手动删除）
 DROP TABLE IF EXISTS role_resource;
 DROP TABLE IF EXISTS resource_menu;
 DROP TABLE IF EXISTS portal_config;
 DROP TABLE IF EXISTS app_register;
+DROP TABLE IF EXISTS ops_role;
+DROP TABLE IF EXISTS resource_function;
+
+-- 删除核心业务表
+DROP TABLE IF EXISTS favorite;
+DROP TABLE IF EXISTS cart;
+DROP TABLE IF EXISTS address;
+DROP TABLE IF EXISTS uploaded_file;
 DROP TABLE IF EXISTS ai_message;
 DROP TABLE IF EXISTS ai_session;
 DROP TABLE IF EXISTS knowledge_chunk;
@@ -126,6 +129,7 @@ CREATE TABLE ai_session (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   session_id VARCHAR(64) NOT NULL UNIQUE,
   user_id BIGINT NOT NULL,
+  title VARCHAR(256) NOT NULL DEFAULT '新对话',
   updated_at DATETIME NOT NULL,
   INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -141,86 +145,15 @@ CREATE TABLE ai_message (
   INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
-CREATE TABLE app_register (
-  app_code VARCHAR(64) PRIMARY KEY,
-  title VARCHAR(128) NOT NULL,
-  entry VARCHAR(512) NOT NULL,
-  path_prefix VARCHAR(128) NOT NULL,
-  roles VARCHAR(512) NOT NULL DEFAULT '',
-  hide_shell_menu TINYINT(1) NOT NULL DEFAULT 0,
-  portal_code VARCHAR(64) NOT NULL DEFAULT ''
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE portal_config (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  portal_code VARCHAR(64) NOT NULL UNIQUE,
-  portal_name VARCHAR(128) NOT NULL,
-  template_type VARCHAR(32) NOT NULL DEFAULT 'backstage',
-  config_json TEXT NOT NULL,
-  login_config_id BIGINT,
-  updated_by VARCHAR(64),
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_portal_code (portal_code)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE resource_menu (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  parent_id BIGINT NOT NULL DEFAULT 0,
-  menu_code VARCHAR(64) NOT NULL UNIQUE,
-  menu_name VARCHAR(128) NOT NULL,
-  menu_type VARCHAR(16) NOT NULL DEFAULT 'MENU',
-  app_code VARCHAR(64) NOT NULL DEFAULT '',
-  path VARCHAR(256) NOT NULL DEFAULT '',
-  url_path VARCHAR(256) NOT NULL DEFAULT '',
-  component_path VARCHAR(512) NOT NULL DEFAULT '',
-  resource_code VARCHAR(64) NOT NULL DEFAULT '',
-  icon VARCHAR(128) NOT NULL DEFAULT '',
-  sort_order INT NOT NULL DEFAULT 0,
-  status TINYINT NOT NULL DEFAULT 1,
-  visible TINYINT(1) NOT NULL DEFAULT 1,
-  INDEX idx_parent_id (parent_id),
-  INDEX idx_app_code (app_code)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE role_resource (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  role_code VARCHAR(64) NOT NULL,
-  resource_id BIGINT NOT NULL,
-  UNIQUE KEY uk_role_resource (role_code, resource_id),
-  INDEX idx_role_code (role_code),
-  INDEX idx_resource_id (resource_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
-CREATE TABLE resource_function (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  menu_id BIGINT NOT NULL COMMENT '所属菜单ID',
-  function_code VARCHAR(64) NOT NULL COMMENT '功能编码',
-  function_name VARCHAR(128) NOT NULL COMMENT '功能名称',
-  status TINYINT DEFAULT 1 COMMENT '状态 1启用 0禁用',
-  sort_order INT DEFAULT 0 COMMENT '排序',
-  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_menu_id (menu_id)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资源功能按钮表';
-
-CREATE TABLE ops_role (
-  id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  role_code VARCHAR(64) NOT NULL UNIQUE,
-  role_name VARCHAR(128) NOT NULL,
-  description VARCHAR(512),
-  status VARCHAR(16) NOT NULL DEFAULT 'ACTIVE',
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_role_code (role_code)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-
 CREATE TABLE uploaded_file (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   original_name VARCHAR(255) NOT NULL,
   stored_name VARCHAR(255) NOT NULL,
-  file_path VARCHAR(500) NOT NULL,
+  file_path VARCHAR(500),
   file_size BIGINT NOT NULL,
-  content_type VARCHAR(100),
-  url VARCHAR(500) NOT NULL,
+  content_type VARCHAR(100) NOT NULL,
+  url TEXT NOT NULL,
+  base64_data LONGTEXT NOT NULL,
   uploader_id BIGINT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_uploader_id (uploader_id),

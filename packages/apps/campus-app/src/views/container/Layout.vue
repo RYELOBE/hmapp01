@@ -12,21 +12,29 @@
           <span v-else>CT</span>
         </div>
         <a-menu
-          :default-selected-keys="currentMenuKeys"
+          :selected-keys="currentMenuKeys"
+          :default-open-keys="['portal', 'seller', 'ops']"
           mode="inline"
           class="sidebar-menu"
+          @menu-item-click="handleMenuClick"
         >
           <template v-for="menu in menuItems" :key="menu.key">
-            <a-menu-item v-if="!menu.children" :key="menu.key">
+            <a-menu-item 
+              v-if="!menu.children" 
+              :key="menu.key"
+            >
               <component :is="menu.icon" />
               <span>{{ menu.label }}</span>
             </a-menu-item>
-            <a-sub-menu v-else :key="menu.key">
+            <a-sub-menu v-else :key="`${menu.key}-sub`">
               <template #title>
                 <component :is="menu.icon" />
                 <span>{{ menu.label }}</span>
               </template>
-              <a-menu-item v-for="child in menu.children" :key="child.key">
+              <a-menu-item 
+                v-for="child in menu.children" 
+                :key="child.key"
+              >
                 <span>{{ child.label }}</span>
               </a-menu-item>
             </a-sub-menu>
@@ -101,8 +109,52 @@ const pageTitle = computed(() => {
 });
 
 const currentMenuKeys = computed(() => {
-  return [route.path.split("/")[1] || ""];
+  const path = route.path;
+  // 匹配当前路径对应的菜单key
+  if (path.startsWith('/ops')) return ['ops'];
+  if (path.startsWith('/portal/seller')) return ['seller'];
+  if (path.startsWith('/portal')) return ['portal'];
+  return [route.name || 'home'];
 });
+
+// 查找所有菜单项（包括子菜单）的完整列表
+function flattenMenuItems(items) {
+  const result = [];
+  items.forEach(item => {
+    if (item.children) {
+      result.push(...flattenMenuItems(item.children));
+    } else {
+      result.push(item);
+    }
+  });
+  return result;
+}
+
+function handleMenuClick(key) {
+  console.log('[Menu Click] 点击菜单项:', key);
+  
+  // 查找对应菜单项的path
+  const allItems = flattenMenuItems(menuItems.value);
+  const menuItem = allItems.find(item => item.key === key);
+  
+  if (menuItem && menuItem.path) {
+    console.log('[Menu Navigate] 跳转到:', menuItem.path);
+    router.push(menuItem.path).catch(err => {
+      if (err.name !== 'NavigationDuplicated') {
+        console.error('[Menu Error] 导航失败:', err);
+      }
+    });
+  } else if (key === 'home') {
+    // 首页特殊处理
+    router.push('/').catch(err => {
+      if (err.name !== 'NavigationDuplicated') {
+        console.error('[Menu Error] 导航失败:', err);
+      }
+    });
+  } else {
+    console.warn('[Menu Warning] 未找到菜单项路径:', key);
+  }
+}
 
 const menuItems = computed(() => {
   const items = [];

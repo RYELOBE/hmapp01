@@ -1,7 +1,7 @@
 package com.campus.marketplace.service;
 
-import cn.dev33.satoken.stp.StpUtil;
 import com.campus.marketplace.repository.UserRepository;
+import com.campus.marketplace.util.JwtUtil;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,14 +10,21 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class AuthService {
+
   private final UserRepository userRepository;
+  private final JwtUtil jwtUtil;
   private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
-  public AuthService(UserRepository userRepository) {
+  public AuthService(UserRepository userRepository, JwtUtil jwtUtil) {
     this.userRepository = userRepository;
+    this.jwtUtil = jwtUtil;
   }
 
   public Map<String, Object> login(String username, String password) {
+    System.out.println("========================================");
+    System.out.println("🔐 用户尝试登录: " + username);
+    System.out.println("========================================");
+
     var userOpt = userRepository.findByUsername(username);
     if (userOpt.isEmpty()) {
       throw new IllegalArgumentException("账号不存在");
@@ -28,32 +35,36 @@ public class AuthService {
     }
 
     Long userId = ((Number) user.get("id")).longValue();
-    StpUtil.login(userId);
+    @SuppressWarnings("unchecked")
+    List<String> roles = (List<String>) user.get("roles");
+
+    // 🔥 使用 JwtUtil 生成真实的 JWT Token
+    String token = jwtUtil.generateToken(username, roles, userId);
 
     Map<String, Object> response = new HashMap<>();
-    response.put("token", StpUtil.getTokenValue());
-    response.put("tokenType", "user");
+    response.put("token", token);
+    response.put("tokenType", "Bearer");
 
     Map<String, Object> safeUser = new HashMap<>();
     safeUser.put("id", userId);
     safeUser.put("username", user.get("username"));
     safeUser.put("nickname", user.get("nickname"));
-    safeUser.put("roles", user.get("roles"));
+    safeUser.put("roles", roles);
+    safeUser.put("avatar", user.get("avatar"));
+    safeUser.put(
+      "phone",
+      user.get("phone") != null ? user.get("phone").toString().replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1****$2") : null
+    );
     response.put("user", safeUser);
+
     return response;
   }
 
   public void logout() {
-    if (StpUtil.isLogin()) {
-      StpUtil.logout();
-    }
+    System.out.println("👋 用户已登出 (JWT无状态，无需服务端处理)");
   }
 
-  public Map<String, Object> getCurrentUser() {
-    if (!StpUtil.isLogin()) {
-      return Map.of("code", 401, "message", "未登录");
-    }
-    Long userId = Long.parseLong(String.valueOf(StpUtil.getLoginId()));
+  public Map<String, Object> getCurrentUser(Long userId) {
     var userOpt = userRepository.findById(userId);
     if (userOpt.isEmpty()) {
       return Map.of("code", 404, "message", "用户不存在");
@@ -86,11 +97,13 @@ public class AuthService {
     var user = userRepository.create(username, passwordEncoder.encode(password), nickname, roles);
 
     Long userId = ((Number) user.get("id")).longValue();
-    StpUtil.login(userId);
+
+    // 🔥 注册成功后也生成 JWT
+    String token = jwtUtil.generateToken(username, roles, userId);
 
     Map<String, Object> response = new HashMap<>();
-    response.put("token", StpUtil.getTokenValue());
-    response.put("tokenType", "user");
+    response.put("token", token);
+    response.put("tokenType", "Bearer");
 
     Map<String, Object> safeUser = new HashMap<>();
     safeUser.put("id", userId);
@@ -98,6 +111,7 @@ public class AuthService {
     safeUser.put("nickname", user.get("nickname"));
     safeUser.put("roles", user.get("roles"));
     response.put("user", safeUser);
+
     return response;
   }
 }

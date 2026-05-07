@@ -1,3 +1,4 @@
+import http from "../services/core/http";
 import { STORAGE_KEYS } from "@campus/common/constants";
 
 const TOKEN_KEY = STORAGE_KEYS.TOKEN;
@@ -119,64 +120,66 @@ export function onOpsUserChange(callback) {
 }
 
 export async function login({ username, password }) {
-  const baseURL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
-  const response = await fetch(`${baseURL}/auth/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
-  });
+  const result = await http.post("/auth/login", { username, password });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "登录失败" }));
-    throw new Error(error.message || "登录失败");
+  let data = result;
+  if (data.data && (data.data.token || data.data.user)) {
+    data = data.data;
   }
 
-  const result = await response.json();
-  setToken(result.token);
-  setCurrentUser(result.user);
-  _userChangeListeners.forEach((fn) => fn(result.user));
-  return result;
+  if (data.token) {
+    setToken(data.token);
+  }
+
+  if (data.user) {
+    setCurrentUser(data.user);
+  }
+
+  _userChangeListeners.forEach((fn) => fn(data.user));
+  return data;
 }
 
 export async function opsLogin({ username, password }) {
-  const baseURL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
-  const response = await fetch(`${baseURL}/auth/ops/login`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password }),
-  });
+  const result = await http.post("/auth/ops/login", { username, password });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "运营登录失败" }));
-    throw new Error(error.message || "运营登录失败");
+  let data = result;
+  if (data.data && (data.data.token || data.data.user)) {
+    data = data.data;
   }
 
-  const result = await response.json();
-  setOpsToken(result.token);
-  setOpsCurrentUser(result.user);
-  _opsUserChangeListeners.forEach((fn) => fn(result.user));
-  return result;
+  if (data.token) {
+    setOpsToken(data.token);
+  }
+
+  if (data.user) {
+    setOpsCurrentUser(data.user);
+  }
+
+  _opsUserChangeListeners.forEach((fn) => fn(data.user));
+  return data;
 }
 
 export async function register({ username, password, nickname, roles }) {
-  const baseURL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api";
-  const response = await fetch(`${baseURL}/auth/register`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ username, password, nickname, roles }),
+  const result = await http.post("/auth/register", {
+    username,
+    password,
+    nickname,
+    roles,
   });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: "注册失败" }));
-    throw new Error(error.message || "注册失败");
+  let data = result;
+  if (data.data && (data.data.token || data.data.user)) {
+    data = data.data;
   }
 
-  const result = await response.json();
-  setToken(result.token);
-  setCurrentUser(result.user);
-  _userChangeListeners.forEach((fn) => fn(result.user));
-  return result;
+  if (data.token) {
+    setToken(data.token);
+  }
+
+  if (data.user) {
+    setCurrentUser(data.user);
+  }
+
+  _userChangeListeners.forEach((fn) => fn(data.user));
+  return data;
 }

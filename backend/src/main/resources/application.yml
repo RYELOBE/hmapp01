@@ -2,38 +2,42 @@ server:
   port: 8080
 
 spring:
-  application:
-    name: marketplace-api
-  jackson:
-    default-property-inclusion: non_null
-  servlet:
-    multipart:
-      max-file-size: 2MB
-      max-request-size: 2MB
   datasource:
-    url: jdbc:mysql://localhost:3306/grand_test?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+    url: jdbc:mysql://localhost:3306/campus_market?useUnicode=true&characterEncoding=UTF-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true
     username: root
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      connection-init-sql: SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
+  jpa:
+    hibernate:
+      ddl-auto: drop-create
+    show-sql: true
+    properties:
+      hibernate:
+        connection:
+          characterEncoding: UTF-8
+          charSet: UTF-8
   sql:
     init:
       mode: always
+      encoding: UTF-8
       schema-locations: classpath:schema.sql
       data-locations: classpath:data.sql
-      encoding: UTF-8
+
+# 🔥 JWT 配置 (纯 JJWT)
+jwt:
+  secret: campus_market_jwt_secret_key_2024_must_be_at_least_256_bits_long_for_security!!!
+  expiration: 86400000 # 24小时 (毫秒)
+
 logging:
   level:
-    org.springframework.jdbc: DEBUG
-    org.springframework.boot.autoconfigure.jdbc: DEBUG
-
-sa-token:
-  token-name: Authorization
-  timeout: 2592000
-  is-read-cookie: false
-  is-share: false
+    root: INFO
+    com.campus.marketplace: DEBUG
+    org.springframework.security: DEBUG
 
 ai:
   base-url: ${AI_BASE_URL:https://open.bigmodel.cn}
   api-key: ${AI_API_KEY:4b1730b7bef904e7ccd7bc105d8d4ec7.SQis5Gk6cLtj6QQX}
   model: ${AI_MODEL:glm-4-flash}
-  use-mock: ${AI_USE_MOCK:false}
+

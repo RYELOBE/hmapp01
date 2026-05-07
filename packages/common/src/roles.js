@@ -7,7 +7,15 @@ export const roleLabels = {
 export const ALL_ROLES = Object.keys(roleLabels);
 
 export function hasAnyRole(userRoles = [], requiredRoles = []) {
-  return userRoles.some((role) => requiredRoles.includes(role));
+  const userRolesArray = normalizeToArray(userRoles);
+  const requiredRolesArray = normalizeToArray(requiredRoles);
+  return userRolesArray.some((role) => requiredRolesArray.includes(role));
+}
+
+function normalizeToArray(value) {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string' && value.trim()) return [value.trim()];
+  return [];
 }
 
 export function hasRole(userRoles = [], role) {

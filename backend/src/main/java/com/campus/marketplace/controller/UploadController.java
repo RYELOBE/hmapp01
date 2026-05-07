@@ -1,32 +1,32 @@
 package com.campus.marketplace.controller;
 
+import com.campus.marketplace.service.CurrentUserService;
 import com.campus.marketplace.service.UploadService;
-import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.stp.StpUtil;
-import org.springframework.http.ResponseEntity;
+import java.util.HashMap;
+import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @RestController
 @RequestMapping("/api")
-@SaCheckLogin
+@PreAuthorize("isAuthenticated()")
 public class UploadController {
 
     private final UploadService uploadService;
+    private final CurrentUserService currentUserService;
 
-    public UploadController(UploadService uploadService) {
+    public UploadController(UploadService uploadService, CurrentUserService currentUserService) {
         this.uploadService = uploadService;
+        this.currentUserService = currentUserService;
     }
 
     @PostMapping("/upload")
     public Map<String, Object> upload(MultipartFile file) {
-        // 获取当前登录用户 ID（未登录会抛异常，由 GlobalExceptionHandler 处理）
-        Long uploaderId = StpUtil.isLogin() ? Long.valueOf(StpUtil.getLoginId().toString()) : null;
+        // 获取当前登录用户 ID（使用 Spring Security）
+        Long uploaderId = currentUserService.userId();
 
         Map<String, Object> result = uploadService.upload(file, uploaderId);
 

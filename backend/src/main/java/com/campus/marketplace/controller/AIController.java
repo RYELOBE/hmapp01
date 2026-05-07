@@ -1,10 +1,10 @@
 package com.campus.marketplace.controller;
 
-import cn.dev33.satoken.annotation.SaCheckLogin;
 import com.campus.marketplace.service.AIService;
 import com.campus.marketplace.service.CurrentUserService;
 import java.util.List;
 import java.util.Map;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/ai")
-@SaCheckLogin
+@PreAuthorize("isAuthenticated()")
 public class AIController {
   private final AIService aiService;
   private final CurrentUserService currentUserService;

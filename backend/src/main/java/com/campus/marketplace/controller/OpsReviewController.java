@@ -1,7 +1,6 @@
 package com.campus.marketplace.controller;
 
-import cn.dev33.satoken.annotation.SaCheckLogin;
-import cn.dev33.satoken.annotation.SaCheckRole;
+import org.springframework.security.access.prepost.PreAuthorize;
 import com.campus.marketplace.service.CurrentUserService;
 import com.campus.marketplace.service.ReviewService;
 import java.util.Map;
@@ -15,8 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/ops/reviews")
-@SaCheckLogin
-@SaCheckRole("OPS")
+@PreAuthorize("isAuthenticated() and hasRole('OPS')")
 public class OpsReviewController {
   private final ReviewService reviewService;
   private final CurrentUserService currentUserService;
