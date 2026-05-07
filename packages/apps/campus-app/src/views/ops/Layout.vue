@@ -35,8 +35,8 @@
       </nav>
 
       <button class="collapse-btn" @click="toggleCollapse" :title="collapsed ? '展开侧边栏' : '折叠侧边栏'">
-        <icon-menu-unfold v-if="collapsed" />
-        <icon-menu-fold v-else />
+        <icon-right v-if="collapsed" />
+        <icon-left v-else />
       </button>
     </aside>
 
@@ -78,8 +78,9 @@ import {
   IconStar,
   IconCheckCircle,
   IconSettings,
-  IconMenuFold,
-  IconMenuUnfold
+  IconMenu,
+  IconRight,
+  IconLeft
 } from '@arco-design/web-vue/es/icon'
 
 const route = useRoute()

@@ -125,7 +125,7 @@ import { useRouter } from 'vue-router';
 import { Modal, Message } from '@arco-design/web-vue';
 import {
   IconInfoCircle,
-  IconCart,
+  IconApps,
   IconCheckCircle,
   IconHeartFill,
   IconMore,
@@ -177,7 +177,7 @@ function getMessageType(type) {
 function getMessageIcon(type) {
   const iconMap = {
     SYSTEM: IconInfoCircle,
-    TRANSACTION: IconCart,
+    TRANSACTION: IconApps,
     REVIEW: IconCheckCircle,
     INTERACTION: IconHeartFill,
   };

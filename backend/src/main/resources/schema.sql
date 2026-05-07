@@ -9,7 +9,12 @@ DROP TABLE IF EXISTS ops_role;
 DROP TABLE IF EXISTS resource_function;
 
 -- 删除核心业务表
+DROP TABLE IF EXISTS message;
+DROP TABLE IF EXISTS circle_like;
+DROP TABLE IF EXISTS circle_comment;
+DROP TABLE IF EXISTS circle_post;
 DROP TABLE IF EXISTS favorite;
+DROP TABLE IF EXISTS cart_item;
 DROP TABLE IF EXISTS cart;
 DROP TABLE IF EXISTS address;
 DROP TABLE IF EXISTS uploaded_file;
@@ -43,6 +48,8 @@ CREATE TABLE user_account (
   password VARCHAR(128) NOT NULL,
   nickname VARCHAR(64) NOT NULL,
   roles VARCHAR(128) NOT NULL,
+  campus VARCHAR(64) DEFAULT '',
+  phone VARCHAR(32) DEFAULT '',
   status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_username (username),
@@ -190,6 +197,17 @@ CREATE TABLE cart (
   INDEX idx_item_id (item_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE cart_item (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  item_id BIGINT NOT NULL,
+  quantity INT NOT NULL DEFAULT 1,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_user_item (user_id, item_id),
+  INDEX idx_user_id (user_id),
+  INDEX idx_item_id (item_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE favorite (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT NOT NULL,
@@ -221,14 +239,18 @@ CREATE TABLE review (
 CREATE TABLE circle_post (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   user_id BIGINT NOT NULL,
+  user_name VARCHAR(64) NOT NULL,
   title VARCHAR(200) NOT NULL,
   content TEXT NOT NULL,
   images TEXT,
   tags VARCHAR(200),
+  likes INT NOT NULL DEFAULT 0,
+  comments INT NOT NULL DEFAULT 0,
   status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
   like_count INT NOT NULL DEFAULT 0,
   comment_count INT NOT NULL DEFAULT 0,
   view_count INT NOT NULL DEFAULT 0,
+  campus VARCHAR(64) DEFAULT '',
   create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
   update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   INDEX idx_user_id (user_id),
@@ -242,6 +264,7 @@ CREATE TABLE circle_comment (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   post_id BIGINT NOT NULL,
   user_id BIGINT NOT NULL,
+  user_name VARCHAR(64) NOT NULL,
   content VARCHAR(1000) NOT NULL,
   create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_post_id (post_id),
@@ -261,18 +284,16 @@ CREATE TABLE circle_like (
 
 CREATE TABLE message (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  user_id BIGINT NOT NULL,
-  type VARCHAR(20) NOT NULL COMMENT 'SYSTEM/TRANSACTION/REVIEW/INTERACTION',
-  title VARCHAR(200) NOT NULL,
+  sender_id BIGINT NOT NULL,
+  sender_name VARCHAR(64) NOT NULL,
+  receiver_id BIGINT NOT NULL,
   content TEXT NOT NULL,
+  type VARCHAR(20) NOT NULL COMMENT 'SYSTEM/TRANSACTION/REVIEW/INTERACTION',
   status VARCHAR(16) NOT NULL DEFAULT 'UNREAD' COMMENT 'UNREAD/READ',
-  link VARCHAR(500),
-  is_deleted TINYINT(1) NOT NULL DEFAULT false,
   create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
-  INDEX idx_user_id (user_id),
+  INDEX idx_receiver_id (receiver_id),
+  INDEX idx_sender_id (sender_id),
   INDEX idx_type (type),
   INDEX idx_status (status),
-  INDEX idx_create_time (create_time),
-  INDEX idx_user_status (user_id, status),
-  INDEX idx_user_type (user_id, type)
+  INDEX idx_create_time (create_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

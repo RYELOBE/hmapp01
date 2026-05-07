@@ -42,7 +42,7 @@
           <a-col :xs="24" :lg="14">
             <a-card title="近7天订单趋势" :bordered="false" class="chart-card">
               <div class="chart-placeholder">
-                <icon-line-chart />
+                <icon-apps />
                 <span>订单趋势图表（预留）</span>
               </div>
             </a-card>
@@ -51,7 +51,7 @@
           <a-col :xs="24" :lg="10">
             <a-card title="商品分类占比" :bordered="false" class="chart-card">
               <div class="chart-placeholder">
-                <icon-pie-chart />
+                <icon-list />
                 <span>分类占比图表（预留）</span>
               </div>
             </a-card>
@@ -157,8 +157,8 @@ import {
   IconEye,
   IconExport,
   IconNotification,
-  IconChart,
-  IconGraph,
+  IconApps,
+  IconList,
 } from "@arco-design/web-vue/es/icon";
 import PageContainer from "../../../components/layout/PageContainer/PageContainer.vue";
 import StatsCard from "../../../components/data/StatsCard/StatsCard.vue";

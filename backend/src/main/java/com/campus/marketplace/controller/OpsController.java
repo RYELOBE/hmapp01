@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -189,6 +190,19 @@ public class OpsController {
       @RequestParam(defaultValue = "10") int pageSize
   ) {
     return opsService.getPendingItems(pageNo, Math.min(pageSize, 100));
+  }
+
+  /**
+   * 获取待审核数量统计
+   * @return 待审核数量
+   */
+  @GetMapping("/pending-counts")
+  public Map<String, Object> getPendingCounts() {
+    Map<String, Object> counts = new HashMap<>();
+    counts.put("items", opsService.getPendingItemsCount());
+    counts.put("reviews", 0); // 后续可扩展
+    counts.put("circle", 0); // 后续可扩展
+    return buildSuccessResponse(counts);
   }
 
   /**

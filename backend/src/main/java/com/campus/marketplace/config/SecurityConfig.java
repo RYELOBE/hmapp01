@@ -37,6 +37,8 @@ public class SecurityConfig {
         .authorizeHttpRequests(authz -> authz
             // 🔓 公开接口 (无需认证)
             .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+            // 公开商品相关接口（GET 请求）
+            .requestMatchers("/api/items", "/api/items/*").permitAll()
             // 静态资源
             .requestMatchers(
                 "/",

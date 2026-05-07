@@ -153,37 +153,19 @@ const mobileMenuOpen = ref(false)
 const navItems = [
   { label: '首页', path: '/portal/home' },
   { label: '全部商品', path: '/portal/buyer/items' },
-  { label: '卖家精选', path: '/portal/home?filter=featured' },
-  { label: '校园圈子', path: '#' },
-  { label: '客服中心', path: '#' }
+  { label: '校园圈子', path: '/portal/circle' },
+  { label: '关于我们', path: '/about' }
 ]
 
 const isActive = (path) => {
   if (!path || path === '#') return false;
   
   const currentPath = route.path;
-  const currentQuery = route.query;
   
-  // 提取纯净路径（去除查询参数）
   const cleanPath = path.split('?')[0];
   
-  // 精确匹配逻辑
-  if (cleanPath === '/portal/home') {
-    // 首页和卖家精选的特殊处理
-    if (path === '/portal/home' || path === '/portal') {
-      // 只有当前页正好是 /portal/home 时才激活（排除带参数的情况）
-      return currentPath === '/portal/home' || currentPath === '/portal';
-    } else if (path.includes('filter=featured')) {
-      // 卖家精选：需要检查是否有 filter 参数
-      return currentPath === '/portal/home' && currentQuery.filter === 'featured';
-    }
-    return currentPath === cleanPath;
-  }
-  
-  // 其他路径的精确匹配
   if (currentPath === cleanPath) return true;
   
-  // 子路径匹配（如 /portal/seller/items 匹配 /portal/seller）
   if (currentPath.startsWith(cleanPath + '/')) return true;
   
   return false;
@@ -585,7 +567,7 @@ const handleLogout = () => {
         border-bottom: 1px solid var(--border-color-light);
 
         &.active::after {
-          bottom: auto;
+          bottom: -18px;
           left: 0;
           top: 50%;
           transform: translateY(-50%);

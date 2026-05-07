@@ -1,8 +1,8 @@
 <template>
   <div class="buyer-page">
     <div class="buyer-page__header">
-      <h2>需方管理</h2>
-      <span class="buyer-page__desc">管理所有买方用户及其订单统计</span>
+      <h2>买家管理</h2>
+      <span class="buyer-page__desc">管理所有买家用户及其订单统计</span>
     </div>
 
     <!-- 搜索 -->
@@ -26,7 +26,7 @@
     >
       <template #username="{ record }">
         <a-space>
-          <a-avatar :size="28">{{ record.username?.[0] || '需' }}</a-avatar>
+          <a-avatar :size="28">{{ record.username?.[0] || '买家' }}</a-avatar>
           <span style="font-weight: 500;">{{ record.username }}</span>
         </a-space>
       </template>

@@ -270,11 +270,11 @@ function formatDate(dateStr) {
 async function loadStats() {
   try {
     const res = await http.get("/ops/statistics");
-    const data = res?.statistics || res || {};
+    const data = res?.data?.statistics || res?.data || res || {};
     stats.value = {
       totalOrders: data.totalOrders || 0,
-      todayNew: data.todayNewOrders || 0,
-      totalAmount: data.totalAmount || 0,
+      todayNew: data.todayNewOrders || data.todayOrders || 0,
+      totalAmount: data.totalAmount || data.completedOrderAmount || 0,
       refundCount: data.refundCount || 0,
     };
   } catch (e) {
@@ -298,8 +298,9 @@ async function loadData() {
     }
 
     const res = await http.get("/ops/orders", { params });
-    tableData.value = res?.orders || res?.rows || [];
-    pagination.total = res?.totalCount ?? res?.total ?? 0;
+    const data = res?.data || res;
+    tableData.value = data?.orders || data?.rows || [];
+    pagination.total = data?.totalCount ?? data?.total ?? 0;
   } catch (e) {
     console.error("[Orders] load error:", e);
     Message.error(e.message || "加载订单列表失败");

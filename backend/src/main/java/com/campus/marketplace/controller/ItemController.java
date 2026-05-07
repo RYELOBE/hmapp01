@@ -19,7 +19,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/items")
-@PreAuthorize("isAuthenticated()")
 public class ItemController {
   private final ItemService itemService;
   private final CurrentUserService currentUserService;
@@ -53,15 +52,23 @@ public class ItemController {
       @RequestParam(required = false) String sort,
       @RequestParam(defaultValue = "1") int pageNo,
       @RequestParam(defaultValue = "20") int pageSize) {
+    // 获取当前用户ID（如果已登录）
+    Long userId = null;
+    try {
+      userId = currentUserService.userId();
+    } catch (Exception e) {
+      // 未登录，userId 保持为 null
+    }
+    
     // 如果有分页参数，走分页查询
     if (pageNo > 0 && pageSize > 0) {
       return itemService.listItemsPaged(
           approvedOnly, mine, keyword, category, sort,
-          pageNo, pageSize, currentUserService.userId());
+          pageNo, pageSize, userId);
     }
     return Map.of(
         "code", 200,
-        "data", itemService.listItems(approvedOnly, mine, currentUserService.userId()));
+        "data", itemService.listItems(approvedOnly, mine, userId));
   }
 
   /** 卖家的商品列表（分页） */

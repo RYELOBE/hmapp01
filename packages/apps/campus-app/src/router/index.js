@@ -19,6 +19,10 @@ const PortalHome = () =>
   import(
     /* webpackChunkName: "portal-home" */ "../views/portal/home/index.vue"
   );
+const BuyerItems = () =>
+  import(
+    /* webpackChunkName: "buyer-items" */ "../views/portal/buyer/Items.vue"
+  );
 const ItemDetail = () =>
   import(
     /* webpackChunkName: "portal-item-detail" */ "../views/portal/ItemDetail.vue"
@@ -71,6 +75,10 @@ const OpsBuyer = () =>
 
 const routes = [
   {
+    path: "/",
+    redirect: "/portal/home",
+  },
+  {
     path: "/login",
     name: "login",
     component: LoginView,
@@ -102,7 +110,7 @@ const routes = [
       {
         path: "buyer/items",
         name: "buyerItems",
-        component: PortalHome,
+        component: BuyerItems,
         meta: { title: "全部商品" },
       },
       {
@@ -211,67 +219,57 @@ const routes = [
     ],
   },
 
-  // ========== 运营后台路由 (container Layout - 深色侧边栏) ==========
+  // ========== 运营后台路由 (独立Layout - 深色侧边栏) ==========
   {
-    path: "/",
-    name: "frameRoot",
-    component: LayoutView,
+    path: "/ops",
+    name: "opsRoot",
+    component: OpsLayout,
+    redirect: "/ops/dashboard",
     children: [
       {
-        path: "",
-        name: "home",
-        component: ShellHomeView,
-        meta: { requiresAuth: true },
+        path: "dashboard",
+        component: OpsDashboard,
+        meta: { roles: ["OPS"] },
+      },
+      { path: "reviews", component: OpsReview, meta: { roles: ["OPS"] } },
+      {
+        path: "reviews/:id",
+        component: OpsReviewDetail,
+        meta: { roles: ["OPS"] },
+      },
+      { path: "review", component: OpsApprovalWorkspace, meta: { roles: ["OPS"] } },
+      { path: "orders", component: OpsOrders, meta: { roles: ["OPS"] } },
+      { path: "vendor", component: OpsVendor, meta: { roles: ["OPS"] } },
+      { path: "buyer", component: OpsBuyer, meta: { roles: ["OPS"] } },
+      {
+        path: "user-manage",
+        component: () => import("../views/ops/UserManage.vue"),
+        meta: { roles: ["OPS"] },
       },
       {
-        path: "about",
-        name: "about",
-        component: AboutUs,
-        meta: { title: "关于我们" },
+        path: "vendor-manage",
+        component: () => import("../views/ops/VendorManage.vue"),
+        meta: { roles: ["OPS"] },
       },
       {
-        path: "ops",
-        name: "opsRoot",
-        component: OpsLayout,
-        children: [
-          {
-            path: "dashboard",
-            component: OpsDashboard,
-            meta: { roles: ["OPS"] },
-          },
-          { path: "reviews", component: OpsReview, meta: { roles: ["OPS"] } },
-          {
-            path: "reviews/:id",
-            component: OpsReviewDetail,
-            meta: { roles: ["OPS"] },
-          },
-          { path: "review", component: OpsApprovalWorkspace, meta: { roles: ["OPS"] } },
-          { path: "orders", component: OpsOrders, meta: { roles: ["OPS"] } },
-          { path: "vendor", component: OpsVendor, meta: { roles: ["OPS"] } },
-          { path: "buyer", component: OpsBuyer, meta: { roles: ["OPS"] } },
-          {
-            path: "user-manage",
-            component: () => import("../views/ops/UserManage.vue"),
-            meta: { roles: ["OPS"] },
-          },
-          {
-            path: "vendor-manage",
-            component: () => import("../views/ops/VendorManage.vue"),
-            meta: { roles: ["OPS"] },
-          },
-          {
-            path: "buyer-manage",
-            component: () => import("../views/ops/BuyerManage.vue"),
-            meta: { roles: ["OPS"] },
-          },
-          {
-            path: "role-manage",
-            component: () => import("../views/ops/RoleManage.vue"),
-            meta: { roles: ["OPS"] },
-          },
-        ],
+        path: "buyer-manage",
+        component: () => import("../views/ops/BuyerManage.vue"),
+        meta: { roles: ["OPS"] },
+      },
+      {
+        path: "role-manage",
+        component: () => import("../views/ops/RoleManage.vue"),
+        meta: { roles: ["OPS"] },
       },
     ],
+  },
+
+  // ========== 其他页面 ==========
+  {
+    path: "/about",
+    name: "about",
+    component: AboutUs,
+    meta: { title: "关于我们" },
   },
 ];
 

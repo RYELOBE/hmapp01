@@ -321,10 +321,11 @@ function getConditionLabel(condition) {
 async function loadCounts() {
   try {
     const res = await http.get("/ops/pending-counts");
-    if (res) {
-      counts.items = res.items ?? 0;
-      counts.reviews = res.reviews ?? 0;
-      counts.circle = res.circle ?? 0;
+    const data = res?.data || res;
+    if (data) {
+      counts.items = data.items ?? 0;
+      counts.reviews = data.reviews ?? 0;
+      counts.circle = data.circle ?? 0;
     }
   } catch (e) {
     console.error("[ApprovalWorkspace] load counts error:", e);
@@ -337,36 +338,37 @@ async function loadData() {
     let url = "";
     switch (activeTab.value) {
       case "items":
-        url = "/api/items/pending";
+        url = "/ops/pending-items";
         break;
       case "reviews":
-        url = "/api/reviews/pending";
+        url = "/ops/reviews";
         break;
       case "circle":
-        url = "/api/circle/pending";
+        url = "/ops/circle/pending";
         break;
     }
 
     const params = {
-      page: pagination.current,
-      size: pagination.pageSize,
+      pageNo: pagination.current,
+      pageSize: pagination.pageSize,
     };
 
     const res = await http.get(url, { params });
+    const data = res?.data || res;
 
     switch (activeTab.value) {
       case "items":
-        pendingItems.value = res?.list || res?.items || [];
+        pendingItems.value = data?.items || data?.list || [];
         break;
       case "reviews":
-        pendingReviews.value = res?.list || res?.items || [];
+        pendingReviews.value = data?.items || data?.list || [];
         break;
       case "circle":
-        pendingPosts.value = res?.list || res?.items || [];
+        pendingPosts.value = data?.items || data?.list || [];
         break;
     }
 
-    pagination.total = res?.totalCount ?? res?.total ?? 0;
+    pagination.total = data?.totalCount ?? data?.total ?? 0;
   } catch (e) {
     console.error("[ApprovalWorkspace] load error:", e);
     Message.error("加载数据失败，请刷新重试");
@@ -413,13 +415,13 @@ async function confirmApprove() {
     let url = "";
     switch (currentType.value) {
       case "items":
-        url = `/api/items/${currentItem.value.id}/approve`;
+        url = `/ops/reviews/${currentItem.value.id}/approve`;
         break;
       case "reviews":
-        url = `/api/reviews/${currentItem.value.id}/approve`;
+        url = `/ops/reviews/${currentItem.value.id}/approve`;
         break;
       case "circle":
-        url = `/api/circle/posts/${currentItem.value.id}/approve`;
+        url = `/ops/circle/${currentItem.value.id}/approve`;
         break;
     }
 
@@ -446,13 +448,13 @@ async function confirmReject() {
     let url = "";
     switch (currentType.value) {
       case "items":
-        url = `/api/items/${currentItem.value.id}/reject`;
+        url = `/ops/reviews/${currentItem.value.id}/reject`;
         break;
       case "reviews":
-        url = `/api/reviews/${currentItem.value.id}/reject`;
+        url = `/ops/reviews/${currentItem.value.id}/reject`;
         break;
       case "circle":
-        url = `/api/circle/posts/${currentItem.value.id}/reject`;
+        url = `/ops/circle/${currentItem.value.id}/reject`;
         break;
     }
 

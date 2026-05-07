@@ -60,8 +60,9 @@ async function loadData() {
       pageSize: pagination.value.pageSize,
     };
     const res = await http.get("/ops/vendors", { params });
-    tableData.value = res?.vendors || res?.rows || [];
-    pagination.value.total = res?.totalCount ?? res?.total ?? 0;
+    const data = res?.data || res;
+    tableData.value = data?.vendors || data?.rows || [];
+    pagination.value.total = data?.totalCount ?? data?.total ?? 0;
   } catch (e) {
     console.error("[Vendor] load error:", e);
   } finally {

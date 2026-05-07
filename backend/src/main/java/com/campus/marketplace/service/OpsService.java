@@ -207,6 +207,14 @@ public class OpsService {
   }
 
   /**
+   * 获取待审核商品数量
+   * @return 待审核商品数量
+   */
+  public int getPendingItemsCount() {
+    return itemRepository.countPending();
+  }
+
+  /**
    * 参数校验
    * @param pageNo 页码
    * @param pageSize 每页数量

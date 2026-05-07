@@ -247,8 +247,9 @@ async function loadData() {
     }
 
     const res = await getBuyers(params);
-    tableData.value = res?.buyers || res?.rows || [];
-    pagination.total = res?.totalCount ?? res?.total ?? 0;
+    const data = res?.data || res;
+    tableData.value = data?.buyers || data?.rows || [];
+    pagination.total = data?.totalCount ?? data?.total ?? 0;
   } catch (e) {
     console.error("[BuyerManage] load error:", e);
     Message.error("加载买家列表失败");
