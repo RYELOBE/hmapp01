@@ -1,0 +1,26 @@
+// =====================================================
+// 排版系统 - Typography
+// 定义字体族、字号、行高、字重
+// =====================================================
+
+$font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+$font-family-mono: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+
+$font-size-xs: 12px;
+$font-size-sm: 13px;
+$font-size-base: 14px;
+$font-size-md: 15px;
+$font-size-lg: 16px;
+$font-size-xl: 18px;
+$font-size-2xl: 20px;
+$font-size-3xl: 24px;
+$font-size-4xl: 30px;
+
+$line-height-tight: 1.25;
+$line-height-base: 1.5;
+$line-height-relaxed: 1.75;
+
+$font-weight-normal: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 600;
+$font-weight-bold: 700;

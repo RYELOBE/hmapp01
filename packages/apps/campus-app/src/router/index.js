@@ -8,6 +8,8 @@ const ForbiddenView = () =>
   import(/* webpackChunkName: "forbidden" */ "../views/ForbiddenView.vue");
 const ShellHomeView = () =>
   import(/* webpackChunkName: "shell-home" */ "../views/ShellHomeView.vue");
+const AboutUs = () =>
+  import(/* webpackChunkName: "about-us" */ "../views/shared/AboutUs.vue");
 const LayoutView = () =>
   import(/* webpackChunkName: "layout" */ "../views/container/Layout.vue");
 
@@ -48,13 +50,17 @@ const OpsDashboard = () =>
   import(
     /* webpackChunkName: "ops-dashboard" */ "../views/ops/dashboard/index.vue"
   );
-const OpsReviews = () =>
+const OpsReview = () =>
   import(
     /* webpackChunkName: "ops-reviews" */ "../views/ops/reviews/index.vue"
   );
 const OpsReviewDetail = () =>
   import(
     /* webpackChunkName: "ops-review-detail" */ "../views/ops/ReviewDetail.vue"
+  );
+const OpsApprovalWorkspace = () =>
+  import(
+    /* webpackChunkName: "ops-approval-workspace" */ "../views/ops/review/ApprovalWorkspace.vue"
   );
 const OpsOrders = () =>
   import(/* webpackChunkName: "ops-orders" */ "../views/ops/orders/index.vue");
@@ -165,6 +171,43 @@ const routes = [
         component: () => import("../views/portal/SellerStats.vue"),
         meta: { roles: ["SELLER"] },
       },
+      // ========== 校园圈子路由 ==========
+      {
+        path: "circle",
+        name: "circleHome",
+        component: () =>
+          import(
+            /* webpackChunkName: "circle-home" */ "../views/portal/circle/CircleHome.vue"
+          ),
+        meta: { title: "校园圈子" },
+      },
+      {
+        path: "circle/publish",
+        component: () =>
+          import(
+            /* webpackChunkName: "circle-publish" */ "../views/portal/circle/CirclePublish.vue"
+          ),
+        meta: { roles: ["BUYER", "SELLER"], title: "发布动态" },
+      },
+      {
+        path: "circle/:id",
+        name: "circleDetail",
+        component: () =>
+          import(
+            /* webpackChunkName: "circle-detail" */ "../views/portal/circle/CircleDetail.vue"
+          ),
+        meta: { title: "帖子详情" },
+      },
+      // ========== 消息中心路由 ==========
+      {
+        path: "messages",
+        name: "messageList",
+        component: () =>
+          import(
+            /* webpackChunkName: "message-list" */ "../views/portal/MessageList.vue"
+          ),
+        meta: { roles: ["BUYER", "SELLER"], title: "消息中心" },
+      },
     ],
   },
 
@@ -181,6 +224,12 @@ const routes = [
         meta: { requiresAuth: true },
       },
       {
+        path: "about",
+        name: "about",
+        component: AboutUs,
+        meta: { title: "关于我们" },
+      },
+      {
         path: "ops",
         name: "opsRoot",
         component: OpsLayout,
@@ -190,12 +239,13 @@ const routes = [
             component: OpsDashboard,
             meta: { roles: ["OPS"] },
           },
-          { path: "reviews", component: OpsReviews, meta: { roles: ["OPS"] } },
+          { path: "reviews", component: OpsReview, meta: { roles: ["OPS"] } },
           {
             path: "reviews/:id",
             component: OpsReviewDetail,
             meta: { roles: ["OPS"] },
           },
+          { path: "review", component: OpsApprovalWorkspace, meta: { roles: ["OPS"] } },
           { path: "orders", component: OpsOrders, meta: { roles: ["OPS"] } },
           { path: "vendor", component: OpsVendor, meta: { roles: ["OPS"] } },
           { path: "buyer", component: OpsBuyer, meta: { roles: ["OPS"] } },

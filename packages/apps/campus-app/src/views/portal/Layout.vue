@@ -142,7 +142,7 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '../../stores/auth'
 import { Message } from '@arco-design/web-vue'
-import AiAssistant from '../../components/AiAssistant.vue'
+import AiAssistant from '../../components/common/AiAssistant.vue'
 
 const route = useRoute()
 const router = useRouter()

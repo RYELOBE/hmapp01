@@ -118,9 +118,9 @@ import {
   IconEdit,
 } from "@arco-design/web-vue/es/icon";
 import { parseFirstImageUrl } from "../../../utils/image-utils";
-import AddressCard from "../../../components/AddressCard.vue";
-import ConditionTag from "../../../components/sub/ConditionTag.vue";
-import EditAddressModal from "../../../components/sub/EditAddressModal.vue";
+import AddressCard from "../../../components/data/AddressCard.vue";
+import ConditionTag from "../../../components/data/ConditionTag.vue";
+import EditAddressModal from "../../../components/data/EditAddressModal.vue";
 import { getItemDetail, createOrder, getDefaultAddress, getAddressList } from "../../../services/api";
 
 const router = useRouter();

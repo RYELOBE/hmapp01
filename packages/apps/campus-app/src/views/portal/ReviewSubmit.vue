@@ -8,7 +8,7 @@
             <template #icon><icon-arrow-left /></template>
             返回
           </a-button>
-          <h2 class="page-title">订单评价</h2>
+          <h2 class="page-title">发表评价</h2>
         </div>
 
         <!-- 商品信息展示区 -->
@@ -25,6 +25,10 @@
             </div>
             <div class="item-details">
               <h3 class="item-title">{{ order.itemTitle }}</h3>
+              <div class="price-row">
+                <span class="price-symbol">¥</span>
+                <span class="price-value">{{ formatPrice(order.itemPrice) }}</span>
+              </div>
               <div class="order-meta">
                 <span class="meta-item">
                   <icon-calendar /> 订单号：{{ order.orderNo || order.id }}
@@ -37,97 +41,71 @@
           </div>
         </a-card>
 
-        <!-- 评价表单 -->
-        <a-form
-          ref="formRef"
-          :model="form"
-          layout="vertical"
-          class="review-form"
-        >
-          <!-- 总体评分 -->
-          <a-card title="总体评分" class="form-section">
-            <div class="rating-wrapper">
-              <a-rate
-                v-model="form.rating"
-                :count="5"
-                allow-half
-                :stroke-width="28"
-              />
+        <!-- 评分选择组件 -->
+        <a-card title="总体评分" class="rating-card">
+          <div class="rating-wrapper">
+            <a-rate
+              v-model="form.rating"
+              :count="5"
+              :stroke-width="32"
+              @change="handleRatingChange"
+            />
+            <div class="rating-feedback">
+              <span class="rating-score">{{ form.rating }} 分</span>
               <span class="rating-text" :class="`rating-text--${getRatingLevel(form.rating)}`">
                 {{ getRatingText(form.rating) }}
               </span>
             </div>
-          </a-card>
+          </div>
+          <div class="rating-tips">
+            {{ getRatingTip(form.rating) }}
+          </div>
+        </a-card>
 
-          <!-- 分类评分（可选） -->
-          <a-card title="详细评价（可选）" class="form-section">
-            <div class="category-ratings">
-              <div class="category-item">
-                <label>商品质量</label>
-                <a-rate v-model="form.qualityRating" :count="5" allow-half size="small" />
-              </div>
-              <div class="category-item">
-                <label>描述相符</label>
-                <a-rate v-model="form.descriptionRating" :count="5" allow-half size="small" />
-              </div>
-              <div class="category-item">
-                <label>物流服务</label>
-                <a-rate v-model="form.logisticsRating" :count="5" allow-half size="small" />
-              </div>
-            </div>
-          </a-card>
+        <!-- 富文本编辑器 - 评价内容 -->
+        <a-card title="评价内容" class="content-card">
+          <RichEditor
+            v-model="form.content"
+            placeholder="分享您的购买体验..."
+            :height="300"
+          />
+        </a-card>
 
-          <!-- 评价内容 -->
-          <a-card title="评价内容" class="form-section">
-            <a-form-item field="content" hide-label>
-              <a-textarea
-                v-model="form.content"
-                placeholder="分享您的使用体验..."
-                :max-length="500"
-                show-word-limit
-                :rows="6"
-                allow-clear
-              />
-            </a-form-item>
-          </a-card>
-
-          <!-- 匿名评价 & 图片上传 -->
-          <a-card title="其他选项" class="form-section">
-            <div class="options-row">
-              <div class="option-item">
-                <a-switch v-model="form.anonymous" size="small" />
-                <span class="option-label">匿名评价</span>
-              </div>
-            </div>
-
-            <div class="upload-section">
-              <label class="upload-label">晒图（最多3张）</label>
-              <a-upload
-                action="/api/upload"
-                list-type="picture-card"
-                :file-list="form.images"
-                :limit="3"
-                image-preview
-                @change="handleImageChange"
-                @before-upload="beforeUpload"
-              >
-                <template #upload-button>
-                  <div class="upload-trigger">
-                    <icon-plus :size="24" />
-                    <div style="margin-top: 8px; font-size: 12px;">上传图片</div>
-                  </div>
-                </template>
-              </a-upload>
-            </div>
-          </a-card>
-        </a-form>
+        <!-- 图片上传 -->
+        <a-card title="晒图评价" class="image-card">
+          <div class="upload-section">
+            <p class="upload-tip">支持上传最多5张图片，单张不超过5MB</p>
+            <a-upload
+              action="/api/upload"
+              list-type="picture-card"
+              :file-list="form.images"
+              :limit="5"
+              image-preview
+              @change="handleImageChange"
+              @before-upload="beforeUpload"
+            >
+              <template #upload-button>
+                <div class="upload-trigger">
+                  <icon-plus :size="24" />
+                  <div style="margin-top: 8px; font-size: 12px;">上传图片</div>
+                </div>
+              </template>
+            </a-upload>
+          </div>
+        </a-card>
 
         <!-- 操作按钮 -->
         <div class="action-bar">
           <a-button size="large" @click="$router.back()">
-            返回
+            返回订单
           </a-button>
-          <a-button type="primary" size="large" :loading="submitting" @click="submitReview">
+          <a-button
+            type="primary"
+            size="large"
+            :loading="submitting"
+            :disabled="!canSubmit"
+            @click="submitReview"
+          >
             提交评价
           </a-button>
         </div>
@@ -145,11 +123,12 @@ import { useRouter, useRoute } from 'vue-router';
 import { Message } from '@arco-design/web-vue';
 import {
   IconArrowLeft,
-  IconImage,
+  IconCamera,
   IconCalendar,
   IconClockCircle,
   IconPlus,
 } from '@arco-design/web-vue/es/icon';
+import RichEditor from '../../components/form/RichEditor/RichEditor.vue';
 import { getOrderDetail, createReview } from '../../services/api';
 
 const router = useRouter();
@@ -157,23 +136,27 @@ const route = useRoute();
 
 const loading = ref(false);
 const submitting = ref(false);
-const formRef = ref(null);
 const order = ref(null);
 
 const form = ref({
-  rating: 5,
-  qualityRating: 0,
-  descriptionRating: 0,
-  logisticsRating: 0,
+  rating: 0,
   content: '',
-  anonymous: false,
   images: [],
 });
 
+const canSubmit = computed(() => {
+  return form.value.rating > 0 && form.value.content.trim().length > 0;
+});
+
 function getRatingText(rating) {
-  const texts = ['非常差', '差', '一般', '好', '非常好'];
-  const index = Math.floor(rating) - 1;
-  return texts[index] || '';
+  const texts = {
+    1: '很差',
+    2: '较差',
+    3: '一般',
+    4: '很好',
+    5: '非常好',
+  };
+  return texts[rating] || '';
 }
 
 function getRatingLevel(rating) {
@@ -182,6 +165,26 @@ function getRatingLevel(rating) {
   if (rating <= 3) return 'normal';
   if (rating <= 4) return 'good';
   return 'excellent';
+}
+
+function getRatingTip(rating) {
+  const tips = {
+    1: '非常不满意，商品存在严重问题',
+    2: '不太满意，与预期有较大差距',
+    3: '一般般，符合基本要求',
+    4: '比较满意，超出预期',
+    5: '非常满意，强烈推荐！',
+  };
+  return tips[rating] || '';
+}
+
+function handleRatingChange(value) {
+  form.value.rating = value;
+}
+
+function formatPrice(price) {
+  if (!price && price !== 0) return '0.00';
+  return Number(price).toFixed(2);
 }
 
 function formatTime(dateStr) {
@@ -197,7 +200,7 @@ function formatTime(dateStr) {
 }
 
 async function loadOrder() {
-  const orderId = route.params.orderId;
+  const orderId = route.query.orderId;
   if (!orderId) {
     Message.error('订单ID不存在');
     router.back();
@@ -221,22 +224,22 @@ function handleImageChange(fileList) {
 
 function beforeUpload(file) {
   const isImage = file.type.startsWith('image/');
-  const isLt2M = file.size / 1024 / 1024 < 2;
+  const isLt5M = file.size / 1024 / 1024 < 5;
 
   if (!isImage) {
     Message.error('只能上传图片文件');
     return false;
   }
-  if (!isLt2M) {
-    Message.error('图片大小不能超过 2MB');
+  if (!isLt5M) {
+    Message.error('图片大小不能超过 5MB');
     return false;
   }
   return true;
 }
 
 async function submitReview() {
-  if (form.value.rating === 0) {
-    Message.warning('请选择商品评分');
+  if (!canSubmit.value) {
+    Message.warning('请完成评分并填写评价内容');
     return;
   }
 
@@ -247,11 +250,11 @@ async function submitReview() {
       : [];
     await createReview(order.value.id, {
       itemId: order.value.itemId,
-      rating: Math.floor(form.value.rating),
+      rating: form.value.rating,
       content: form.value.content,
-      images: images.length > 0 ? JSON.stringify(images) : '',
+      images: images.length > 0 ? images : [],
     });
-    Message.success('评价提交成功');
+    Message.success('评价提交成功！');
     router.push('/portal/orders');
   } catch (e) {
     Message.error(e.message || '提交失败');
@@ -271,7 +274,7 @@ onMounted(loadOrder);
 }
 
 .review-container {
-  max-width: 600px;
+  max-width: 700px;
   margin: 0 auto;
 }
 
@@ -313,8 +316,8 @@ onMounted(loadOrder);
 }
 
 .item-image {
-  width: 80px;
-  height: 80px;
+  width: 100px;
+  height: 100px;
   border-radius: 8px;
   object-fit: cover;
   flex-shrink: 0;
@@ -325,7 +328,7 @@ onMounted(loadOrder);
     align-items: center;
     justify-content: center;
     color: var(--color-text-4, #C9CDD4);
-    font-size: 28px;
+    font-size: 32px;
   }
 }
 
@@ -334,15 +337,31 @@ onMounted(loadOrder);
   min-width: 0;
 
   .item-title {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 500;
     color: var(--color-text-1, #1D2129);
-    margin: 0 0 10px 0;
+    margin: 0 0 8px 0;
     line-height: 1.5;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+
+  .price-row {
+    margin-bottom: 10px;
+
+    .price-symbol {
+      font-size: 16px;
+      font-weight: 600;
+      color: #F53F3F;
+    }
+
+    .price-value {
+      font-size: 22px;
+      font-weight: 700;
+      color: #F53F3F;
+    }
   }
 
   .order-meta {
@@ -360,11 +379,9 @@ onMounted(loadOrder);
   }
 }
 
-.review-form {
-  padding: 0;
-}
-
-.form-section {
+.rating-card,
+.content-card,
+.image-card {
   border-radius: 0;
   box-shadow: none;
   border-bottom: 1px solid var(--color-border-1, #E5E6EB);
@@ -378,11 +395,28 @@ onMounted(loadOrder);
 .rating-wrapper {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
+  padding: 16px 0;
+
+  :deep(.arco-rate) {
+    font-size: 28px;
+  }
+}
+
+.rating-feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rating-score {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-1, #1D2129);
 }
 
 .rating-text {
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 500;
 
   &--bad { color: #F53F3F; }
@@ -392,52 +426,20 @@ onMounted(loadOrder);
   &--excellent { color: #00B42A; }
 }
 
-.category-ratings {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.category-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px dashed var(--color-border-2, #E5E6EB);
-
-  &:last-child {
-    border-bottom: none;
-  }
-
-  label {
-    font-size: 14px;
-    color: var(--color-text-2, #4E5969);
-    font-weight: 500;
-  }
-}
-
-.options-row {
-  margin-bottom: 20px;
-}
-
-.option-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.option-label {
-  font-size: 14px;
-  color: var(--color-text-2, #4E5969);
+.rating-tips {
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: var(--color-fill-1, #F7F8FA);
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--color-text-3, #86909C);
 }
 
 .upload-section {
-  .upload-label {
-    display: block;
-    font-size: 14px;
-    color: var(--color-text-2, #4E5969);
+  .upload-tip {
+    font-size: 13px;
+    color: var(--color-text-3, #86909C);
     margin-bottom: 12px;
-    font-weight: 500;
   }
 }
 

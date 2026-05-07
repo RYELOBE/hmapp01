@@ -176,7 +176,7 @@ import {
   IconRefresh,
   IconImage,
 } from "@arco-design/web-vue/es/icon";
-import FilterBar from "../../../ops-components/FilterBar.vue";
+import FilterBar from "../../../components/data/FilterBar.vue";
 import { opsHttp as http } from "../../../services/http";
 import { ORDER_STATUS_OPTIONS, ORDER_STATUS_MAP, ORDER_COLUMNS } from "./const";
 

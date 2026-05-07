@@ -1,140 +1,144 @@
 <template>
   <div class="ops-dashboard">
-    <div class="ops-dashboard__header">
-      <a-breadcrumb class="breadcrumb">
-        <a-breadcrumb-item>运营中心</a-breadcrumb-item>
-        <a-breadcrumb-item>工作台</a-breadcrumb-item>
-      </a-breadcrumb>
-      <h2 class="page-title">运营工作台</h2>
-    </div>
+    <PageContainer title="运营工作台" subtitle="数据概览与快捷操作">
+      <a-spin :loading="loading" style="width: 100%">
+        <a-row :gutter="[16, 16]" class="stats-row">
+          <a-col :xs="24" :sm="12" :md="6" v-for="card in statCards" :key="card.key">
+            <StatsCard
+              :icon-component="card.iconComponent"
+              :value="stats[card.key] ?? 0"
+              :label="card.label"
+              :color="card.color"
+              :trend="card.trendKey ? { value: stats[card.trendKey], isUp: stats[card.trendKey] > 0 } : null"
+            />
+          </a-col>
+        </a-row>
 
-    <a-spin :loading="loading" style="width: 100%">
-      <!-- 数据统计卡片区 -->
-      <a-row :gutter="[16, 16]" class="stats-row">
-        <a-col :xs="24" :sm="12" :md="6" v-for="card in statCards" :key="card.key">
-          <a-card class="stat-card" :bordered="false" hoverable>
-            <div class="stat-card__body">
-              <div class="stat-card__icon" :style="{ background: card.bgColor, color: card.color }">
-                <component :is="card.iconComponent" />
-              </div>
-              <div class="stat-card__info">
-                <div class="stat-card__label">{{ card.label }}</div>
-                <div class="stat-card__value">{{ formatNumber(stats[card.key]) }}</div>
-                <div class="stat-card__trend" v-if="card.trendKey && stats[card.trendKey] !== undefined">
-                  <icon-arrow-rise v-if="stats[card.trendKey] > 0" class="trend-icon up" />
-                  <icon-arrow-fall v-else-if="stats[card.trendKey] < 0" class="trend-icon down" />
-                  <span :class="{ 'trend-up': stats[card.trendKey] > 0, 'trend-down': stats[card.trendKey] < 0 }">
-                    {{ stats[card.trendKey] > 0 ? '+' : '' }}{{ stats[card.trendKey] }}
-                  </span>
+        <a-row :gutter="[16, 16]" class="stats-row">
+          <a-col :xs="12" :sm="6" v-for="card in secondaryStatCards" :key="card.key">
+            <StatsCard
+              :icon-component="card.iconComponent"
+              :value="stats[card.key] ?? 0"
+              :label="card.label"
+              :color="card.color"
+            />
+          </a-col>
+        </a-row>
+
+        <a-card title="快捷操作" :bordered="false" class="quick-actions-card">
+          <a-row :gutter="[16, 16]">
+            <a-col :xs="12" :sm="8" :md="6" v-for="action in quickActions" :key="action.label">
+              <div class="action-item" @click="handleQuickAction(action)">
+                <div class="action-icon" :style="{ background: action.bgColor, color: action.color }">
+                  <component :is="action.iconComponent" />
                 </div>
+                <div class="action-label">{{ action.label }}</div>
               </div>
-            </div>
-          </a-card>
-        </a-col>
-      </a-row>
+            </a-col>
+          </a-row>
+        </a-card>
 
-      <!-- 待办事项区 -->
-      <a-row :gutter="16" class="todo-section">
-        <!-- 左列：待审核商品 -->
-        <a-col :xs="24" :lg="12">
-          <a-card title="待审核商品" :bordered="false" class="todo-card">
-            <template #extra>
-              <a-link @click="$router.push('/ops/reviews')">查看全部 →</a-link>
-            </template>
-            <a-table
-              :data="pendingReviews"
-              :pagination="false"
-              :columns="reviewColumns"
-              size="small"
-              :scroll="{ y: 400 }"
-              row-key="id"
-            >
-              <template #thumbnail="{ record }">
-                <a-avatar :size="40" shape="square">
-                  <img v-if="record.thumbnail" :src="record.thumbnail" alt="" />
-                  <icon-storage v-else />
-                </a-avatar>
-              </template>
-              <template #price="{ record }">
-                <span class="price">¥{{ record.price?.toFixed(2) || '—' }}</span>
-              </template>
-              <template #action="{ record }">
-                <a-button type="text" size="small" @click="goToReview(record.id)">
-                  去审核
-                </a-button>
-              </template>
-            </a-table>
-            <a-empty v-if="!loading && pendingReviews.length === 0" description="暂无待审核商品" />
-          </a-card>
-        </a-col>
+        <a-row :gutter="16" class="charts-section">
+          <a-col :xs="24" :lg="14">
+            <a-card title="近7天订单趋势" :bordered="false" class="chart-card">
+              <div class="chart-placeholder">
+                <icon-line-chart />
+                <span>订单趋势图表（预留）</span>
+              </div>
+            </a-card>
+          </a-col>
 
-        <!-- 右列：最新订单 -->
-        <a-col :xs="24" :lg="12">
-          <a-card title="最新订单" :bordered="false" class="todo-card">
-            <template #extra>
-              <a-link @click="$router.push('/ops/orders')">查看全部 →</a-link>
-            </template>
-            <a-table
-              :data="recentOrders"
-              :pagination="false"
-              :columns="orderColumns"
-              size="small"
-              :scroll="{ y: 400 }"
-              row-key="id"
-            >
-              <template #amount="{ record }">
-                <span class="price">¥{{ record.amount?.toFixed(2) || '—' }}</span>
-              </template>
-              <template #status="{ record }">
-                <a-tag :color="getOrderStatusColor(record.status)" size="small">
-                  {{ getOrderStatusLabel(record.status) }}
-                </a-tag>
-              </template>
-            </a-table>
-            <a-empty v-if="!loading && recentOrders.length === 0" description="暂无订单数据" />
-          </a-card>
-        </a-col>
-      </a-row>
+          <a-col :xs="24" :lg="10">
+            <a-card title="商品分类占比" :bordered="false" class="chart-card">
+              <div class="chart-placeholder">
+                <icon-pie-chart />
+                <span>分类占比图表（预留）</span>
+              </div>
+            </a-card>
+          </a-col>
+        </a-row>
 
-      <!-- 快捷操作区 -->
-      <a-row :gutter="16" class="quick-actions-section">
-        <a-col :span="24">
-          <a-card title="快捷操作" :bordered="false">
-            <a-row :gutter="[16, 16]">
-              <a-col :xs="12" :sm="8" :md="6" v-for="action in quickActions" :key="action.label">
-                <div class="action-item" @click="handleQuickAction(action)">
-                  <div class="action-icon" :style="{ background: action.bgColor, color: action.color }">
-                    <component :is="action.iconComponent" />
-                  </div>
-                  <div class="action-label">{{ action.label }}</div>
-                </div>
-              </a-col>
-            </a-row>
-          </a-card>
-        </a-col>
-      </a-row>
-
-      <!-- 最近活动时间线 -->
-      <a-row :gutter="16" class="timeline-section">
-        <a-col :span="24">
-          <a-card title="最近活动" :bordered="false">
-            <a-timeline v-if="recentActivities.length > 0">
-              <a-timeline-item
-                v-for="activity in recentActivities"
-                :key="activity.id"
-                :dot-color="activity.dotColor"
+        <a-row :gutter="16" class="todo-section">
+          <a-col :xs="24" :lg="12">
+            <a-card title="待审核商品" :bordered="false" class="todo-card">
+              <template #extra>
+                <a-link @click="$router.push('/ops/review')">查看全部 →</a-link>
+              </template>
+              <a-table
+                :data="pendingReviews"
+                :pagination="false"
+                :columns="reviewColumns"
+                size="small"
+                :scroll="{ y: 300 }"
+                row-key="id"
               >
-                <div class="activity-content">
-                  <div class="activity-title">{{ activity.title }}</div>
-                  <div class="activity-time">{{ activity.time }}</div>
-                </div>
-              </a-timeline-item>
-            </a-timeline>
-            <a-empty v-else description="暂无活动记录" />
-          </a-card>
-        </a-col>
-      </a-row>
-    </a-spin>
+                <template #thumbnail="{ record }">
+                  <a-avatar :size="40" shape="square">
+                    <img v-if="record.thumbnail" :src="record.thumbnail" alt="" />
+                    <icon-storage v-else />
+                  </a-avatar>
+                </template>
+                <template #price="{ record }">
+                  <span class="price">¥{{ record.price?.toFixed(2) || '—' }}</span>
+                </template>
+                <template #action="{ record }">
+                  <a-button type="text" size="small" @click="$router.push(`/ops/reviews/${record.id}`)">
+                    去审核
+                  </a-button>
+                </template>
+              </a-table>
+              <a-empty v-if="!loading && pendingReviews.length === 0" description="暂无待审核商品" />
+            </a-card>
+          </a-col>
+
+          <a-col :xs="24" :lg="12">
+            <a-card title="最新订单" :bordered="false" class="todo-card">
+              <template #extra>
+                <a-link @click="$router.push('/ops/orders')">查看全部 →</a-link>
+              </template>
+              <a-table
+                :data="recentOrders"
+                :pagination="false"
+                :columns="orderColumns"
+                size="small"
+                :scroll="{ y: 300 }"
+                row-key="id"
+              >
+                <template #amount="{ record }">
+                  <span class="price">¥{{ record.amount?.toFixed(2) || '—' }}</span>
+                </template>
+                <template #status="{ record }">
+                  <a-tag :color="getOrderStatusColor(record.status)" size="small">
+                    {{ getOrderStatusLabel(record.status) }}
+                  </a-tag>
+                </template>
+              </a-table>
+              <a-empty v-if="!loading && recentOrders.length === 0" description="暂无订单数据" />
+            </a-card>
+          </a-col>
+        </a-row>
+
+        <a-row :gutter="16" class="timeline-section">
+          <a-col :span="24">
+            <a-card title="最近活动" :bordered="false">
+              <a-timeline v-if="recentActivities.length > 0">
+                <a-timeline-item
+                  v-for="activity in recentActivities"
+                  :key="activity.id"
+                  :dot-color="activity.dotColor"
+                >
+                  <div class="activity-content">
+                    <div class="activity-title">{{ activity.title }}</div>
+                    <div class="activity-time">{{ activity.time }}</div>
+                  </div>
+                </a-timeline-item>
+              </a-timeline>
+              <a-empty v-else description="暂无活动记录" />
+            </a-card>
+          </a-col>
+        </a-row>
+      </a-spin>
+    </PageContainer>
   </div>
 </template>
 
@@ -146,14 +150,18 @@ import {
   IconUserGroup,
   IconStorage,
   IconFile,
-  IconBarChart,
+  IconTag,
+  IconPlusCircle,
+  IconClockCircle,
   IconCheckCircle,
   IconEye,
   IconExport,
   IconNotification,
-  IconArrowRise,
-  IconArrowFall,
+  IconChart,
+  IconGraph,
 } from "@arco-design/web-vue/es/icon";
+import PageContainer from "../../../components/layout/PageContainer/PageContainer.vue";
+import StatsCard from "../../../components/data/StatsCard/StatsCard.vue";
 import {
   getStatistics,
   getReviewQueue,
@@ -170,35 +178,55 @@ const recentActivities = ref([]);
 const statCards = [
   {
     key: "totalUsers",
-    label: "用户总数",
+    label: "总用户数",
     iconComponent: IconUserGroup,
     color: "#165DFF",
-    bgColor: "#E6F1FF",
     trendKey: "newUsersToday",
   },
   {
     key: "totalItems",
-    label: "商品总数",
+    label: "总商品数",
     iconComponent: IconStorage,
     color: "#00B42A",
-    bgColor: "#E8FFEA",
-    trendKey: "pendingReviews",
   },
   {
     key: "totalOrders",
-    label: "订单总数",
+    label: "总订单数",
     iconComponent: IconFile,
     color: "#FF7D00",
-    bgColor: "#FFF7E8",
-    trendKey: "newOrdersToday",
   },
   {
-    key: "totalRevenue",
-    label: "交易总额",
-    iconComponent: IconBarChart,
+    key: "todayRevenue",
+    label: "今日成交额",
+    iconComponent: IconTag,
+    color: "#F53F3F",
+  },
+];
+
+const secondaryStatCards = [
+  {
+    key: "newUsersToday",
+    label: "今日新增用户",
+    iconComponent: IconPlusCircle,
     color: "#722ED1",
-    bgColor: "#F5E8FF",
-    trendKey: null,
+  },
+  {
+    key: "pendingItems",
+    label: "待审核商品数",
+    iconComponent: IconClockCircle,
+    color: "#FF7D00",
+  },
+  {
+    key: "pendingReviewsCount",
+    label: "待审核评价数",
+    iconComponent: IconClockCircle,
+    color: "#F53F3F",
+  },
+  {
+    key: "pendingPosts",
+    label: "待审核帖子数",
+    iconComponent: IconClockCircle,
+    color: "#14C9C9",
   },
 ];
 
@@ -220,10 +248,10 @@ const orderColumns = [
 ];
 
 const quickActions = [
-  { label: "待审核商品", iconComponent: IconCheckCircle, path: "/ops/reviews", color: "#165DFF", bgColor: "#E6F1FF" },
-  { label: "订单监控", iconComponent: IconEye, path: "/ops/orders", color: "#00B42A", bgColor: "#E8FFEA" },
-  { label: "批量导出", iconComponent: IconExport, handler: "exportData", color: "#FF7D00", bgColor: "#FFF7E8" },
-  { label: "系统公告", iconComponent: IconNotification, handler: "publishNotice", color: "#722ED1", bgColor: "#F5E8FF" },
+  { label: "进入审批工作台", iconComponent: IconCheckCircle, path: "/ops/review", color: "#165DFF", bgColor: "#E6F1FF" },
+  { label: "查看最新订单", iconComponent: IconEye, path: "/ops/orders", color: "#00B42A", bgColor: "#E8FFEA" },
+  { label: "批量导出数据", iconComponent: IconExport, handler: "exportData", color: "#FF7D00", bgColor: "#FFF7E8" },
+  { label: "发布系统公告", iconComponent: IconNotification, handler: "publishNotice", color: "#722ED1", bgColor: "#F5E8FF" },
 ];
 
 async function loadDashboardData() {
@@ -267,14 +295,6 @@ function generateMockActivities() {
   ];
 }
 
-function formatNumber(num) {
-  if (num === undefined || num === null) return "—";
-  if (typeof num === "number") {
-    return num.toLocaleString("zh-CN");
-  }
-  return num;
-}
-
 function formatTimeAgo(date) {
   const diff = Date.now() - date.getTime();
   const minutes = Math.floor(diff / 60000);
@@ -309,10 +329,6 @@ function getOrderStatusLabel(status) {
   return labels[status] || status;
 }
 
-function goToReview(id) {
-  router.push(`/ops/reviews/${id}`);
-}
-
 function handleQuickAction(action) {
   if (action.path) {
     router.push(action.path);
@@ -328,134 +344,22 @@ onMounted(loadDashboardData);
 
 <style lang="scss" scoped>
 .ops-dashboard {
-  &__header {
-    margin-bottom: 20px;
-
-    .breadcrumb {
-      margin-bottom: 8px;
-      font-size: 13px;
-    }
-
-    .page-title {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--color-text-1);
-    }
-  }
-
-  .stats-row {
-    margin-bottom: 20px;
-  }
-
-  .todo-section {
-    margin-bottom: 20px;
-  }
-
-  .quick-actions-section {
-    margin-bottom: 20px;
-  }
-
-  .timeline-section {
-    margin-bottom: 20px;
-  }
+  background: #f5f6f7;
+  min-height: calc(100vh - 64px);
+  padding: 0;
 }
 
-.stat-card {
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-
-    :deep(.arco-card-body) {
-      background: transparent;
-    }
-  }
-
-  &__body {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-  }
-
-  &__icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 22px;
-    flex-shrink: 0;
-  }
-
-  &__info {
-    flex: 1;
-    min-width: 0;
-  }
-
-  &__label {
-    font-size: 13px;
-    color: var(--color-text-3);
-    margin-bottom: 4px;
-  }
-
-  &__value {
-    font-size: 28px;
-    font-weight: 800;
-    color: var(--color-text-1);
-    line-height: 1.2;
-  }
-
-  &__trend {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-top: 4px;
-    font-size: 12px;
-
-    .trend-icon {
-      font-size: 14px;
-
-      &.up {
-        color: #00b42a;
-      }
-
-      &.down {
-        color: #f53f3f;
-      }
-    }
-
-    .trend-up {
-      color: #00b42a;
-    }
-
-    .trend-down {
-      color: #f53f3f;
-    }
-  }
+.stats-row {
+  margin-bottom: 16px;
 }
 
-.todo-card {
+.quick-actions-card {
   border-radius: 8px;
-  min-height: 480px;
-
-  :deep(.arco-card-header) {
-    border-bottom: 1px solid var(--color-border-2);
-    padding: 16px 20px;
-  }
+  margin-bottom: 16px;
 
   :deep(.arco-card-body) {
     padding: 16px 20px;
   }
-}
-
-.price {
-  font-weight: 500;
-  color: #f53f3f;
 }
 
 .action-item {
@@ -491,6 +395,58 @@ onMounted(loadDashboardData);
   }
 }
 
+.charts-section {
+  margin-bottom: 16px;
+}
+
+.chart-card {
+  border-radius: 8px;
+  min-height: 320px;
+
+  .chart-placeholder {
+    height: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    color: #86909c;
+    font-size: 14px;
+
+    :deep(.arco-icon) {
+      font-size: 48px;
+      opacity: 0.4;
+    }
+  }
+}
+
+.todo-section {
+  margin-bottom: 16px;
+}
+
+.todo-card {
+  border-radius: 8px;
+  min-height: 400px;
+
+  :deep(.arco-card-header) {
+    border-bottom: 1px solid var(--color-border-2);
+    padding: 16px 20px;
+  }
+
+  :deep(.arco-card-body) {
+    padding: 16px 20px;
+  }
+}
+
+.timeline-section {
+  margin-bottom: 16px;
+}
+
+.price {
+  font-weight: 500;
+  color: #f53f3f;
+}
+
 .activity-content {
   .activity-title {
     font-size: 14px;
@@ -505,10 +461,18 @@ onMounted(loadDashboardData);
   }
 }
 
-@media screen and (max-width: 768px) {
-  .stat-card {
-    &__value {
-      font-size: 24px;
+@media screen and (max-width: 767px) {
+  .quick-actions-card {
+    :deep(.arco-card-body) {
+      padding: 12px 16px;
+    }
+  }
+
+  .chart-card {
+    min-height: 260px;
+
+    .chart-placeholder {
+      height: 220px;
     }
   }
 

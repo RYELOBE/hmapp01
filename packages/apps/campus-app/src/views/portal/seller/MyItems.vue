@@ -120,8 +120,8 @@ import {
   IconPlus,
   IconApps,
 } from "@arco-design/web-vue/es/icon";
-import StatusTag from "../../../shared-components/StatusTag/StatusTag.vue";
-import ConditionTag from "../../../components/sub/ConditionTag.vue";
+import StatusTag from "../../../components/common/StatusTag/StatusTag.vue";
+import ConditionTag from "../../../components/data/ConditionTag.vue";
 import { getMyItems, offShelfItem, deleteItem as apiDeleteItem, updateItem } from "../../../services/api";
 
 const router = useRouter();

@@ -135,7 +135,7 @@ import { ref, onMounted, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { IconSearch } from "@arco-design/web-vue/es/icon";
 import { getItems } from "../../../services/api";
-import ItemCard from "../../../shared-components/ItemCard/ItemCard.vue";
+import ItemCard from "../../../components/data/ItemCard/ItemCard.vue";
 import { CATEGORIES, SORT_OPTIONS } from "./const";
 import { debounce } from "@campus/common";
 

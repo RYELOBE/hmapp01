@@ -71,7 +71,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Message, Modal } from "@arco-design/web-vue";
 import { IconArrowLeft, IconList } from "@arco-design/web-vue/es/icon";
-import OrderCard from "../../../components/OrderCard.vue";
+import OrderCard from "../../../components/data/OrderCard.vue";
 import {
   getMyOrders,
   confirmOrder,

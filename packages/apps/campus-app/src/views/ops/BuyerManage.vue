@@ -161,7 +161,7 @@ import {
   IconCalendar,
   IconRefresh,
 } from "@arco-design/web-vue/es/icon";
-import FilterBar from "../../ops-components/FilterBar.vue";
+import FilterBar from "../../components/data/FilterBar.vue";
 import { getBuyers, getBuyerDetail, updateUserStatus } from "../../services/api";
 
 const tableData = ref([]);

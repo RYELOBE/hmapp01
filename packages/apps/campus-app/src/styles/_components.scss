@@ -1,0 +1,32 @@
+// =====================================================
+// 组件样式 - Components
+// 各组件的通用样式和覆盖
+// =====================================================
+
+.card {
+  background-color: var(--bg-card);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  padding: var(--spacing-lg);
+}
+
+.btn-primary {
+  background-color: var(--primary-blue);
+  color: white;
+  
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.input-field {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  
+  &:focus {
+    outline: none;
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 2px rgba(22, 93, 255, 0.1);
+  }
+}

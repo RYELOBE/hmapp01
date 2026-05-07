@@ -1,0 +1,89 @@
+// =====================================================
+// 校园二手交易平台 - 样式系统主入口文件
+// 统一导入所有设计规范模块
+// 基于 Arco Design Vue 设计语言
+// =====================================================
+
+// 设计令牌（Design Tokens）
+@use 'variables';
+@use 'typography';
+@use 'spacing';
+@use 'radius';
+@use 'shadow';
+
+// 组件基础样式与 Mixin
+@use 'components';
+
+// ==================== 全局基础重置 ====================
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: typography.$font-family-base;
+  font-size: typography.$font-size-base;
+  font-weight: typography.$font-weight-normal;
+  line-height: typography.$line-height-base;
+  color: variables.$gray-600;
+  background-color: variables.$bg-page;
+}
+
+// ==================== 全局链接样式 ====================
+a {
+  color: variables.$primary-500;
+  text-decoration: none;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: variables.$primary-600;
+  }
+}
+
+// ==================== 全局图片响应式 ====================
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+// ==================== 全局焦点样式 ====================
+:focus-visible {
+  outline: 2px solid variables.$primary-500;
+  outline-offset: 2px;
+}
+
+// ==================== 滚动条美化 ====================
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: variables.$gray-100;
+  border-radius: radius.$radius-full;
+}
+
+::-webkit-scrollbar-thumb {
+  background: variables.$gray-300;
+  border-radius: radius.$radius-full;
+
+  &:hover {
+    background: variables.$gray-400;
+  }
+}
+
+// ==================== 选择文本样式 ====================
+::selection {
+  background-color: rgba(variables.$primary-500, 0.15);
+  color: variables.$gray-600;
+}

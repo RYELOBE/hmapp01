@@ -1,0 +1,15 @@
+// =====================================================
+// 间距系统 - Spacing
+// 基于 4px 基准网格
+// =====================================================
+
+$spacing-unit: 4px;
+
+$spacing-xs: $spacing-unit;        // 4px
+$spacing-sm: $spacing-unit * 2;     // 8px
+$spacing-md: $spacing-unit * 3;     // 12px
+$spacing-base: $spacing-unit * 4;   // 16px
+$spacing-lg: $spacing-unit * 6;     // 24px
+$spacing-xl: $spacing-unit * 8;     // 32px
+$spacing-2xl: $spacing-unit * 12;   // 48px
+$spacing-3xl: $spacing-unit * 16;   // 64px;

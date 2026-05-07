@@ -2,6 +2,7 @@ package com.campus.marketplace.controller;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.campus.marketplace.service.OpsService;
+import com.campus.marketplace.service.StatsService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,9 +21,11 @@ import java.util.Map;
 public class OpsController {
 
   private final OpsService opsService;
+  private final StatsService statsService;
 
-  public OpsController(OpsService opsService) {
+  public OpsController(OpsService opsService, StatsService statsService) {
     this.opsService = opsService;
+    this.statsService = statsService;
   }
 
   /**
@@ -41,6 +44,24 @@ public class OpsController {
   @GetMapping("/statistics/brief")
   public Map<String, Object> getBriefStatistics() {
     return buildSuccessResponse(Map.of("statistics", opsService.getBriefStatistics()));
+  }
+
+  /**
+   * 获取完整统计数据（包含圈子系统）
+   * @return 完整统计数据
+   */
+  @GetMapping("/stats")
+  public Map<String, Object> getStats() {
+    return buildSuccessResponse(statsService.getAllStats());
+  }
+
+  /**
+   * 获取简要统计数据（包含圈子系统）
+   * @return 简要统计数据
+   */
+  @GetMapping("/stats/brief")
+  public Map<String, Object> getBriefStats() {
+    return buildSuccessResponse(statsService.getBriefStats());
   }
 
   /**

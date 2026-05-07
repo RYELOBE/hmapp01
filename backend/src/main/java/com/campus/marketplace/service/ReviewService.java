@@ -46,7 +46,8 @@ public class ReviewService {
       throw new IllegalArgumentException("该订单已评价");
     }
 
-    Map<String, Object> review = reviewRepository.create(orderId, itemId, buyerId, rating, content, images);
+    Long sellerId = ((Number) order.get("sellerId")).longValue();
+    Map<String, Object> review = reviewRepository.create(orderId, itemId, buyerId, sellerId, rating, content, images);
 
     Map<String, Object> enrichedReview = new java.util.HashMap<>(review);
     var userOpt = userRepository.findById(buyerId);
@@ -56,7 +57,7 @@ public class ReviewService {
   }
 
   public Map<String, Object> getReviewsByItem(Long itemId, int page, int pageSize) {
-    List<Map<String, Object>> reviews = reviewRepository.findByItemId(itemId);
+    List<Map<String, Object>> reviews = reviewRepository.findByItemIdAndStatus(itemId, "APPROVED");
     int total = reviews.size();
     int start = (page - 1) * pageSize;
     int end = Math.min(start + pageSize, total);
@@ -80,6 +81,68 @@ public class ReviewService {
         "ratingDistribution", reviewRepository.getRatingDistribution(itemId));
   }
 
+  public Map<String, Object> getMyReviews(Long buyerId, int page, int pageSize) {
+    List<Map<String, Object>> allReviews = reviewRepository.findByBuyerId(buyerId);
+    int total = allReviews.size();
+    int start = (page - 1) * pageSize;
+    int end = Math.min(start + pageSize, total);
+
+    List<Map<String, Object>> pagedReviews = new ArrayList<>();
+    for (int i = start; i < end; i++) {
+      Map<String, Object> review = allReviews.get(i);
+      Map<String, Object> enriched = new java.util.HashMap<>(review);
+      Long itemId = (Long) review.get("itemId");
+      Map<String, Object> item = itemRepository.findById(itemId);
+      if (item != null) {
+        enriched.put("itemTitle", item.get("title"));
+        enriched.put("itemImage", item.get("imageUrls"));
+      }
+      pagedReviews.add(enriched);
+    }
+
+    return Map.of("code", 200, "data", pagedReviews, "total", total);
+  }
+
+  public Map<String, Object> getPendingReviews(int page, int pageSize) {
+    List<Map<String, Object>> allReviews = reviewRepository.findByStatus("PENDING");
+    int total = allReviews.size();
+    int start = (page - 1) * pageSize;
+    int end = Math.min(start + pageSize, total);
+
+    List<Map<String, Object>> pagedReviews = new ArrayList<>(allReviews.subList(start, end));
+
+    for (Map<String, Object> review : pagedReviews) {
+      Long buyerId = (Long) review.get("buyerId");
+      userRepository.findById(buyerId).ifPresent(user -> review.put("buyerNickname", user.get("nickname")));
+      Long itemId = (Long) review.get("itemId");
+      Map<String, Object> item = itemRepository.findById(itemId);
+      if (item != null) {
+        review.put("itemTitle", item.get("title"));
+      }
+    }
+
+    return Map.of("code", 200, "data", pagedReviews, "total", total);
+  }
+
+  public Map<String, Object> approveReview(Long reviewId) {
+    var reviewOpt = reviewRepository.findById(reviewId);
+    if (reviewOpt.isEmpty()) {
+      throw new IllegalArgumentException("评价不存在");
+    }
+    reviewRepository.updateStatus(reviewId, "APPROVED", null);
+    return Map.of("code", 200, "message", "审核通过", "data", reviewRepository.findById(reviewId).get());
+  }
+
+  public Map<String, Object> rejectReview(Long reviewId, String reason) {
+    var reviewOpt = reviewRepository.findById(reviewId);
+    if (reviewOpt.isEmpty()) {
+      throw new IllegalArgumentException("评价不存在");
+    }
+    String replyContent = "拒绝原因：" + reason;
+    reviewRepository.updateStatus(reviewId, "REJECTED", replyContent);
+    return Map.of("code", 200, "message", "已驳回", "data", reviewRepository.findById(reviewId).get());
+  }
+
   public Map<String, Object> getReviewByOrder(Long buyerId, Long orderId) {
     var order = orderRepository.findById(orderId);
     if (order == null) {
@@ -96,12 +159,17 @@ public class ReviewService {
     return Map.of("code", 200, "data", reviewOpt.get());
   }
 
-  public Map<String, Object> replyToReview(Long sellerId, Long reviewId, String content) {
+  public Map<String, Object> replyToReview(Long userId, Long reviewId, String content) {
     var reviewOpt = reviewRepository.findById(reviewId);
     if (reviewOpt.isEmpty()) {
       throw new IllegalArgumentException("评价不存在");
     }
     Map<String, Object> review = reviewOpt.get();
+    Long sellerId = review.get("sellerId") != null ? ((Number) review.get("sellerId")).longValue() : null;
+
+    if (sellerId == null || !sellerId.equals(userId)) {
+      throw new IllegalArgumentException("无权回复此评价");
+    }
 
     reviewRepository.updateReply(reviewId, content);
     return Map.of("code", 200, "message", "回复成功");
@@ -117,6 +185,10 @@ public class ReviewService {
         "averageRating", averageRating,
         "ratingDistribution", reviewRepository.getRatingDistribution(itemId)
     ));
+  }
+
+  public long getPendingCount() {
+    return reviewRepository.countByStatus("PENDING");
   }
 
   public Map<String, Object> getReviewQueuePaged(String status, int pageNo, int pageSize) {

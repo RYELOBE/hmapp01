@@ -1,0 +1,50 @@
+// =====================================================
+// 全局样式 - Global Styles
+// 导入所有样式模块
+// =====================================================
+
+@import './variables';
+@import './typography';
+@import './spacing';
+@import './components';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: $font-size-base;
+  line-height: $line-height-base;
+  font-family: $font-family-base;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--text-primary);
+  background-color: var(--bg-page);
+}
+
+a {
+  color: var(--primary-blue);
+  text-decoration: none;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+button {
+  cursor: pointer;
+  font-family: inherit;
+}

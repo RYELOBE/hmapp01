@@ -184,7 +184,7 @@ import {
   IconRight,
 } from "@arco-design/web-vue/es/icon";
 import { publishItem, updateItem, getItemDetail } from "../../../services/api";
-import ImageUploader from "../../../shared-components/ImageUploader/ImageUploader.vue";
+import ImageUploader from "../../../components/form/ImageUploader/ImageUploader.vue";
 
 const router = useRouter();
 const route = useRoute();

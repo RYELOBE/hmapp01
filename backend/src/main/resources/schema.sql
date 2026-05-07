@@ -217,3 +217,62 @@ CREATE TABLE review (
   INDEX idx_buyer_id (buyer_id),
   INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE circle_post (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  title VARCHAR(200) NOT NULL,
+  content TEXT NOT NULL,
+  images TEXT,
+  tags VARCHAR(200),
+  status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+  like_count INT NOT NULL DEFAULT 0,
+  comment_count INT NOT NULL DEFAULT 0,
+  view_count INT NOT NULL DEFAULT 0,
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_user_id (user_id),
+  INDEX idx_status (status),
+  INDEX idx_tags (tags(64)),
+  INDEX idx_create_time (create_time),
+  INDEX idx_status_created (status, create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE circle_comment (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  post_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  content VARCHAR(1000) NOT NULL,
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_post_id (post_id),
+  INDEX idx_user_id (user_id),
+  INDEX idx_create_time (create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE circle_like (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  post_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_post_user (post_id, user_id),
+  INDEX idx_post_id (post_id),
+  INDEX idx_user_id (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE message (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  user_id BIGINT NOT NULL,
+  type VARCHAR(20) NOT NULL COMMENT 'SYSTEM/TRANSACTION/REVIEW/INTERACTION',
+  title VARCHAR(200) NOT NULL,
+  content TEXT NOT NULL,
+  status VARCHAR(16) NOT NULL DEFAULT 'UNREAD' COMMENT 'UNREAD/READ',
+  link VARCHAR(500),
+  is_deleted TINYINT(1) NOT NULL DEFAULT false,
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_user_id (user_id),
+  INDEX idx_type (type),
+  INDEX idx_status (status),
+  INDEX idx_create_time (create_time),
+  INDEX idx_user_status (user_id, status),
+  INDEX idx_user_type (user_id, type)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

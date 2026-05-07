@@ -56,6 +56,71 @@
               <a-typography-title :heading="5">商品详细描述</a-typography-title>
               <div class="description-content" v-html="detail.description || '<p style=\'color: #86909c\'>暂无描述</p>'"></div>
             </a-card>
+
+            <!-- 用户评价区域 -->
+            <a-card :bordered="false" class="reviews-card">
+              <div class="reviews-header">
+                <a-typography-title :heading="5">用户评价</a-typography-title>
+                <span class="reviews-count">{{ reviewsTotal }} 条评价</span>
+              </div>
+
+              <!-- 评价列表 -->
+              <div v-if="reviews.length > 0" class="reviews-list">
+                <div
+                  v-for="review in reviews"
+                  :key="review.id"
+                  class="review-item"
+                >
+                  <div class="review-user">
+                    <a-avatar :size="40" class="user-avatar">
+                      {{ (review.userName || '用')[0] }}
+                    </a-avatar>
+                    <div class="user-info">
+                      <div class="user-name">{{ review.userName || '匿名用户' }}</div>
+                      <div class="review-meta">
+                        <a-rate
+                          :model-value="review.rating"
+                          readonly
+                          :count="5"
+                          size="small"
+                          allow-half
+                        />
+                        <span class="review-time">{{ formatReviewTime(review.createdAt) }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="review-content" v-html="review.content"></div>
+
+                  <!-- 评价图片 -->
+                  <div v-if="review.images && review.images.length > 0" class="review-images">
+                    <img
+                      v-for="(img, idx) in review.images"
+                      :key="idx"
+                      :src="img"
+                      class="review-image"
+                      alt="评价图片"
+                    />
+                  </div>
+
+                  <!-- 卖家回复 -->
+                  <div v-if="review.reply" class="seller-reply">
+                    <div class="reply-label">卖家回复：</div>
+                    <div class="reply-content">{{ review.reply }}</div>
+                  </div>
+                </div>
+
+                <!-- 加载更多 -->
+                <div v-if="hasMoreReviews" class="load-more-wrapper">
+                  <a-button type="outline" long @click="loadMoreReviews" :loading="loadingReviews">
+                    加载更多评价
+                  </a-button>
+                </div>
+              </div>
+
+              <!-- 空状态 -->
+              <a-empty v-else description="暂无评价，快来发表第一条评价吧！" />
+            </a-card>
           </div>
 
           <!-- 右侧区域 (30%, sticky) -->
@@ -168,9 +233,9 @@ import {
   IconSettings,
   IconHeartFill,
 } from '@arco-design/web-vue/es/icon';
-import StatusTag from "../../shared-components/StatusTag/StatusTag.vue";
-import ImageGallery from "../../shared-components/ImageGallery/ImageGallery.vue";
-import ConditionTag from "../../components/sub/ConditionTag.vue";
+import StatusTag from "../../components/common/StatusTag/StatusTag.vue";
+import ImageGallery from "../../components/data/ImageGallery/ImageGallery.vue";
+import ConditionTag from "../../components/data/ConditionTag.vue";
 import {
   getItemDetail,
   checkFavorite,
@@ -178,6 +243,7 @@ import {
   removeFavorite,
   addToCart,
 } from '../../services/api';
+import http from '../../services/core/http';
 
 const route = useRoute();
 const router = useRouter();
@@ -185,6 +251,13 @@ const detail = ref(null);
 const loading = ref(true);
 const isFavorited = ref(false);
 const favoriteCount = ref(0);
+
+// 评价相关
+const reviews = ref([]);
+const reviewsTotal = ref(0);
+const reviewsPage = ref(1);
+const hasMoreReviews = ref(false);
+const loadingReviews = ref(false);
 
 function truncateTitle(title) {
   if (!title) return '';
@@ -266,6 +339,63 @@ function handleAIChat() {
   Message.info('AI 助手功能开发中');
 }
 
+// 评价相关方法
+async function loadReviews(reset = false) {
+  if (reset) {
+    reviewsPage.value = 1;
+    reviews.value = [];
+  }
+
+  loadingReviews.value = true;
+  try {
+    const res = await http.get(`/items/${route.params.id}/reviews`, {
+      params: {
+        page: reviewsPage.value,
+        size: 5,
+        status: 'APPROVED',
+      },
+    });
+
+    const list = res.list || res.records || [];
+    if (reset) {
+      reviews.value = list;
+    } else {
+      reviews.value = [...reviews.value, ...list];
+    }
+    reviewsTotal.value = res.total || 0;
+    hasMoreReviews.value = reviews.value.length < reviewsTotal.value;
+  } catch (e) {
+    console.error('加载评价失败:', e);
+  } finally {
+    loadingReviews.value = false;
+  }
+}
+
+function loadMoreReviews() {
+  reviewsPage.value += 1;
+  loadReviews();
+}
+
+function formatReviewTime(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now - date;
+  const minutes = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days = Math.floor(diff / 86400000);
+
+  if (minutes < 1) return '刚刚';
+  if (minutes < 60) return `${minutes}分钟前`;
+  if (hours < 24) return `${hours}小时前`;
+  if (days < 30) return `${days}天前`;
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+}
+
 async function loadDetail() {
   loading.value = true;
   try {
@@ -273,6 +403,8 @@ async function loadDetail() {
     detail.value = data;
     favoriteCount.value = data.favoriteCount || 0;
     await checkIsFavorite();
+    // 加载评价列表
+    await loadReviews(true);
   } catch (error) {
     console.error('加载详情失败:', error);
   } finally {
@@ -424,6 +556,142 @@ onMounted(loadDetail);
     height: auto;
     border-radius: 4px;
   }
+}
+
+.reviews-card {
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+  :deep(.arco-card-body) {
+    padding: 20px;
+  }
+}
+
+.reviews-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+
+  .reviews-count {
+    font-size: 14px;
+    color: #86909C;
+  }
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.review-item {
+  background: #FFFFFF;
+  border: 1px solid #E5E6EB;
+  border-radius: 8px;
+  padding: 16px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.review-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+
+  .user-avatar {
+    background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .user-info {
+    flex: 1;
+    min-width: 0;
+
+    .user-name {
+      font-size: 15px;
+      font-weight: 500;
+      color: #1D2129;
+      margin-bottom: 4px;
+    }
+
+    .review-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .review-time {
+        font-size: 13px;
+        color: #86909C;
+      }
+    }
+  }
+}
+
+.review-content {
+  color: #4E5969;
+  line-height: 1.7;
+  font-size: 14px;
+  word-wrap: break-word;
+  margin-bottom: 12px;
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 4px;
+  }
+}
+
+.review-images {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+
+  .review-image {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+}
+
+.seller-reply {
+  margin-top: 12px;
+  padding: 12px 14px;
+  background: #F0F5FF;
+  border-radius: 6px;
+  border-left: 3px solid #165DFF;
+
+  .reply-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #165DFF;
+    margin-bottom: 6px;
+  }
+
+  .reply-content {
+    font-size: 14px;
+    color: #4E5969;
+    line-height: 1.6;
+  }
+}
+
+.load-more-wrapper {
+  margin-top: 16px;
 }
 
 .detail-right {

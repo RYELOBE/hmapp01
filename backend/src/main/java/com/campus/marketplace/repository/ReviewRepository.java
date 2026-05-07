@@ -23,12 +23,14 @@ public class ReviewRepository {
     row.put("orderId", rs.getLong("order_id"));
     row.put("itemId", rs.getLong("item_id"));
     row.put("buyerId", rs.getLong("buyer_id"));
+    row.put("sellerId", rs.getLong("seller_id"));
     row.put("rating", rs.getInt("rating"));
     row.put("content", rs.getString("content"));
     row.put("images", rs.getString("images"));
-    row.put("reply", rs.getString("reply"));
+    row.put("status", rs.getString("status"));
+    row.put("replyContent", rs.getString("reply_content"));
     row.put("replyTime", rs.getTimestamp("reply_time") != null ? rs.getTimestamp("reply_time").toString() : null);
-    row.put("createTime", rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toString() : null);
+    row.put("createTime", rs.getTimestamp("create_time") != null ? rs.getTimestamp("create_time").toString() : null);
     return row;
   };
 
@@ -36,18 +38,19 @@ public class ReviewRepository {
     this.jdbc = jdbc;
   }
 
-  public Map<String, Object> create(Long orderId, Long itemId, Long buyerId, int rating, String content, String images) {
+  public Map<String, Object> create(Long orderId, Long itemId, Long buyerId, Long sellerId, int rating, String content, String images) {
     KeyHolder kh = new GeneratedKeyHolder();
     jdbc.update(con -> {
       var ps = con.prepareStatement(
-          "INSERT INTO review (order_id, item_id, buyer_id, rating, content, images) VALUES (?, ?, ?, ?, ?, ?)",
+          "INSERT INTO review (order_id, item_id, buyer_id, seller_id, rating, content, images, status) VALUES (?, ?, ?, ?, ?, ?, ?, 'PENDING')",
           Statement.RETURN_GENERATED_KEYS);
       ps.setLong(1, orderId);
       ps.setLong(2, itemId);
       ps.setLong(3, buyerId);
-      ps.setInt(4, rating);
-      ps.setString(5, content);
-      ps.setString(6, images);
+      ps.setLong(4, sellerId);
+      ps.setInt(5, rating);
+      ps.setString(6, content);
+      ps.setString(7, images);
       return ps;
     }, kh);
     Long id = kh.getKey().longValue();
@@ -78,10 +81,40 @@ public class ReviewRepository {
         ROW_MAPPER, buyerId);
   }
 
-  public void updateReply(Long id, String reply) {
+  public void updateReply(Long id, String replyContent) {
     jdbc.update(
-        "UPDATE review SET reply = ?, reply_time = NOW() WHERE id = ?",
-        reply, id);
+        "UPDATE review SET reply_content = ?, reply_time = NOW() WHERE id = ?",
+        replyContent, id);
+  }
+
+  public List<Map<String, Object>> findByItemIdAndStatus(Long itemId, String status) {
+    return jdbc.query(
+        "SELECT * FROM review WHERE item_id = ? AND status = ? ORDER BY create_time DESC",
+        ROW_MAPPER, itemId, status);
+  }
+
+  public List<Map<String, Object>> findByStatus(String status) {
+    return jdbc.query(
+        "SELECT * FROM review WHERE status = ? ORDER BY create_time ASC",
+        ROW_MAPPER, status);
+  }
+
+  public int countByStatus(String status) {
+    Integer count = jdbc.queryForObject(
+        "SELECT COUNT(*) FROM review WHERE status = ?", Integer.class, status);
+    return count != null ? count : 0;
+  }
+
+  public void updateStatus(Long id, String status, String replyContent) {
+    if (replyContent != null && !replyContent.isEmpty()) {
+      jdbc.update(
+          "UPDATE review SET status = ?, reply_content = ?, reply_time = NOW() WHERE id = ?",
+          status, replyContent, id);
+    } else {
+      jdbc.update(
+          "UPDATE review SET status = ? WHERE id = ?",
+          status, id);
+    }
   }
 
   public boolean existsByOrderId(Long orderId) {
