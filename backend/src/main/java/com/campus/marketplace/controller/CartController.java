@@ -35,6 +35,12 @@ public class CartController {
     return cartService.getCartCount(userId);
   }
 
+  @GetMapping("/check/{itemId}")
+  public Map<String, Object> check(@PathVariable Long itemId) {
+    Long userId = currentUserService.userId();
+    return cartService.checkItem(userId, itemId);
+  }
+
   @PostMapping
   public Map<String, Object> add(@RequestBody @Validated CartAddRequest request) {
     Long userId = currentUserService.userId();
@@ -63,6 +69,12 @@ public class CartController {
   public Map<String, Object> delete(@PathVariable Long id) {
     Long userId = currentUserService.userId();
     return cartService.deleteItem(userId, id);
+  }
+
+  @DeleteMapping("/item/{itemId}")
+  public Map<String, Object> deleteByItem(@PathVariable Long itemId) {
+    Long userId = currentUserService.userId();
+    return cartService.deleteItemByItemId(userId, itemId);
   }
 
   @DeleteMapping("/clear")

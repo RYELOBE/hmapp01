@@ -19,7 +19,7 @@
           <div class="seller-group" v-for="(group, sellerId) in groupedCartItems" :key="sellerId">
             <div class="seller-header">
               <a-space>
-                <icon-store />
+                <icon-apps />
                 <span class="seller-name">{{ group.sellerName }}</span>
               </a-space>
             </div>
@@ -150,7 +150,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Message } from "@arco-design/web-vue";
-import { IconLeft, IconDelete, IconList, IconHome, IconImage } from "@arco-design/web-vue/es/icon";
+import { IconLeft, IconDelete, IconList, IconImage, IconApps } from "@arco-design/web-vue/es/icon";
 import { parseFirstImageUrl } from "../../utils/image-utils";
 import {
   getCartList,

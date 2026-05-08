@@ -86,6 +86,17 @@ public class ItemService {
   public Map<String, Object> listItemsPaged(Boolean approvedOnly, Boolean mine,
       String keyword, String category, String sort,
       int pageNo, int pageSize, Long userId) {
+    return listItemsPaged(approvedOnly, mine, keyword, category, sort,
+        null, null, pageNo, pageSize, userId);
+  }
+
+  /**
+   * 分页查询商品（完整版，支持所有筛选条件）
+   */
+  public Map<String, Object> listItemsPaged(Boolean approvedOnly, Boolean mine,
+      String keyword, String category, String sort,
+      String conditionLevel, String campus,
+      int pageNo, int pageSize, Long userId) {
     validatePageParams(pageNo, pageSize);
 
     boolean showMine = Boolean.TRUE.equals(mine);
@@ -103,8 +114,8 @@ public class ItemService {
       rows = itemRepository.findBySellerIdPaged(userId, null, pageNo, pageSize);
       total = itemRepository.countBySellerIdWithFilter(userId, null);
     } else {
-      rows = itemRepository.findByPage(status, keyword, category, pageNo, pageSize);
-      total = itemRepository.countByFilter(status, keyword, category);
+      rows = itemRepository.findByPage(status, keyword, category, conditionLevel, campus, sort, pageNo, pageSize);
+      total = itemRepository.countByFilter(status, keyword, category, conditionLevel, campus);
     }
 
     return buildSuccessResponse(Map.of(
@@ -147,7 +158,7 @@ public class ItemService {
     if (id == null) {
       throw new IllegalArgumentException("商品ID不能为空");
     }
-    Map<String, Object> item = itemRepository.findById(id);
+    Map<String, Object> item = itemRepository.findDetailById(id);
     if (item == null) {
       throw new IllegalArgumentException("商品不存在");
     }

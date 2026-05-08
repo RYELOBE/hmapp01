@@ -3,6 +3,9 @@ package com.campus.marketplace.controller;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.campus.marketplace.service.CurrentUserService;
 import com.campus.marketplace.service.ItemService;
+import com.campus.marketplace.service.ItemStatsService;
+import com.campus.marketplace.service.ReviewService;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,10 +25,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class ItemController {
   private final ItemService itemService;
   private final CurrentUserService currentUserService;
+  private final ItemStatsService itemStatsService;
+  private final ReviewService reviewService;
 
-  public ItemController(ItemService itemService, CurrentUserService currentUserService) {
+  public ItemController(ItemService itemService, CurrentUserService currentUserService, ItemStatsService itemStatsService, ReviewService reviewService) {
     this.itemService = itemService;
     this.currentUserService = currentUserService;
+    this.itemStatsService = itemStatsService;
+    this.reviewService = reviewService;
   }
 
   @PostMapping
@@ -39,8 +46,25 @@ public class ItemController {
         request.imageUrls(),
         request.category(),
         request.conditionLevel(),
-        null // campus
+        null
     );
+  }
+
+  @PostMapping("/list")
+  public Map<String, Object> listItemsPost(@RequestBody(required = false) ItemQueryRequest request) {
+    if (request == null) {
+      request = new ItemQueryRequest(null, null, null, null, null, null, null, 1, 20);
+    }
+    Long userId = null;
+    try {
+      userId = currentUserService.userId();
+    } catch (Exception e) {
+    }
+    
+    return itemService.listItemsPaged(
+        request.approvedOnly(), request.mine(), request.keyword(),
+        request.category(), request.sort(), request.conditionLevel(),
+        request.campus(), request.pageNo(), request.pageSize(), userId);
   }
 
   @GetMapping
@@ -52,15 +76,12 @@ public class ItemController {
       @RequestParam(required = false) String sort,
       @RequestParam(defaultValue = "1") int pageNo,
       @RequestParam(defaultValue = "20") int pageSize) {
-    // 获取当前用户ID（如果已登录）
     Long userId = null;
     try {
       userId = currentUserService.userId();
     } catch (Exception e) {
-      // 未登录，userId 保持为 null
     }
     
-    // 如果有分页参数，走分页查询
     if (pageNo > 0 && pageSize > 0) {
       return itemService.listItemsPaged(
           approvedOnly, mine, keyword, category, sort,
@@ -71,7 +92,6 @@ public class ItemController {
         "data", itemService.listItems(approvedOnly, mine, userId));
   }
 
-  /** 卖家的商品列表（分页） */
   @GetMapping("/mine")
   public Map<String, Object> myItems(
       @RequestParam(required = false) String status,
@@ -82,10 +102,15 @@ public class ItemController {
 
   @GetMapping("/{id}")
   public Map<String, Object> detail(@PathVariable("id") Long id) {
-    return itemService.getItemDetail(id);
+    Map<String, Object> item = itemService.getItemDetail(id);
+    itemStatsService.trackView(id);
+    Object viewCount = item.get("viewCount");
+    if (viewCount instanceof Number count) {
+      item.put("viewCount", count.intValue() + 1);
+    }
+    return item;
   }
 
-  /** 下架商品 */
   @PostMapping("/{id}/off-shelf")
   @PreAuthorize("hasRole('SELLER')")
   public Map<String, Object> offShelf(@PathVariable("id") Long id) {
@@ -109,12 +134,99 @@ public class ItemController {
     return Map.of("code", 200, "message", "已删除");
   }
 
+  @GetMapping("/hot")
+  public Map<String, Object> getHotItems(@RequestParam(defaultValue = "8") int limit) {
+    return itemStatsService.getHotItems(limit);
+  }
+
+  @PostMapping("/{id}/track-view")
+  public Map<String, Object> trackView(@PathVariable("id") Long id) {
+    itemStatsService.trackView(id);
+    return Map.of("code", 200, "message", "ok");
+  }
+
+  @PostMapping("/{id}/track-click")
+  public Map<String, Object> trackClick(@PathVariable("id") Long id) {
+    itemStatsService.trackClick(id);
+    return Map.of("code", 200, "message", "ok");
+  }
+
+  @PostMapping("/{id}/track-favorite")
+  public Map<String, Object> trackFavorite(@PathVariable("id") Long id, @RequestParam boolean isAdd) {
+    itemStatsService.trackFavorite(id, isAdd);
+    return Map.of("code", 200, "message", "ok");
+  }
+
+  @PostMapping("/stats/init")
+  public Map<String, Object> initStats() {
+    itemStatsService.batchInitStats();
+    return Map.of("code", 200, "message", "统计数据初始化完成");
+  }
+
+  @GetMapping("/{id}/reviews")
+  public Map<String, Object> getItemReviews(
+      @PathVariable("id") Long id,
+      @RequestParam(defaultValue = "1") int page,
+      @RequestParam(defaultValue = "10") int pageSize) {
+    return reviewService.getReviewsByItem(id, page, pageSize);
+  }
+
+  @PostMapping("/{id}/reviews/query")
+  public Map<String, Object> queryItemReviews(
+      @PathVariable("id") Long id,
+      @RequestBody(required = false) ReviewQueryRequest request) {
+    if (request == null) {
+      request = new ReviewQueryRequest(1, 10, null);
+    }
+    return reviewService.queryReviewsByItem(id, request.page(), request.pageSize(), request.status());
+  }
+
+  @PostMapping("/{id}/reviews")
+  @PreAuthorize("isAuthenticated()")
+  public Map<String, Object> createItemReview(
+      @PathVariable("id") Long id,
+      @RequestBody ItemReviewRequest request) {
+    Long userId = currentUserService.userId();
+    
+    String imagesJson = null;
+    if (request.images() != null && !request.images().isEmpty()) {
+      try {
+        imagesJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(request.images());
+      } catch (Exception e) {
+        throw new IllegalArgumentException("图片数据格式错误");
+      }
+    }
+    
+    return reviewService.createReview(userId, null, id, request.rating(), request.content(), imagesJson);
+  }
+
   public record CreateItemRequest(
       @NotBlank String title,
       @NotNull @Min(1) Integer price,
       @NotBlank String description,
-      Object imageUrls, // 前端传 string[] 或 JSON 字符串均可
+      Object imageUrls,
       String category,
-      String conditionLevel) {
-  }
+      String conditionLevel) {}
+
+  public record ItemQueryRequest(
+      Boolean approvedOnly,
+      Boolean mine,
+      String keyword,
+      String category,
+      String sort,
+      String conditionLevel,
+      String campus,
+      @Min(1) Integer pageNo,
+      @Min(1) Integer pageSize) {}
+
+  public record ReviewQueryRequest(
+      @Min(1) Integer page,
+      @Min(1) Integer pageSize,
+      String status) {}
+
+  public record ItemReviewRequest(
+      @Min(value = 1, message = "评分最少为1") 
+      @Max(value = 5, message = "评分最多为5") int rating,
+      String content,
+      java.util.List<String> images) {}
 }

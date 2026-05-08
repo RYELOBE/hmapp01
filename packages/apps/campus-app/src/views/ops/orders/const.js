@@ -1,18 +1,22 @@
 export const ORDER_STATUS_OPTIONS = [
   { value: "", label: "全部" },
-  { value: "PENDING_PAY", label: "待付款" },
-  { value: "PENDING_SHIP", label: "待发货" },
+  { value: "PENDING_PAYMENT", label: "待付款" },
+  { value: "PAID", label: "待发货" },
   { value: "SHIPPED", label: "待收货" },
   { value: "COMPLETED", label: "已完成" },
   { value: "CANCELLED", label: "已取消" },
+  { value: "REFUNDING", label: "退款中" },
+  { value: "REFUNDED", label: "已退款" },
 ];
 
 export const ORDER_STATUS_MAP = {
-  PENDING_PAY: { label: "待付款", color: "orange" },
-  PENDING_SHIP: { label: "待发货", color: "blue" },
+  PENDING_PAYMENT: { label: "待付款", color: "orange" },
+  PAID: { label: "待发货", color: "blue" },
   SHIPPED: { label: "待收货", color: "cyan" },
   COMPLETED: { label: "已完成", color: "green" },
   CANCELLED: { label: "已取消", color: "gray" },
+  REFUNDING: { label: "退款中", color: "red" },
+  REFUNDED: { label: "已退款", color: "gray" },
 };
 
 export const ORDER_COLUMNS = [

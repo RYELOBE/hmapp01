@@ -48,6 +48,14 @@ public class CartService {
     return Map.of("code", 200, "message", "已加入购物车", "data", cartItem);
   }
 
+  public Map<String, Object> checkItem(Long userId, Long itemId) {
+    var cartOpt = cartRepository.findByUserIdAndItemId(userId, itemId);
+    if (cartOpt.isEmpty()) {
+      return Map.of("code", 200, "data", Map.of("inCart", false));
+    }
+    return Map.of("code", 200, "data", Map.of("inCart", true, "cartItem", cartOpt.get()));
+  }
+
   public Map<String, Object> getCartList(Long userId) {
     List<Map<String, Object>> cartItems = cartRepository.findByUserId(userId);
     List<Map<String, Object>> result = new ArrayList<>();
@@ -118,6 +126,15 @@ public class CartService {
 
     cartRepository.delete(cartId);
     return Map.of("code", 200, "message", "已从购物车删除");
+  }
+
+  public Map<String, Object> deleteItemByItemId(Long userId, Long itemId) {
+    var cartOpt = cartRepository.findByUserIdAndItemId(userId, itemId);
+    if (cartOpt.isEmpty()) {
+      return Map.of("code", 200, "message", "商品未在购物车中");
+    }
+    cartRepository.deleteByUserIdAndItemId(userId, itemId);
+    return Map.of("code", 200, "message", "已取消加入购物车");
   }
 
   public Map<String, Object> clearCart(Long userId) {

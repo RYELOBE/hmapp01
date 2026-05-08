@@ -55,9 +55,10 @@ async function loadData() {
       pageNo: pagination.value.current,
       pageSize: pagination.value.pageSize,
     };
-    const res = await http.get("/ops/buyers", { params });
-    tableData.value = res?.buyers || res?.rows || [];
-    pagination.value.total = res?.totalCount ?? res?.total ?? 0;
+    const res = await http.post("/ops/buyers", params);
+    const data = res?.data || res;
+    tableData.value = data?.buyers || data?.rows || [];
+    pagination.value.total = data?.totalCount ?? data?.total ?? 0;
   } catch (e) {
     console.error("[Buyer] load error:", e);
   } finally {

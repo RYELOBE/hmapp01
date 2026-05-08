@@ -118,6 +118,7 @@ import {
   IconEdit,
 } from "@arco-design/web-vue/es/icon";
 import { parseFirstImageUrl } from "../../../utils/image-utils";
+import { getErrorMessage } from "../../../utils/error-utils";
 import AddressCard from "../../../components/data/AddressCard.vue";
 import ConditionTag from "../../../components/data/ConditionTag.vue";
 import EditAddressModal from "../../../components/data/EditAddressModal.vue";
@@ -222,7 +223,8 @@ async function submitOrder() {
     Message.success("订单创建成功");
     router.push("/portal/orders");
   } catch (e) {
-    Message.error(e.message || "创建订单失败");
+    const errorMsg = getErrorMessage(e);
+    Message.error(errorMsg);
   } finally {
     submitting.value = false;
   }

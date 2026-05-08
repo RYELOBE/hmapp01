@@ -22,6 +22,7 @@ public class CirclePostRepository {
     Map<String, Object> row = new HashMap<>();
     row.put("id", rs.getLong("id"));
     row.put("userId", rs.getLong("user_id"));
+    row.put("userName", rs.getString("user_name"));
     row.put("title", rs.getString("title"));
     row.put("content", rs.getString("content"));
     row.put("images", rs.getString("images"));
@@ -30,7 +31,8 @@ public class CirclePostRepository {
     row.put("likeCount", rs.getInt("like_count"));
     row.put("commentCount", rs.getInt("comment_count"));
     row.put("viewCount", rs.getInt("view_count"));
-    row.put("createTime", rs.getTimestamp("create_time") != null ? rs.getTimestamp("create_time").toString() : null);
+    row.put("campus", rs.getString("campus"));
+    row.put("createdAt", rs.getTimestamp("create_time") != null ? rs.getTimestamp("create_time").toString() : null);
     row.put("updateTime", rs.getTimestamp("update_time") != null ? rs.getTimestamp("update_time").toString() : null);
     return row;
   };

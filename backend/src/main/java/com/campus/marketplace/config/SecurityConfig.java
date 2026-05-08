@@ -12,6 +12,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.http.HttpMethod;
 
 @Configuration
 @EnableWebSecurity
@@ -27,19 +28,20 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
     http
-        // 禁用 CSRF (前后端分离不需要)
         .csrf(csrf -> csrf.disable())
-        // 配置 CORS
         .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-        // 设置 Session 为无状态 (JWT 不需要 Session)
         .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-        // 配置请求授权规则
         .authorizeHttpRequests(authz -> authz
-            // 🔓 公开接口 (无需认证)
             .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
-            // 公开商品相关接口（GET 请求）
-            .requestMatchers("/api/items", "/api/items/*").permitAll()
-            // 静态资源
+            .requestMatchers(HttpMethod.GET, "/api/items", "/api/items/*").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/items/list").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/items/*/reviews").permitAll()
+            .requestMatchers(HttpMethod.POST, "/api/items/list").permitAll()
+            .requestMatchers("/api/dict/**").permitAll()
+            .requestMatchers("/api/circle/**").permitAll()
+            .requestMatchers("/api/items/hot").permitAll()
+            .requestMatchers("/api/items/*/track-*").permitAll()
+            .requestMatchers("/api/items/stats/**").permitAll()
             .requestMatchers(
                 "/",
                 "/index.html",
@@ -49,10 +51,8 @@ public class SecurityConfig {
                 "/*.css",
                 "/*.html")
             .permitAll()
-            // 其他所有接口都需要认证
             .anyRequest()
             .authenticated())
-        // 添加 JWT 过滤器 (在用户名密码过滤器之前)
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
     return http.build();

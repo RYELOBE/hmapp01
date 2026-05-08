@@ -24,6 +24,7 @@ DROP TABLE IF EXISTS knowledge_chunk;
 DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS review_log;
 DROP TABLE IF EXISTS review;
+DROP TABLE IF EXISTS item_stats;
 DROP TABLE IF EXISTS item;
 DROP TABLE IF EXISTS user_account;
 DROP TABLE IF EXISTS ops_account;
@@ -79,6 +80,20 @@ CREATE TABLE item (
   INDEX idx_updated_at (updated_at),
   INDEX idx_seller_status (seller_id, review_status),
   INDEX idx_status_created (review_status, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE item_stats (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  item_id BIGINT NOT NULL UNIQUE,
+  view_count INT NOT NULL DEFAULT 0,
+  click_count INT NOT NULL DEFAULT 0,
+  favorite_count INT NOT NULL DEFAULT 0,
+  hot_score DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+  updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_item_id (item_id),
+  INDEX idx_hot_score (hot_score DESC),
+  INDEX idx_view_count (view_count DESC),
+  INDEX idx_click_count (click_count DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE review_log (
@@ -221,18 +236,22 @@ CREATE TABLE favorite (
 
 CREATE TABLE review (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
-  order_id BIGINT NOT NULL,
+  order_id BIGINT NULL,
   item_id BIGINT NOT NULL,
   buyer_id BIGINT NOT NULL,
+  seller_id BIGINT NULL,
   rating INT NOT NULL,
   content TEXT,
   images TEXT,
   reply TEXT,
   reply_time DATETIME,
+  status VARCHAR(20) NOT NULL DEFAULT 'APPROVED',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_item_id (item_id),
   INDEX idx_order_id (order_id),
   INDEX idx_buyer_id (buyer_id),
+  INDEX idx_seller_id (seller_id),
+  INDEX idx_status (status),
   INDEX idx_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

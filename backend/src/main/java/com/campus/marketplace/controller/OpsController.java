@@ -1,6 +1,7 @@
 package com.campus.marketplace.controller;
 
 import org.springframework.security.access.prepost.PreAuthorize;
+import com.campus.marketplace.service.CircleService;
 import com.campus.marketplace.service.OpsService;
 import com.campus.marketplace.service.StatsService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -9,7 +10,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
@@ -23,10 +23,12 @@ public class OpsController {
 
   private final OpsService opsService;
   private final StatsService statsService;
+  private final CircleService circleService;
 
-  public OpsController(OpsService opsService, StatsService statsService) {
+  public OpsController(OpsService opsService, StatsService statsService, CircleService circleService) {
     this.opsService = opsService;
     this.statsService = statsService;
+    this.circleService = circleService;
   }
 
   /**
@@ -73,14 +75,10 @@ public class OpsController {
    * @param pageSize 每页数量（默认10，最大100）
    * @return 订单分页结果
    */
-  @GetMapping("/orders")
-  public Map<String, Object> getOrders(
-      @RequestParam(required = false) String status,
-      @RequestParam(required = false) String keyword,
-      @RequestParam(defaultValue = "1") int pageNo,
-      @RequestParam(defaultValue = "10") int pageSize
-  ) {
-    return opsService.getOrders(status, keyword, pageNo, Math.min(pageSize, 100));
+  @PostMapping("/orders")
+  public Map<String, Object> getOrders(@RequestBody(required = false) OpsListRequest request) {
+    OpsListRequest query = request != null ? request : new OpsListRequest(null, null, null, null, null);
+    return opsService.getOrders(query.status(), query.keyword(), pageNo(query), pageSize(query));
   }
 
   /**
@@ -90,13 +88,10 @@ public class OpsController {
    * @param pageSize 每页数量（默认10，最大100）
    * @return 供方分页结果
    */
-  @GetMapping("/vendors")
-  public Map<String, Object> getVendors(
-      @RequestParam(required = false) String keyword,
-      @RequestParam(defaultValue = "1") int pageNo,
-      @RequestParam(defaultValue = "10") int pageSize
-  ) {
-    return opsService.getVendors(keyword, pageNo, Math.min(pageSize, 100));
+  @PostMapping("/vendors")
+  public Map<String, Object> getVendors(@RequestBody(required = false) OpsListRequest request) {
+    OpsListRequest query = request != null ? request : new OpsListRequest(null, null, null, null, null);
+    return opsService.getVendors(query.keyword(), pageNo(query), pageSize(query));
   }
 
   /**
@@ -106,13 +101,10 @@ public class OpsController {
    * @param pageSize 每页数量（默认10，最大100）
    * @return 需方分页结果
    */
-  @GetMapping("/buyers")
-  public Map<String, Object> getBuyers(
-      @RequestParam(required = false) String keyword,
-      @RequestParam(defaultValue = "1") int pageNo,
-      @RequestParam(defaultValue = "10") int pageSize
-  ) {
-    return opsService.getBuyers(keyword, pageNo, Math.min(pageSize, 100));
+  @PostMapping("/buyers")
+  public Map<String, Object> getBuyers(@RequestBody(required = false) OpsListRequest request) {
+    OpsListRequest query = request != null ? request : new OpsListRequest(null, null, null, null, null);
+    return opsService.getBuyers(query.keyword(), pageNo(query), pageSize(query));
   }
 
   @GetMapping("/buyers/{buyerId}")
@@ -132,13 +124,10 @@ public class OpsController {
    * @param pageSize 每页数量（默认10，最大100）
    * @return 用户分页结果
    */
-  @GetMapping("/users")
-  public Map<String, Object> getUsers(
-      @RequestParam(required = false) String keyword,
-      @RequestParam(defaultValue = "1") int pageNo,
-      @RequestParam(defaultValue = "10") int pageSize
-  ) {
-    return opsService.getUsers(keyword, pageNo, Math.min(pageSize, 100));
+  @PostMapping("/users")
+  public Map<String, Object> getUsers(@RequestBody(required = false) OpsListRequest request) {
+    OpsListRequest query = request != null ? request : new OpsListRequest(null, null, null, null, null);
+    return opsService.getUsers(query.keyword(), pageNo(query), pageSize(query));
   }
 
   /**
@@ -184,12 +173,10 @@ public class OpsController {
    * @param pageSize 每页数量（默认10，最大100）
    * @return 待审核商品分页结果
    */
-  @GetMapping("/pending-items")
-  public Map<String, Object> getPendingItems(
-      @RequestParam(defaultValue = "1") int pageNo,
-      @RequestParam(defaultValue = "10") int pageSize
-  ) {
-    return opsService.getPendingItems(pageNo, Math.min(pageSize, 100));
+  @PostMapping("/pending-items")
+  public Map<String, Object> getPendingItems(@RequestBody(required = false) OpsListRequest request) {
+    OpsListRequest query = request != null ? request : new OpsListRequest(null, null, null, null, null);
+    return opsService.getPendingItems(pageNo(query), pageSize(query));
   }
 
   /**
@@ -200,10 +187,49 @@ public class OpsController {
   public Map<String, Object> getPendingCounts() {
     Map<String, Object> counts = new HashMap<>();
     counts.put("items", opsService.getPendingItemsCount());
-    counts.put("reviews", 0); // 后续可扩展
-    counts.put("circle", 0); // 后续可扩展
+    counts.put("reviews", 0);
+    counts.put("circle", circleService.getPendingCount());
     return buildSuccessResponse(counts);
   }
+
+  @PostMapping("/circle/pending")
+  public Map<String, Object> getPendingCirclePosts(@RequestBody(required = false) OpsListRequest request) {
+    OpsListRequest query = request != null ? request : new OpsListRequest(null, null, null, null, null);
+    int pageNo = pageNo(query);
+    int pageSize = pageSize(query);
+    return buildSuccessResponse(Map.of(
+        "items", circleService.getPendingPosts(pageNo, pageSize),
+        "totalCount", circleService.getPendingCount(),
+        "pageNo", pageNo,
+        "pageSize", pageSize));
+  }
+
+  @PostMapping("/circle/{postId}/approve")
+  public Map<String, Object> approveCirclePost(@PathVariable Long postId) {
+    return buildSuccessResponse(circleService.approvePost(postId));
+  }
+
+  @PostMapping("/circle/{postId}/reject")
+  public Map<String, Object> rejectCirclePost(@PathVariable Long postId, @RequestBody(required = false) Map<String, Object> request) {
+    String reason = request != null && request.get("reason") != null ? String.valueOf(request.get("reason")) : "运营驳回";
+    return buildSuccessResponse(circleService.rejectPost(postId, reason));
+  }
+
+  private int pageNo(OpsListRequest request) {
+    return request.pageNo() != null && request.pageNo() > 0 ? request.pageNo() : 1;
+  }
+
+  private int pageSize(OpsListRequest request) {
+    int size = request.pageSize() != null && request.pageSize() > 0 ? request.pageSize() : 10;
+    return Math.min(size, 100);
+  }
+
+  public record OpsListRequest(
+      String status,
+      String keyword,
+      String category,
+      Integer pageNo,
+      Integer pageSize) {}
 
   /**
    * 构建成功响应

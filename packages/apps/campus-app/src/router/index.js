@@ -195,7 +195,7 @@ const routes = [
           import(
             /* webpackChunkName: "circle-publish" */ "../views/portal/circle/CirclePublish.vue"
           ),
-        meta: { roles: ["BUYER", "SELLER"], title: "发布动态" },
+        meta: { requiresAuth: true, title: "发布动态" },
       },
       {
         path: "circle/:id",

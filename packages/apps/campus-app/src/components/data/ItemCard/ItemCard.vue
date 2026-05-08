@@ -51,6 +51,14 @@
           <icon-location />
           {{ item.campus }}
         </span>
+        <div class="item-card__stats">
+          <span class="stat-item">
+            <icon-eye />{{ item.viewCount || 0 }}
+          </span>
+          <span class="stat-item">
+            <icon-heart-fill />{{ item.favoriteCount || 0 }}
+          </span>
+        </div>
       </div>
     </div>
   </a-card>
@@ -58,7 +66,7 @@
 
 <script setup>
 import { computed } from "vue";
-import { IconImage, IconUser, IconLocation } from "@arco-design/web-vue/es/icon";
+import { IconImage, IconUser, IconLocation, IconEye, IconHeartFill } from "@arco-design/web-vue/es/icon";
 
 const props = defineProps({
   item: { type: Object, required: true },
@@ -250,9 +258,29 @@ function formatPrice(price) {
   &__footer {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
     font-size: 12px;
     color: var(--color-text-3, #86909c);
+  }
+
+  &__stats {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: auto;
+
+    .stat-item {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      color: var(--color-text-4, #86909c);
+      font-size: 11px;
+      
+      .arco-icon {
+        font-size: 13px;
+      }
+    }
   }
 
   &__seller,

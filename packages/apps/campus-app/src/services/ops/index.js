@@ -5,7 +5,7 @@ export async function getStatistics() {
 }
 
 export async function getReviewQueue(params = {}) {
-  return await http.get("/ops/reviews/queue", { params });
+  return await http.post("/ops/reviews", params);
 }
 
 export async function reviewItem(id, data) {
@@ -21,7 +21,7 @@ export async function rejectItem(id, data) {
 }
 
 export async function getOpsOrders(params = {}) {
-  return await http.get("/ops/orders", { params });
+  return await http.post("/ops/orders", params);
 }
 
 export async function getOpsReviewDetail(id) {
@@ -29,7 +29,7 @@ export async function getOpsReviewDetail(id) {
 }
 
 export async function getUsers(params = {}) {
-  return await http.get("/ops/users", { params });
+  return await http.post("/ops/users", params);
 }
 
 export async function getUserDetail(id) {
@@ -45,11 +45,11 @@ export async function updateUserStatus(id, status) {
 }
 
 export async function getSellers(params = {}) {
-  return await http.get("/ops/sellers", { params });
+  return await http.post("/ops/vendors", params);
 }
 
 export async function getBuyers(params = {}) {
-  return await http.get("/ops/buyers", { params });
+  return await http.post("/ops/buyers", params);
 }
 
 export async function getBuyerDetail(id) {
@@ -57,7 +57,7 @@ export async function getBuyerDetail(id) {
 }
 
 export async function getVendors(params = {}) {
-  return await http.get("/ops/vendors", { params });
+  return await http.post("/ops/vendors", params);
 }
 
 export async function getVendorDetail(id) {

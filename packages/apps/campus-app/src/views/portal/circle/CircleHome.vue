@@ -41,36 +41,34 @@
       @item-click="handlePostClick"
     >
       <template #default="{ item }">
-        <div class="post-card">
+        <div class="post-card" :class="{ 'card-no-image': !item.images?.length }">
           <!-- 封面图 -->
-          <div v-if="item.coverImage || (item.images && item.images.length > 0)" class="post-cover">
-            <img
-              :src="item.coverImage || item.images[0]"
-              alt="封面图"
-            />
+          <div v-if="item.images && item.images.length > 0" class="post-cover">
+            <img :src="item.images[0]" alt="" loading="lazy" />
           </div>
 
           <!-- 帖子内容 -->
           <div class="post-body">
             <h3 class="post-title">{{ item.title }}</h3>
 
-            <div class="post-author">
-              <a-avatar :size="28" class="author-avatar">
-                {{ (item.authorName || '用')[0] }}
-              </a-avatar>
-              <span class="author-name">{{ item.authorName || '匿名用户' }}</span>
+            <div v-if="item.tags && item.tags.length > 0" class="post-tags">
+              <span v-for="tag in item.tags" :key="tag" class="tag-badge">{{ tag }}</span>
             </div>
 
-            <div class="post-meta">
-              <span class="meta-item">
-                <icon-heart /> {{ item.likeCount || 0 }}
-              </span>
-              <span class="meta-item">
-                <icon-message /> {{ item.commentCount || 0 }}
-              </span>
-              <span class="meta-item post-time">
-                {{ formatTime(item.createdAt) }}
-              </span>
+            <p v-if="item.content" class="post-content">{{ item.content }}</p>
+
+            <div class="post-footer">
+              <div class="post-author">
+                <a-avatar :size="26" class="author-avatar">
+                  {{ (item.authorName || '用')[0] }}
+                </a-avatar>
+                <span class="author-name">{{ item.authorName || '匿名用户' }}</span>
+              </div>
+
+              <div class="post-meta">
+                <span class="meta-item"><icon-heart /> {{ item.likeCount || 0 }}</span>
+                <span class="meta-item"><icon-message /> {{ item.commentCount || 0 }}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -89,7 +87,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { Message } from '@arco-design/web-vue';
+import { Message, Modal } from '@arco-design/web-vue';
 import {
   IconPlus,
   IconHeart,
@@ -107,19 +105,39 @@ const hasMore = ref(true);
 const page = ref(1);
 const activeTag = ref('');
 
-const tags = [
+const tags = ref([
   { label: '全部', value: '' },
-  { label: '#学习资料', value: '学习资料' },
-  { label: '#生活好物', value: '生活好物' },
-  { label: '#闲置转让', value: '闲置转让' },
-  { label: '#经验分享', value: '经验分享' },
-  { label: '#求助问答', value: '求助问答' },
-];
+]);
+
+onMounted(() => {
+  loadPosts();
+  loadTags();
+});
+
+function loadTags() {
+  fetch('/api/dict/options')
+    .then(res => res.json())
+    .then(data => {
+      const tagList = data?.data?.tags || [];
+      tags.value = [
+        { label: '全部', value: '' },
+        ...tagList.map(t => ({ label: t.label || t.value, value: t.value?.replace('#', '') || t.label })),
+      ];
+    })
+    .catch(e => console.error('加载标签失败:', e));
+}
 
 function handlePublish() {
   if (!authStore.isLoggedIn) {
-    Message.warning('请先登录后再发布');
-    router.push({ path: '/login', query: { redirect: '/portal/circle/publish' } });
+    Modal.confirm({
+      title: '需要登录',
+      content: '发布动态需要先登录账号，是否前往登录/注册？',
+      okText: '去登录',
+      cancelText: '取消',
+      onOk() {
+        router.push({ path: '/login', query: { redirect: '/portal/circle/publish' } });
+      },
+    });
     return;
   }
   router.push('/portal/circle/publish');
@@ -166,17 +184,30 @@ async function loadPosts() {
       params.tag = activeTag.value;
     }
 
-    // 使用通用http调用，因为API可能还未定义
     const response = await fetch(`/api/circle/posts?${new URLSearchParams(params)}`);
     const data = await response.json();
 
-    const list = data.list || data.records || [];
+    const rawData = data.data?.posts || data.posts || data.list || data.records || [];
+    const list = rawData.map(item => ({
+      id: item.id,
+      title: item.title,
+      content: item.content,
+      images: item.images ? (typeof item.images === 'string' ? JSON.parse(item.images || '[]') : item.images) : [],
+      authorName: item.userName || item.user_name || '匿名用户',
+      likeCount: item.likeCount || item.likes || item.like_count || 0,
+      commentCount: item.commentCount || item.comments || item.comment_count || 0,
+      viewCount: item.viewCount || item.view_count || 0,
+      campus: item.campus || '',
+      tags: item.tags ? (typeof item.tags === 'string' ? item.tags.split(',') : item.tags) : [],
+      createdAt: item.createdAt || item.create_time || item.created_at,
+    }));
+
     if (page.value === 1) {
       posts.value = list;
     } else {
       posts.value = [...posts.value, ...list];
     }
-    hasMore.value = posts.value.length < (data.total || 0);
+    hasMore.value = list.length > 0 && list.length >= 20;
   } catch (e) {
     console.error('加载帖子失败:', e);
     Message.error(e.message || '加载帖子失败');
@@ -191,10 +222,6 @@ function loadMorePosts() {
     loadPosts();
   }
 }
-
-onMounted(() => {
-  loadPosts();
-});
 </script>
 
 <style lang="scss" scoped>
@@ -289,62 +316,119 @@ onMounted(() => {
 
 .post-card {
   background: #FFFFFF;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
   height: 100%;
   display: flex;
   flex-direction: column;
+  cursor: pointer;
 
   &:hover {
     transform: translateY(-4px);
-    box-shadow: 0 8px 24px rgba(22, 93, 255, 0.15);
+    box-shadow: 0 8px 24px rgba(22, 93, 255, 0.14);
+
+    .post-cover img {
+      transform: scale(1.04);
+    }
+  }
+
+  &.card-no-image {
+    background: linear-gradient(180deg, #F8FAFF 0%, #FFFFFF 60%);
+
+    .post-body {
+      padding: 18px 16px 14px;
+    }
+
+    .post-title {
+      font-size: 15px;
+    }
+
+    .post-content {
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
   }
 }
 
 .post-cover {
   width: 100%;
-  height: 180px;
   overflow: hidden;
   background: var(--color-fill-2, #E5E6EB);
+  aspect-ratio: 4/3;
 
   img {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    transition: transform 0.3s ease;
-  }
-
-  &:hover img {
-    transform: scale(1.05);
+    transition: transform 0.4s ease;
   }
 }
 
 .post-body {
-  padding: 16px;
-  flex: 1;
+  padding: 14px 16px 12px;
   display: flex;
   flex-direction: column;
+  gap: 10px;
+  flex: 1;
 }
 
 .post-title {
+  margin: 0;
   font-size: 15px;
   font-weight: 600;
   color: var(--color-text-1, #1D2129);
-  line-height: 1.5;
-  margin: 0 0 12px 0;
+  line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
+.post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  .tag-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    font-size: 12px;
+    color: rgb(22, 93, 255);
+    background: rgba(22, 93, 255, 0.08);
+    border-radius: 10px;
+    border: 1px solid rgba(22, 93, 255, 0.15);
+    line-height: 1.6;
+  }
+}
+
+.post-content {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-text-3, #86909C);
+  line-height: 1.6;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.post-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-fill-2, #F2F3F5);
+}
+
 .post-author {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 12px;
 
   .author-avatar {
     background: linear-gradient(135deg, #165DFF 0%, #4080FF 100%);

@@ -27,7 +27,7 @@ public class OrderController {
 
   /** 创建订单 */
   @PostMapping
-  @PreAuthorize("hasAnyRole('BUYER', 'OPS')")
+  @PreAuthorize("hasAnyRole('BUYER', 'SELLER', 'OPS')")
   public Map<String, Object> createOrder(@RequestBody CreateOrderRequest request) {
     Map<String, Object> order = orderService.createOrder(
         currentUserService.userId(),

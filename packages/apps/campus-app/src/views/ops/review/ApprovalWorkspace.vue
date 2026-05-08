@@ -310,8 +310,9 @@ function getConditionColor(condition) {
 function getConditionLabel(condition) {
   const labels = {
     NEW: "全新",
-    LIKE_NEW: "几乎全新",
-    GOOD: "良好",
+    LIKE_NEW: "99新",
+    EXCELLENT: "95新",
+    GOOD: "8成新",
     FAIR: "一般",
     POOR: "较差",
   };
@@ -353,7 +354,7 @@ async function loadData() {
       pageSize: pagination.pageSize,
     };
 
-    const res = await http.get(url, { params });
+    const res = await http.post(url, params);
     const data = res?.data || res;
 
     switch (activeTab.value) {

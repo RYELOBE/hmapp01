@@ -10,17 +10,7 @@ import { computed } from 'vue'
 const props = defineProps({
   status: {
     type: String,
-    required: true,
-    validator: (value) => [
-      'pending',
-      'approved',
-      'rejected',
-      'active',
-      'inactive',
-      'processing',
-      'completed',
-      'cancelled'
-    ].includes(value)
+    required: true
   },
   label: {
     type: String,
@@ -30,7 +20,7 @@ const props = defineProps({
 
 const statusConfig = {
   pending: {
-    label: '待处理',
+    label: '待审核',
     bgColor: '#FFF7E8',
     textColor: '#FF7D00',
     borderColor: '#FFE0A3'
@@ -76,15 +66,37 @@ const statusConfig = {
     bgColor: '#F2F3F5',
     textColor: '#86909C',
     borderColor: '#D9D9D9'
+  },
+  off_shelf: {
+    label: '已下架',
+    bgColor: '#F2F3F5',
+    textColor: '#86909C',
+    borderColor: '#D9D9D9'
   }
 }
 
-const statusClass = computed(() => {
-  return props.status.toLowerCase()
+const statusAliasMap = {
+  PENDING_REVIEW: 'pending',
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+  OFF_SHELF: 'off_shelf',
+  ACTIVE: 'active',
+  INACTIVE: 'inactive',
+  PROCESSING: 'processing',
+  COMPLETED: 'completed',
+  CANCELLED: 'cancelled'
+}
+
+const statusKey = computed(() => {
+  const rawStatus = String(props.status || '').trim()
+  return statusAliasMap[rawStatus.toUpperCase()] || rawStatus.toLowerCase() || 'pending'
 })
 
+const statusClass = computed(() => statusKey.value)
+
 const currentConfig = computed(() => {
-  return statusConfig[props.status] || statusConfig.pending
+  return statusConfig[statusKey.value] || statusConfig.pending
 })
 
 const displayLabel = computed(() => {
@@ -160,7 +172,8 @@ const tagStyle = computed(() => ({
     border-color: #B7EB8F;
   }
 
-  &--cancelled {
+  &--cancelled,
+  &--off_shelf {
     background-color: #F2F3F5;
     color: #86909C;
     border-color: #D9D9D9;

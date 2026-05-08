@@ -158,6 +158,11 @@ function isActiveRoute(path) {
   const cleanPath = path.split('?')[0]
   if (route.path === cleanPath) return true
   if (route.path.startsWith(cleanPath + '/')) return true
+
+  if (route.path.startsWith('/portal/item/')) {
+    return cleanPath === '/portal/buyer/items'
+  }
+
   return false
 }
 

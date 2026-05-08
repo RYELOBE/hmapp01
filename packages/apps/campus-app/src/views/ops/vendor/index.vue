@@ -59,7 +59,7 @@ async function loadData() {
       pageNo: pagination.value.current,
       pageSize: pagination.value.pageSize,
     };
-    const res = await http.get("/ops/vendors", { params });
+    const res = await http.post("/ops/vendors", params);
     const data = res?.data || res;
     tableData.value = data?.vendors || data?.rows || [];
     pagination.value.total = data?.totalCount ?? data?.total ?? 0;

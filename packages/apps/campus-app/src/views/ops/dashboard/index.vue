@@ -307,11 +307,12 @@ function formatTimeAgo(date) {
 
 function getOrderStatusColor(status) {
   const colors = {
-    PENDING: "orange",
+    PENDING_PAYMENT: "orange",
     PAID: "blue",
     SHIPPED: "cyan",
     COMPLETED: "green",
     CANCELLED: "red",
+    REFUNDING: "red",
     REFUNDED: "gray",
   };
   return colors[status] || "gray";
@@ -319,11 +320,12 @@ function getOrderStatusColor(status) {
 
 function getOrderStatusLabel(status) {
   const labels = {
-    PENDING: "待付款",
-    PAID: "已付款",
-    SHIPPED: "已发货",
+    PENDING_PAYMENT: "待付款",
+    PAID: "待发货",
+    SHIPPED: "待收货",
     COMPLETED: "已完成",
     CANCELLED: "已取消",
+    REFUNDING: "退款中",
     REFUNDED: "已退款",
   };
   return labels[status] || status;

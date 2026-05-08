@@ -34,7 +34,7 @@
           :key="item.id"
           :item="formatItem(item)"
           class="hot-item"
-          @click="$router.push(`/portal/item/${item.id}`)"
+          @click="handleItemClick(formatItem(item))"
         />
       </div>
 
@@ -72,7 +72,7 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { IconRight } from "@arco-design/web-vue/es/icon";
-import { getItems } from "../../../services/api";
+import { getHotItems, getDictOptions, trackClick } from "../../../services/api";
 import ItemCard from "../../../components/data/ItemCard/ItemCard.vue";
 
 const router = useRouter();
@@ -80,20 +80,11 @@ const router = useRouter();
 const hotItems = ref([]);
 const loadingHot = ref(false);
 
-const quickCategories = [
-  { value: 'ELECTRONICS', label: '电子产品', icon: '📱' },
-  { value: 'BOOKS', label: '图书教材', icon: '📚' },
-  { value: 'CLOTHING', label: '服饰鞋包', icon: '👔' },
-  { value: 'DAILY', label: '生活用品', icon: '🏠' },
-  { value: 'SPORTS', label: '运动器材', icon: '⚽' },
-  { value: 'BEAUTY', label: '美妆护肤', icon: '💄' },
-  { value: 'FOOD', label: '食品零食', icon: '🍪' },
-  { value: 'OTHER', label: '其他物品', icon: '🎁' },
-];
+const quickCategories = ref([]);
 
 function formatItem(item) {
   return {
-    id: item.id,
+    id: item.itemId || item.id,
     title: item.title,
     price: item.price,
     imageUrls: item.imageUrls || (item.image ? [item.image] : []),
@@ -101,18 +92,21 @@ function formatItem(item) {
     category: item.category,
     conditionLevel: item.conditionLevel || item.condition,
     campus: item.campus,
+    viewCount: item.viewCount || 0,
+    favoriteCount: item.favoriteCount || 0,
   };
+}
+
+async function handleItemClick(item) {
+  trackClick(item.id);
+  router.push(`/portal/item/${item.id}`);
 }
 
 async function loadHotItems() {
   loadingHot.value = true;
   try {
-    const res = await getItems({
-      sort: 'latest',
-      pageSize: 8,
-      approvedOnly: true
-    });
-    const items = res?.data?.items || res?.items || res?.rows || [];
+    const res = await getHotItems(8);
+    const items = res?.data?.items || [];
     hotItems.value = Array.isArray(items) ? [...items] : [];
   } catch (e) {
     console.error('[Home] 加载热门推荐失败:', e);
@@ -121,7 +115,13 @@ async function loadHotItems() {
   }
 }
 
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const res = await getDictOptions();
+    quickCategories.value = res?.data?.categories || [];
+  } catch (e) {
+    console.error('[Home] 加载分类失败:', e);
+  }
   loadHotItems();
 });
 </script>
@@ -149,7 +149,6 @@ $text-secondary: #4E5969;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   margin: -24px calc(-50vw + 50%) 0 calc(-50vw + 50%);
 }
 

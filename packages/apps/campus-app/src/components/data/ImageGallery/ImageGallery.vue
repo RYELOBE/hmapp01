@@ -3,7 +3,7 @@
     <a-spin :loading="loading" tip="图片加载中...">
       <!-- 主图 -->
       <div class="image-gallery__main">
-        <template v-if="!loading && currentUrl">
+        <template v-if="!loading && currentUrl && !hasError && images.length > 0">
           <a-image
             :src="currentUrl"
             :alt="'图片 ' + (currentIndex + 1)"
@@ -11,23 +11,17 @@
             fit="cover"
             :preview="false"
             @click="openPreview"
+            @error="handleImageError"
           >
             <template #fallback>
-              <div class="image-gallery__empty">
-                <icon-image />
-                <span>图片加载失败</span>
+              <div class="image-gallery__placeholder">
+                <img :src="placeholderLogo" alt="图片加载失败" class="placeholder-logo" />
               </div>
             </template>
           </a-image>
         </template>
-        <div v-else-if="loading || !images.length" class="image-gallery__skeleton">
-          <a-skeleton :animation="true">
-            <a-skeleton-line :rows="1" style="width: 100%; height: 100%;" />
-          </a-skeleton>
-        </div>
-        <div v-else-if="hasError" class="image-gallery__empty">
-          <icon-image />
-          <span>图片加载失败</span>
+        <div v-else class="image-gallery__placeholder">
+          <img :src="placeholderLogo" alt="暂无商品图片" class="placeholder-logo" />
         </div>
 
         <!-- 切换箭头 -->
@@ -87,6 +81,7 @@
 <script setup>
 import { ref, computed, watch, onMounted } from "vue";
 import { IconImage, IconLeft, IconRight } from "@arco-design/web-vue/es/icon";
+import placeholderLogo from "@/assets/logo.png";
 
 const props = defineProps({
   images: { type: [Array, String], default: () => [] },
@@ -168,8 +163,7 @@ function handleThumbError(event, idx) {
     width: 100%;
     border-radius: var(--border-radius-medium, 8px);
     overflow: hidden;
-    background: var(--color-fill-1, #f7f8fa);
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 4 / 3;
   }
 
   &__img {
@@ -185,7 +179,8 @@ function handleThumbError(event, idx) {
   }
 
   &__skeleton,
-  &__empty {
+  &__empty,
+  &__placeholder {
     width: 100%;
     height: 100%;
     display: flex;
@@ -193,11 +188,17 @@ function handleThumbError(event, idx) {
     align-items: center;
     justify-content: center;
     color: var(--color-text-4, #c9cdd4);
-    gap: 8px;
+    gap: 12px;
     font-size: 14px;
 
-    .arco-icon {
-      font-size: 48px;
+    .placeholder-logo {
+      object-fit: contain;
+    }
+
+    .placeholder-text {
+      color: var(--color-text-3, #86909C);
+      font-size: 14px;
+      font-weight: 500;
     }
   }
 
@@ -287,6 +288,15 @@ function handleThumbError(event, idx) {
       height: 100%;
       object-fit: cover;
     }
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
   }
 }
 </style>

@@ -35,6 +35,38 @@ public class ItemRepository {
     return row;
   };
 
+  private static final RowMapper<Map<String, Object>> ROW_MAPPER_WITH_STATS = (rs, rowNum) -> {
+    Map<String, Object> row = new HashMap<>();
+    row.put("id", rs.getLong("id"));
+    row.put("title", rs.getString("title"));
+    row.put("price", rs.getInt("price"));
+    row.put("description", rs.getString("description"));
+    row.put("sellerId", rs.getLong("seller_id"));
+    row.put("sellerName", rs.getString("seller_name"));
+    row.put("reviewStatus", rs.getString("review_status"));
+    row.put("rejectReason", rs.getString("reject_reason"));
+    row.put("imageUrls", rs.getString("image_urls"));
+    row.put("category", rs.getString("category"));
+    row.put("conditionLevel", rs.getString("condition_level"));
+    row.put("campus", rs.getString("campus"));
+    row.put("createdAt", rs.getTimestamp("created_at") != null ? rs.getTimestamp("created_at").toString() : null);
+    row.put("viewCount", rs.getInt("view_count"));
+    row.put("clickCount", rs.getInt("click_count"));
+    row.put("favoriteCount", rs.getInt("favorite_count"));
+    return row;
+  };
+
+  private static final RowMapper<Map<String, Object>> DETAIL_ROW_MAPPER = (rs, rowNum) -> {
+    Map<String, Object> row = ROW_MAPPER_WITH_STATS.mapRow(rs, rowNum);
+    row.put("sellerPhone", rs.getString("seller_phone"));
+    row.put("sellerCampus", rs.getString("seller_campus"));
+    row.put("sellerCreatedAt", rs.getTimestamp("seller_created_at") != null ? rs.getTimestamp("seller_created_at").toString() : null);
+    row.put("sellerSoldCount", rs.getInt("seller_sold_count"));
+    row.put("sellerRating", rs.getBigDecimal("seller_rating"));
+    row.put("reviewCount", rs.getInt("review_count"));
+    return row;
+  };
+
   public ItemRepository(JdbcTemplate jdbc) {
     this.jdbc = jdbc;
   }
@@ -59,6 +91,7 @@ public class ItemRepository {
       return ps;
     }, kh);
     Long id = kh.getKey().longValue();
+    jdbc.update("INSERT IGNORE INTO item_stats (item_id, view_count, click_count, favorite_count, hot_score) VALUES (?, 0, 0, 0, 0.00)", id);
     return findById(id);
   }
 
@@ -93,13 +126,33 @@ public class ItemRepository {
     return results.isEmpty() ? null : results.get(0);
   }
 
+  public Map<String, Object> findDetailById(Long id) {
+    String sql = """
+        SELECT i.*, COALESCE(s.view_count, 0) AS view_count,
+               COALESCE(s.click_count, 0) AS click_count,
+               COALESCE(s.favorite_count, 0) AS favorite_count,
+               u.phone AS seller_phone,
+               u.campus AS seller_campus,
+               u.created_at AS seller_created_at,
+               (SELECT COUNT(*) FROM orders o WHERE o.seller_id = i.seller_id AND o.status = 'COMPLETED') AS seller_sold_count,
+               (SELECT COALESCE(ROUND(AVG(r.rating), 1), 5.0) FROM review r WHERE r.seller_id = i.seller_id AND r.status = 'APPROVED') AS seller_rating,
+               (SELECT COUNT(*) FROM review r WHERE r.item_id = i.id AND r.status = 'APPROVED') AS review_count
+        FROM item i
+        LEFT JOIN item_stats s ON i.id = s.item_id
+        LEFT JOIN user_account u ON i.seller_id = u.id
+        WHERE i.id = ?
+        """;
+    List<Map<String, Object>> results = jdbc.query(sql, DETAIL_ROW_MAPPER, id);
+    return results.isEmpty() ? null : results.get(0);
+  }
+
   public void updateReviewStatus(Long id, String status, String reason) {
     jdbc.update("UPDATE item SET review_status = ?, reject_reason = ? WHERE id = ?", status, reason, id);
   }
 
   public void update(Long id, String title, Integer price, String description, Object imageUrls,
       String category, String conditionLevel) {
-    String imageUrlsStr = imageUrls != null ? imageUrls.toString() : null;
+    String imageUrlsStr = stringifyImageUrls(imageUrls);
     jdbc.update(
         "UPDATE item SET title = ?, price = ?, description = ?, image_urls = ?, category = ?, condition_level = ? WHERE id = ?",
         title, price, description, imageUrlsStr, category, conditionLevel, id);
@@ -112,35 +165,84 @@ public class ItemRepository {
   // ── 分页查询（支持筛选） ──────────────────────────
   public List<Map<String, Object>> findByPage(String status, String keyword, String category,
       int pageNo, int pageSize) {
-    StringBuilder sql = new StringBuilder("SELECT * FROM item WHERE 1=1");
-    if (status != null && !status.isEmpty()) sql.append(" AND review_status = ?");
-    if (keyword != null && !keyword.isEmpty()) sql.append(" AND title LIKE ?");
-    if (category != null && !category.isEmpty()) sql.append(" AND category = ?");
-    sql.append(" ORDER BY created_at DESC, id DESC LIMIT ? OFFSET ?");
+    return findByPage(status, keyword, category, null, null, null, pageNo, pageSize);
+  }
+
+  public List<Map<String, Object>> findByPage(String status, String keyword, String category,
+      String conditionLevel, String campus, String sort,
+      int pageNo, int pageSize) {
+    StringBuilder sql = new StringBuilder(
+        "SELECT i.*, COALESCE(s.view_count, 0) AS view_count, " +
+        "COALESCE(s.click_count, 0) AS click_count, COALESCE(s.favorite_count, 0) AS favorite_count " +
+        "FROM item i LEFT JOIN item_stats s ON i.id = s.item_id WHERE 1=1");
+    if (status != null && !status.isEmpty()) sql.append(" AND i.review_status = ?");
+    if (keyword != null && !keyword.isEmpty()) sql.append(" AND i.title LIKE ?");
+    if (category != null && !category.isEmpty()) sql.append(" AND i.category = ?");
+    if (conditionLevel != null && !conditionLevel.isEmpty()) sql.append(" AND i.condition_level = ?");
+    if (campus != null && !campus.isEmpty()) sql.append(" AND i.campus = ?");
+
+    sql.append(buildOrderBy(sort));
+    sql.append(" LIMIT ? OFFSET ?");
 
     List<Object> params = new ArrayList<>();
     if (status != null && !status.isEmpty()) params.add(status);
     if (keyword != null && !keyword.isEmpty()) params.add("%" + keyword + "%");
     if (category != null && !category.isEmpty()) params.add(category);
+    if (conditionLevel != null && !conditionLevel.isEmpty()) params.add(conditionLevel);
+    if (campus != null && !campus.isEmpty()) params.add(campus);
     params.add(pageSize);
     params.add((pageNo - 1) * pageSize);
 
-    return jdbc.query(sql.toString(), ROW_MAPPER, params.toArray());
+    return jdbc.query(sql.toString(), ROW_MAPPER_WITH_STATS, params.toArray());
   }
 
   public int countByFilter(String status, String keyword, String category) {
+    return countByFilter(status, keyword, category, null, null);
+  }
+
+  public int countByFilter(String status, String keyword, String category,
+      String conditionLevel, String campus) {
     StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM item WHERE 1=1");
     if (status != null && !status.isEmpty()) sql.append(" AND review_status = ?");
     if (keyword != null && !keyword.isEmpty()) sql.append(" AND title LIKE ?");
     if (category != null && !category.isEmpty()) sql.append(" AND category = ?");
+    if (conditionLevel != null && !conditionLevel.isEmpty()) sql.append(" AND condition_level = ?");
+    if (campus != null && !campus.isEmpty()) sql.append(" AND campus = ?");
 
     List<Object> params = new ArrayList<>();
     if (status != null && !status.isEmpty()) params.add(status);
     if (keyword != null && !keyword.isEmpty()) params.add("%" + keyword + "%");
     if (category != null && !category.isEmpty()) params.add(category);
+    if (conditionLevel != null && !conditionLevel.isEmpty()) params.add(conditionLevel);
+    if (campus != null && !campus.isEmpty()) params.add(campus);
 
     Integer count = jdbc.queryForObject(sql.toString(), Integer.class, params.toArray());
     return count != null ? count : 0;
+  }
+  
+  private String stringifyImageUrls(Object imageUrls) {
+    if (imageUrls == null) {
+      return null;
+    }
+    if (imageUrls instanceof List<?> list) {
+      try {
+        return new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(list);
+      } catch (Exception e) {
+        return list.toString();
+      }
+    }
+    return imageUrls.toString();
+  }
+
+  private String buildOrderBy(String sort) {
+    if (sort == null || sort.isEmpty() || "latest".equals(sort)) {
+      return " ORDER BY created_at DESC, id DESC";
+    } else if ("price_asc".equals(sort)) {
+      return " ORDER BY price ASC, id ASC";
+    } else if ("price_desc".equals(sort)) {
+      return " ORDER BY price DESC, id DESC";
+    }
+    return " ORDER BY created_at DESC, id DESC";
   }
 
   // ── 统计 ──────────────────────────

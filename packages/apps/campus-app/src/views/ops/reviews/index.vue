@@ -179,12 +179,14 @@ const filterConfig = [
     span: 5,
     options: [
       { value: "", label: "全部分类" },
-      { value: "electronics", label: "电子产品" },
-      { value: "books", label: "书籍教材" },
-      { value: "clothing", label: "服装鞋帽" },
-      { value: "furniture", label: "家具家电" },
-      { value: "sports", label: "运动户外" },
-      { value: "other", label: "其他" },
+      { value: "ELECTRONICS", label: "电子产品" },
+      { value: "BOOKS", label: "图书教材" },
+      { value: "CLOTHING", label: "服饰鞋包" },
+      { value: "DAILY", label: "生活用品" },
+      { value: "SPORTS", label: "运动器材" },
+      { value: "BEAUTY", label: "美妆护肤" },
+      { value: "FOOD", label: "食品零食" },
+      { value: "OTHER", label: "其他物品" },
     ],
   },
   {
@@ -256,8 +258,9 @@ function getConditionColor(condition) {
 function getConditionLabel(condition) {
   const labels = {
     NEW: "全新",
-    LIKE_NEW: "几乎全新",
-    GOOD: "良好",
+    LIKE_NEW: "99新",
+    EXCELLENT: "95新",
+    GOOD: "8成新",
     FAIR: "一般",
     POOR: "较差",
   };
@@ -280,9 +283,10 @@ async function loadData() {
       params.endDate = filterParams.dateRange[1];
     }
 
-    const res = await http.get("/ops/reviews", { params });
-    tableData.value = res?.items || res?.rows || [];
-    pagination.total = res?.totalCount ?? res?.total ?? 0;
+    const res = await http.post("/ops/reviews", params);
+    const data = res?.data || res;
+    tableData.value = data?.items || data?.rows || [];
+    pagination.total = data?.totalCount ?? data?.total ?? 0;
   } catch (e) {
     console.error("[Reviews] load error:", e);
     Message.error(e.message || "加载审核列表失败");

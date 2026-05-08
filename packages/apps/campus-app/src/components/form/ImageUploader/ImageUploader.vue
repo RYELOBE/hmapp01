@@ -33,6 +33,7 @@ import { ref, watch } from 'vue';
 import { Message } from '@arco-design/web-vue';
 import { IconPlus } from '@arco-design/web-vue/es/icon';
 import { getToken } from '@/services/auth';
+import { formatJWTToken } from '@/utils/jwt';
 
 const props = defineProps({
   modelValue: {
@@ -89,21 +90,38 @@ const handleBeforeUpload = (file) => {
 
 const handleUpload = async (options) => {
   const { file, onProgress, onSuccess, onError } = options;
+  const rawFile = file?.file || file?.originFile || file;
+
+  if (!rawFile) {
+    const error = new Error('未获取到要上传的文件');
+    onError(error);
+    Message.error('请选择要上传的图片');
+    return;
+  }
+
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('file', rawFile, rawFile.name || file?.name || 'image.png');
 
   try {
     const token = getToken();
+    const headers = {};
+    if (token) {
+      headers['Authorization'] = formatJWTToken(token);
+    }
+    
     const response = await fetch(props.uploadUrl, {
       method: 'POST',
-      headers: {
-        'Authorization': token || '',
-      },
+      headers,
       body: formData,
     });
 
     if (!response.ok) {
-      throw new Error('上传失败');
+      if (response.status === 401 || response.status === 403) {
+        Message.error('请先登录');
+      } else {
+        throw new Error('上传失败');
+      }
+      return;
     }
 
     const result = await response.json();

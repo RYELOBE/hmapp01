@@ -17,8 +17,9 @@ const props = defineProps({
 
 const conditionMap = {
   NEW: { text: '全新', icon: '✨', class: 'new' },
-  LIKE_NEW: { text: '几乎全新', icon: '🌟', class: 'like-new' },
-  GOOD: { text: '良好', icon: '👍', class: 'good' },
+  LIKE_NEW: { text: '99新', icon: '🌟', class: 'like-new' },
+  EXCELLENT: { text: '95新', icon: '👍', class: 'excellent' },
+  GOOD: { text: '8成新', icon: '👍', class: 'good' },
   FAIR: { text: '一般', icon: '👌', class: 'fair' },
   POOR: { text: '较差', icon: '📉', class: 'poor' }
 };
@@ -57,6 +58,7 @@ const conditionClass = computed(() => currentCondition.value.class);
     color: #fff;
   }
 
+  &--excellent,
   &--good {
     background: linear-gradient(135deg, #faad14 0%, #d48806 100%);
     color: #fff;

@@ -100,7 +100,7 @@
 
         <template #amount="{ record }">
           <a-typography-text type="danger" strong style="font-size: 14px;">
-            ¥{{ formatPrice(record.amount || record.itemPrice) }}
+            ¥{{ formatPrice(record.totalAmount || record.amount || record.itemPrice || record.price) }}
           </a-typography-text>
         </template>
 
@@ -137,10 +137,10 @@
           {{ currentOrder.itemTitle || currentOrder.title }}
         </a-descriptions-item>
         <a-descriptions-item label="商品价格">
-          ¥{{ formatPrice(currentOrder.itemPrice) }}
+          ¥{{ formatPrice(currentOrder.price || currentOrder.itemPrice) }}
         </a-descriptions-item>
         <a-descriptions-item label="订单金额">
-          <a-typography-text type="danger" strong>¥{{ formatPrice(currentOrder.amount) }}</a-typography-text>
+          <a-typography-text type="danger" strong>¥{{ formatPrice(currentOrder.totalAmount || currentOrder.amount) }}</a-typography-text>
         </a-descriptions-item>
         <a-descriptions-item label="买家">
           {{ currentOrder.buyerName || currentOrder.userName }}
@@ -157,7 +157,7 @@
           {{ formatDate(currentOrder.createdAt) }}
         </a-descriptions-item>
         <a-descriptions-item label="收货地址" :span="2">
-          {{ currentOrder.shippingAddress || currentOrder.address || '-' }}
+          {{ currentOrder.receiverAddress || currentOrder.shippingAddress || currentOrder.address || '-' }}
         </a-descriptions-item>
       </a-descriptions>
     </a-drawer>
@@ -207,11 +207,7 @@ const filterConfig = [
     type: "select",
     placeholder: "全部状态",
     span: 6,
-    options: [
-      ...ORDER_STATUS_OPTIONS,
-      { value: "REFUNDING", label: "退款中" },
-      { value: "REFUNDED", label: "已退款" },
-    ],
+    options: ORDER_STATUS_OPTIONS,
   },
   {
     field: "dateRange",
@@ -238,7 +234,7 @@ const statsCards = [
 ];
 
 function getFirstImage(record) {
-  const urls = record.imageUrls || record.images || [];
+  const urls = record.itemImage || record.imageUrls || record.images || [];
   if (typeof urls === "string") {
     try {
       const parsed = JSON.parse(urls);
@@ -297,7 +293,7 @@ async function loadData() {
       params.endDate = filterParams.dateRange[1];
     }
 
-    const res = await http.get("/ops/orders", { params });
+    const res = await http.post("/ops/orders", params);
     const data = res?.data || res;
     tableData.value = data?.orders || data?.rows || [];
     pagination.total = data?.totalCount ?? data?.total ?? 0;
