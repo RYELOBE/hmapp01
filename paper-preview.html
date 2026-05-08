@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>毕业论文 - 校园二手交易平台</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: "SimSun", "宋体", serif; line-height: 2; color: #333; background: #f5f5f5; }
+  .container { max-width: 900px; margin: 0 auto; background: white; padding: 60px 80px; box-shadow: 0 0 20px rgba(0,0,0,0.08); min-height: 100vh; }
+  
+  /* Cover page */
+  .cover { text-align: center; padding: 120px 0 80px; }
+  .cover h1 { font-size: 28px; letter-spacing: 4px; margin-bottom: 60px; color: #000; font-weight: bold; }
+  .cover .meta { font-size: 16px; line-height: 3.5; color: #222; }
+  
+  /* Headings */
+  h1.heading1 { font-size: 22px; text-align: center; margin-top: 50px; margin-bottom: 25px; font-weight: bold; color: #000; letter-spacing: 2px; }
+  h2.heading2 { font-size: 18px; margin-top: 35px; margin-bottom: 18px; font-weight: bold; color: #111; border-left: 4px solid #165DFF; padding-left: 12px; }
+  h3.heading3 { font-size: 15px; margin-top: 25px; margin-bottom: 12px; font-weight: bold; color: #222; }
+  
+  /* Paragraphs */
+  p.normal { font-size: 14px; text-indent: 2em; margin-bottom: 10px; text-align: justify; }
+  p.no-indent { font-size: 14px; margin-bottom: 10px; text-align: justify; }
+  
+  /* Images */
+  .image-container { text-align: center; margin: 20px 0; }
+  .image-container img { max-width: 100%; height: auto; border: 1px solid #e0e0e0; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  figcaption { font-size: 13px; color: #555; margin-top: 8px; text-align: center; }
+  
+  /* Tables placeholder */
+  .table-placeholder { background: #fafafa; border: 1px dashed #ccc; padding: 30px; text-align: center; color: #888; margin: 15px 0; border-radius: 4px; font-size: 13px; }
+  
+  /* Section divider */
+  .section-divider { height: 40px; }
+  
+  /* Abstract */
+  .abstract-box { background: #f9f9f9; border: 1px solid #e5e6eb; padding: 20px 30px; margin: 20px 0; border-radius: 4px; }
+  .abstract-box p { text-indent: 2em; }
+  .keywords { text-align: right; margin-top: 15px; font-size: 13px; color: #555; }
+</style>
+</head>
+<body>
+<div class="container">
+<p class="normal">学科分类号   0809</p>
+<br>
+<br>
+<p class="normal">本科生毕业设计</p>
+<br>
+<p class="normal">题目（中文） ：基于Vue 3与Spring Boot的校园二手交易平台的设计与实现</p>
+<p class="no-indent"><strong>（英文）：Design and Implementation of a Campus Second-hand Trading Platform Based on Vue 3 and Spring Boot</strong></p>
+<br>
+<br>
+<br>
+<p class="normal">学生姓名：　　　　    	邓梁</p>
+<p class="normal">学　　号：　　　     2200130623</p>
+<p class="normal">院　　别：计算机与人工智能学院（软件学院）</p>
+<p class="normal">专　　业：　　　　    软件工程</p>
+<p class="normal">指导教师：　　　   刘毅文   副教授</p>
+<p class="normal">起止日期：　 　   2025.06 - 2026.04</p>
+<br>
+<br>
+<p class="normal">2026年 4 月 23 日</p>
+<br>
+<br>
+<p class="normal">怀化学院本科毕业设计诚信声明</p>
+<br>
+<br>
+<p class="normal">作者郑重声明：所呈交的本科毕业设计，是在指导老师的指导下，独立进行研究所取得的成果，成果不存在知识产权争议。除文中已经注明引用的内容外，设计不含任何其他个人或集体已经发表或撰写过的成果。对设计的研究做出重要贡献的个人和集体均已在文中以明确的方式标明。本声明的法律结果由作者承担。</p>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<p class="normal">本科毕业设计作者签名：</p>
+<br>
+<div class="image-container">[📷 图片已嵌入]</div>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<p class="normal">基于Vue 3与Spring Boot的校园二手交易平台的设计与实现</p>
+<h1 class="heading1">摘  要</h1>
+<p class="normal">随着互联网技术的快速发展与高校校园经济活动的日趋活跃，二手商品交易需求在大学生群体中持续增长。传统的二手交易方式存在信息不对称、交易效率低、安全性差等诸多问题，亟需一套完善的线上交易系统加以解决。本文设计并实现了一套基于 Vue 3 与 Spring Boot 的校园二手交易平台系统。该系统采用前后端分离架构，前端以 Vue 3 框架配合 Pinia 状态管理、Vue Router 路由管理及 Arco Design 组件库构建，后端以 Spring Boot 3 框架结合 Spring Security 与 JWT 实现身份认证与权限控制，数据持久层使用 MySQL 8.x 关系型数据库。系统整体采用 pnpm Monorepo 单仓库管理策略，实现代码复用与模块解耦。系统面向买家、卖家、运营三类用户角色，主要功能涵盖商品发布与审核、商品搜索与筛选、购物车与订单管理、收货地址管理、商品评价、校园圈子社区、站内消息通知，以及基于智谱 GLM-4-Flash 大模型的 AI 智能助手等模块。平台引入商品热度算法对商品进行热度评分与推荐，并通过 RAG（检索增强生成）技术提升 AI 助手的平台知识问答能力。经功能测试与系统测试验证，本系统各功能模块运行稳定，满足设计要求，具备良好的可用性与扩展性，对推动高校校园二手经济健康发展具有一定的实践意义。</p>
+<br>
+<h1 class="heading1">关键词</h1>
+<p class="normal">校园二手交易；Vue 3；Spring Boot；前后端分离；JWT 认证；AI 智能助手</p>
+<br>
+<p class="normal">Design and Implementation of a Campus Second-hand Trading Platform Based on Vue 3 and Spring Boot</p>
+<br>
+<h1 class="heading1">Abstract</h1>
+<p class="normal">With the rapid development of Internet technology and the increasing activity of campus economy in universities, the demand for second-hand goods trading among college students continues to grow. Traditional second-hand trading methods suffer from information asymmetry, low transaction efficiency, and poor security, which urgently require a comprehensive online trading system to address these issues. This paper designs and implements a campus second-hand trading platform based on Vue 3 and Spring Boot. The system adopts a front-end and back-end separation architecture. The front-end is built with Vue 3 framework, Pinia state management, Vue Router, and Arco Design component library. The back-end uses Spring Boot 3 framework combined with Spring Security and JWT for authentication and authorization. MySQL 8.x relational database is used for data persistence. The overall project adopts pnpm Monorepo management strategy to achieve code reuse and module decoupling. The system serves three types of user roles: buyers, sellers, and operators. The main functions include product publishing and review, product search and filtering, shopping cart and order management, shipping address management, product reviews, campus community circle, in-site message notifications, and an AI intelligent assistant based on Zhipu GLM-4-Flash large language model. The platform introduces a product popularity algorithm for scoring and recommending products, and uses RAG (Retrieval-Augmented Generation) technology to enhance the AI assistant&#x27;s platform knowledge Q&amp;A capability. After functional and system testing, all functional modules of the system run stably, meeting the design requirements, with good usability and extensibility. The platform has certain practical significance in promoting the healthy development of campus second-hand economy in universities.</p>
+<br>
+<h1 class="heading1">Key words</h1>
+<p class="normal">Campus second-hand trading; Vue 3; Spring Boot; front-end and back-end separation; JWT authentication; AI intelligent assistant；</p>
+<h1 class="heading1">1 前言</h1>
+<p class="normal">近年来，我国对循环经济和绿色发展的战略布局持续深化，从国家发展改革委印发《&quot;十四五&quot;循环经济发展规划》明确提出&quot;规范发展二手商品市场，完善二手商品流通体系，鼓励建设集中规范的二手商品交易市场&quot;，到商务部在2025年二手经济高质量发展大会上表示&quot;二手商品流通已从单纯的经济性消费行为，转变为融合绿色、个性的新型消费模式&quot;，政策层面为二手交易的规范化发展提供了明确方向与支持。与此同时，数字技术的普及催生了二手交易方式的深刻变革——据中国互联网络信息中心（CNNIC）第54次《中国互联网络发展状况统计报告》显示，截至2024年6月，我国网民规模达10.9967亿人，互联网普及率78.0%，其中18-35岁年轻群体是移动端使用的主力人群；另据央视新闻报道，全国闲置商品日均交易额已突破10亿元，每天有400万件闲置物品在平台上发布，二手闲置市场规模已突破万亿元，2024年全年市场规模约达1.8万亿元，同比增长20%。</p>
+<p class="normal">在校园场景下，二手交易需求同样旺盛且增长迅速。调查显示，约90%的大学生存在闲置物品，76%的学生愿意购买二手商品，72%的学生有出售闲置物品的意愿，80%的学生认为校园二手交易平台对节约资源有积极作用。然而，传统的校园二手交易模式面临诸多局限：一方面，线下张贴告示、QQ群微信群发帖等传统形式受&quot;时空固定、信息分散&quot;制约，难以适配学生群体&quot;随时浏览、快速匹配&quot;的使用习惯——调查数据显示，高校中81.3%的学生拥有闲置物品，但通过二手交易平台处理闲置物品的比例仅占少数，更多学生选择送给他人（23.1%）甚至直接丢弃（27.21%），大量具有再流通价值的物品未能实现有效流转；另一方面，现有通用型二手交易平台在校园场景下存在&quot;身份不可信、匹配不精准、社区不归属&quot;的问题：闲鱼、转转等平台缺少校园身份认证机制，73.09%的大学生担心二手商品品质无保障，82.17%的受访大学生对二手商品信息真实性表示怀疑；同时，通用平台不具备同校区匹配功能，搜索结果中混杂大量异地信息，跨区域交易增加了物流成本和验货风险；此外，通用平台的社区氛围与校园文化脱节，多数学生更倾向在同校内部完成交易以便当面验货和自提，但现有平台缺乏校区维度的社交与信任机制。例如，某高校调研发现，学生在闲鱼上发布校园类商品后，平均需等待3-5天才能匹配到同城买家，而在校内QQ群发布信息虽响应更快，但信息易被刷屏淹没且缺乏分类检索能力。</p>
+<p class="normal">在这样的背景下，开发一套&quot;身份可验证、校区可匹配、交易可信赖&quot;的校园二手交易平台具有切实的现实需求。本系统采用Vue 3与Spring Boot前后端分离架构——相较于传统单体架构，前后端分离使前端界面与后端服务可独立开发与部署，开发效率提升显著，且Vue 3的Composition API配合Pinia状态管理可高效实现多角色（买家、卖家、运营）权限隔离与状态同步；Spring Boot 3结合Spring Security与JWT认证机制，可在无状态请求模式下实现轻量级的身份验证与角色授权，免去服务端Session存储开销，适配移动端频繁切换场景。此外，MySQL 8.x提供事务支持与行级锁机制，保障订单、支付等敏感操作的数据一致性，pnpm Monorepo管理策略则通过共享工具包@campus/common实现角色定义、常量枚举、工具函数的前端复用，避免代码重复。</p>
+<p class="normal">本项目以&quot;服务校园场景、保障交易安全&quot;为核心目标，构建&quot;买家端+卖家端+运营端&quot;三位一体的校园交易生态：在内容层面，整合&quot;商品发布与审核、购物车与订单、收货地址与评价&quot;四大核心交易流程，并引入商品热度算法——通过浏览数、点击数、收藏数加权计算热度分（hot_score），支持热门商品推荐与降序排列，调研显示，加入推荐算法的电商类平台用户转化率可提升30%以上；在体验层面，通过&quot;瀑布流商品展示+分类筛选+关键词搜索&quot;降低用户查找门槛，参考用户体验设计理论，采用Arco Design组件库实现统一的设计规范与交互反馈，保障多页面间视觉与操作的一致性；在互动层面，搭建校园圈子社区模块，支持用户发布学习心得、生活分享等帖子，并通过标签筛选与点赞评论机制促进用户间的校园社交，形成&quot;交易-交流-分享&quot;的闭环。此外，系统集成基于智谱GLM-4-Flash大模型的AI智能助手，通过RAG（检索增强生成）技术将平台交易规则、商品信息等知识存入knowledge_chunk知识库，使AI助手能够基于平台实际内容回答用户关于交易流程、商品状态等问题，而非通用闲聊。</p>
+<p class="normal">从经济与社会价值来看，本平台通过校区化运营降低交易摩擦成本，例如，同校区买家可直接联系卖家当面验货自提，省去物流费用和等待时间，交易效率较通用平台提升明显；从技术实践价值来看，本项目探索了Vue 3 Composition API在多角色SPA中的应用范式，包括基于路由守卫的RBAC权限控制、JWT无状态认证的前后端协作、Monorepo共享包设计等，可为同类校园电商平台开发提供参考；从用户价值来看，平台通过个性化推荐（基于浏览与收藏记录推送适配商品）、离线浏览（前端路由懒加载与状态持久化）等设计，满足不同用户的使用场景——例如，课间休息的学生可通过手机快速浏览热门商品，而有明确购买需求的用户可通过多条件筛选精确查找目标商品。</p>
+<p class="normal">综上，本项目既是对&quot;循环经济发展&quot;政策的响应，也是对校园二手交易需求的适配，通过技术与场景的深度融合，旨在让校园二手交易从&quot;信息散乱&quot;走向&quot;平台规范&quot;，从&quot;跨区低效&quot;转向&quot;同区便捷&quot;，最终实现&quot;让大学生在安全可信的环境中完成闲置物品流转，在校园社区中形成绿色共享的消费习惯&quot;的目标。</p>
+<br>
+<h1 class="heading1">2 相关技术概述</h1>
+<h2 class="heading2">2.1 Vue 3 框架</h2>
+<p class="normal">Vue.js 是由尤雨溪主导开发的开源渐进式 JavaScript 前端框架，自2014年发布以来已成为全球最流行的前端框架之一，GitHub上Star数量超过20万。Vue 3 于2020年9月正式发布，最核心的变化是引入了 Composition API，允许开发者按功能而非选项组织代码，解决了 Vue 2 中 Options API 逻辑分散的问题，组合式函数还可跨组件复用，避免了 Mixins 命名冲突。在响应式系统方面，Vue 3 采用 Proxy 代理对象替代了 Object.defineProperty，从根本上解决了属性新增与数组索引监听的限制。性能层面，编译器引入静态提升与补丁标志等优化策略，渲染性能较 Vue 2 有显著提升，内存占用明显降低。</p>
+<h2 class="heading2">2.2 JavaScript 脚本语言</h2>
+<h2 class="heading2">JavaScript 是 Web 开发领域唯一的浏览器端脚本语言，经过近30年发展已演进为支撑复杂单页应用的核心语言。ES6 标准于2015年发布，是 JavaScript 历史上最大规模的更新，此后 TC39 委员会每年发布新版本持续迭代。ES6+引入了大量现代语法特性：let和const替代var提供块级作用域；箭头函数简化回调写法并通过词法绑定解决this指向问题；解构赋值与展开运算符使数据提取与合并更加直观；Promise与async/await将回调嵌套转变为接近同步风格的线性代码。此外ES Modules通过import和export实现模块化管理，配合构建工具的Tree Shaking机制可自动剔除未引用代码，有效减小打包体积。</h2>
+<h2 class="heading2">2.3 Vite 构建工具</h2>
+<h2 class="heading2">Vite 是由尤雨溪开发的下一代前端构建工具，名称取自法语&quot;快&quot;之意。传统构建工具如 Webpack 采用&quot;打包优先&quot;策略，开发启动时需遍历整个依赖树打包为bundle，项目规模增大后启动时间可能达数十秒。Vite 利用浏览器原生 ES Modules 支持，采用&quot;按需编译&quot;策略，开发启动时仅启动HTTP服务器，当浏览器请求模块时才即时编译，冷启动时间与项目规模解耦，通常在数百毫秒内完成。热模块替换同样基于ESM实现，修改文件后仅需重新编译该文件及其直接依赖，响应速度远快于传统全量打包方式。生产构建基于Rollup，提供代码分割、CSS提取、资源压缩等优化。</h2>
+<h2 class="heading2">2.4 Node.js</h2>
+<p class="normal">Node.js 是基于 Chrome V8 引擎的 JavaScript 运行时环境，由 Ryan Dahl 于2009年创建，使 JavaScript 能够脱离浏览器在服务器端运行。Node.js 采用单线程事件驱动与非阻塞I/O模型，通过事件循环机制处理并发请求，在I/O密集型场景下表现出较高的吞吐量。Node.js 拥有全球最大的开源包管理生态npm，注册包数量超过230万个。pnpm是npm的替代包管理器，采用内容寻址存储与硬链接机制，将依赖包存储在全局store中，各项目通过硬链接引用而非复制，安装速度较npm更快且磁盘占用更少。pnpm原生支持workspace功能，通过pnpm-workspace.yaml声明多个工作空间包实现Monorepo管理，包与包之间通过workspace:协议互相引用。</p>
+<h2 class="heading2">2.5 MySQL</h2>
+<h2 class="heading2">MySQL 是目前最流行的开源关系型数据库管理系统之一，由瑞典 MySQL AB 公司开发，现属于 Oracle 公司。MySQL 采用客户端/服务器架构，支持标准SQL语法，以性能优异、可靠性高、使用成本低等特点被广泛应用于Web应用的数据持久化存储。MySQL 8.0引入了多项新特性：窗口函数允许在不减少结果行数的前提下进行分组计算，支持排名与前后值比较等操作；公共表表达式通过WITH子句支持递归查询；JSON数据类型增强提供了更灵活的文档查询与操作能力；InnoDB引擎读写性能较5.7版本有明显提升。MySQL提供社区版和商业版两种授权方式，由于其小巧的体积、快速的处理速度、开放源码的特性，成为中小型到大型网站开发的理想选择。
+2.6 Spring Boot</h2>
+<p class="normal">Spring Boot 是由 Pivotal 团队开发的基于 Spring 框架的快速开发脚手架，于2014年发布首个正式版本，旨在简化 Spring 应用的初始搭建与开发过程。Spring Boot 遵循&quot;约定优于配置&quot;原则，通过自动配置机制根据项目引入的依赖自动装配相应的Bean，开发者无需编写大量XML配置文件即可完成应用搭建。内嵌Tomcat、Jetty或Undertow服务器使得应用可直接以java -jar命令启动运行，无需部署到外部容器。Starter依赖聚合机制将常用功能模块的依赖打包为统一入口，如spring-boot-starter-web整合了Spring MVC、Jackson和内嵌服务器，spring-boot-starter-security整合了Spring Security安全框架，极大地降低了依赖管理的复杂度。Spring Boot 3.0于2022年11月正式发布，基于Spring Framework 6构建，要求Java 17及以上版本，全面支持Jakarta EE规范，并在GraalVM原生镜像编译、可观测性集成等方面进行了重要增强。Spring Boot凭借其简洁的配置方式和完善的生态体系，已成为Java Web应用开发领域使用最广泛的后端框架。</p>
+<br>
+<h1 class="heading1">3 系统需求分析</h1>
+<h2 class="heading2">3.1 可行性分析</h2>
+<h3 class="heading3">3.1.1 技术可行性</h3>
+<h3 class="heading3">本系统前端采用Vue 3框架结合Composition API进行开发，配合Arco Design组件库提供统一的UI风格，使用Vite作为构建工具保证开发阶段的快速热更新与高效编译；后端采用Spring Boot 3框架，整合Spring Security与JWT实现安全认证授权，通过Spring JDBC与HikariCP连接池操作MySQL 8.x数据库，保障数据访问的性能与可靠性；项目采用pnpm Monorepo架构管理公共包与子应用，借助qiankun微前端框架实现运维子应用的独立开发与部署。以上技术均为当前业界成熟且广泛使用的技术方案，社区生态完善、文档资料丰富，技术风险可控，具备技术可行性。</h3>
+<h3 class="heading3">3.1.2 经济可行性</h3>
+<h3 class="heading3">本系统所采用的技术栈均为开源免费方案：Vue 3、Spring Boot、MySQL社区版、Vite等无需支付授权费用；开发工具可使用VS Code、IntelliJ IDEA社区版等免费版本；部署环境可选择Linux服务器与Docker容器化方案，运维成本较低。系统面向校园内部学生群体，交易过程中平台不收取佣金，降低了运营成本。同时，校园二手交易平台能够有效减少学生闲置物品的浪费，促进资源循环利用，具有良好的社会经济效益，具备经济可行性。</h3>
+<h3 class="heading3">3.1.3 社会可行性</h3>
+<p class="normal">当前国家大力倡导绿色低碳与循环经济发展，2021年国务院发布《关于加快建立健全绿色低碳循环发展经济体系的指导意见》，明确鼓励二手商品流通与闲置资源再利用。据中国青年网调查显示，72.04%的大学生拥有闲置物品，80.84%愿意进行闲置物品交易，校园二手交易需求旺盛。然而现有主流平台如闲鱼、转转等面向全年龄段用户，缺乏针对校园场景的信用体系与社区氛围，交易信息鱼龙混杂，学生群体面临较高的信任风险。本系统立足于校园场景，通过实名认证与校园圈子社区增强用户之间的信任基础，符合国家政策导向与校园实际需求，具备社会可行性。</p>
+<h3 class="heading3">3.1.4 组织可行性</h3>
+<p class="normal">在项目启动之前，编写详细的需求规格说明书和系统设计文档是确保开发工作有序推进的基础。需求规格说明书明确界定了系统的功能边界、用户角色权限、业务流程规则以及非功能性需求，为后续的设计与开发提供了清晰的依据。系统设计文档则详细规划了技术架构选型、数据库E-R模型、接口规范定义以及模块划分方案，确保团队成员对系统整体结构达成共识。项目采用敏捷开发模式，通过迭代计划与每日站会机制跟踪进度，配合Git版本控制与代码评审流程保障代码质量。从组织可行性分析的角度来看，通过规范的需求管理、稳定的迭代交付以及严格的质量把控，本系统开发项目是完全可行的。</p>
+<h3 class="heading3">3.1.5 性能可行性</h3>
+<p class="normal">本系统前端采用Vite构建工具，利用浏览器原生ES Modules实现按需编译，开发阶段冷启动时间在数百毫秒级别，热更新响应迅速；生产构建基于Rollup进行代码分割与Tree Shaking，有效减小打包体积。后端采用Spring Boot 3框架配合HikariCP连接池，数据库连接复用率高，支持高并发场景下的稳定访问；MySQL 8.x引入的窗口函数与索引优化策略能够提升复杂查询的执行效率。系统通过CDN加速静态资源分发，减轻服务器带宽压力；采用Redis缓存热点数据，降低数据库查询频次。在部署架构上，运维子应用基于qiankun微前端方案独立部署，与主应用解耦，避免单点故障影响整体服务。从性能可行性分析的角度来看，本系统在响应速度、并发处理与资源优化方面均能满足校园二手交易平台的实际运行需求。</p>
+<h2 class="heading2">3.2 功能需求分析</h2>
+<p class="normal">本系统面向校园二手交易场景，根据用户角色和业务流程，将功能需求划分为买家端功能、卖家端功能和运营端功能三大模块，各模块具体功能需求如下。</p>
+<p class="no-indent"><strong>（1）用户认证模块</strong></p>
+<p class="normal">用户注册：支持用户通过填写用户名、密码和昵称进行注册，注册时可选择买家或卖家角色；</p>
+<p class="normal">用户登录：已注册用户通过用户名和密码登录系统，系统基于JWT令牌实现无状态认证，登录后根据角色权限跳转至对应页面；</p>
+<p class="normal">运营端登录：运营管理人员通过独立的运营端入口登录后台管理系统，与普通用户登录分离，保障管理权限安全；</p>
+<p class="normal">个人资料管理：用户可修改昵称、邮箱、个人简介、所在校区和手机号码等个人信息；</p>
+<p class="normal">头像管理：用户可上传和更换个人头像；</p>
+<p class="normal">修改密码：用户可通过验证旧密码后设置新密码。</p>
+<p class="no-indent"><strong>（2）商品管理模块</strong></p>
+<p class="normal">商品发布：卖家可发布二手商品，填写商品标题、价格、描述、上传图片、选择分类和成色等级，发布后进入待审核状态；</p>
+<p class="normal">商品列表：支持分页浏览、关键词搜索、分类筛选和排序功能，买家可浏览所有已审核通过的商品；</p>
+<p class="normal">商品详情：展示商品的完整信息，包括图片、价格、描述、成色、卖家信息等，同时记录浏览量；</p>
+<p class="normal">商品编辑：卖家可修改已发布商品的信息；</p>
+<p class="normal">商品下架：卖家可将商品下架，下架后商品不再展示在商品列表中；</p>
+<p class="normal">热度统计：通过浏览数、点击数和收藏数加权计算商品热度分（hot_score），支持热门商品推荐和降序排列。</p>
+<p class="no-indent"><strong>（3）商品审核模块</strong></p>
+<p class="normal">待审核列表：运营人员可查看所有待审核商品列表，支持分页浏览；</p>
+<p class="normal">审核通过：运营人员审核商品信息后，通过审核的商品将上架展示；</p>
+<p class="normal">审核驳回：运营人员可驳回不符合规范的商品，并填写驳回原因；</p>
+<p class="normal">审核日志：系统记录每次审核操作的详细信息，包括操作人、操作时间和操作原因。</p>
+<p class="no-indent"><strong>（4）购物车模块</strong></p>
+<p class="normal">添加商品：买家可将商品添加至购物车，支持设置购买数量；</p>
+<p class="normal">修改数量：买家可修改购物车中商品的数量；</p>
+<p class="normal">选择与取消：买家可选择或取消选择购物车中的商品，支持批量全选操作；</p>
+<p class="normal">删除与清空：买家可删除购物车中的单个商品或清空整个购物车。</p>
+<p class="no-indent"><strong>（5）订单管理模块</strong></p>
+<p class="normal">创建订单：买家确认购买后创建订单，填写收货人信息，系统生成唯一订单编号；</p>
+<p class="normal">模拟支付：买家可对未支付订单进行模拟支付操作；</p>
+<p class="normal">确认收货：买家收到商品后确认收货，订单状态流转为已完成；</p>
+<p class="normal">卖家发货：卖家填写快递公司和快递单号后发货；</p>
+<p class="normal">取消订单：买家可在未支付状态下取消订单；</p>
+<p class="normal">退款管理：买家可申请退款，卖家可同意或拒绝退款申请。</p>
+<p class="no-indent"><strong>（6）收藏模块</strong></p>
+<p class="normal">添加收藏：买家可收藏感兴趣的商品；</p>
+<p class="normal">取消收藏：买家可取消已收藏的商品；</p>
+<p class="normal">收藏列表：买家可查看所有已收藏的商品列表；</p>
+<p class="normal">收藏检查：系统支持检查某商品是否已被当前用户收藏。</p>
+<p class="no-indent"><strong>（7）收货地址模块</strong></p>
+<p class="normal">地址列表：用户可查看所有已保存的收货地址；</p>
+<p class="normal">新增地址：用户可添加新的收货地址，包括收货人姓名、联系电话、省市区和详细地址；</p>
+<p class="normal">编辑地址：用户可修改已保存的收货地址信息；</p>
+<p class="normal">删除地址：用户可删除不需要的收货地址；</p>
+<p class="normal">默认地址：用户可设置某个地址为默认收货地址，下单时自动填充。</p>
+<p class="no-indent"><strong>（8）评价模块</strong></p>
+<p class="normal">买家评价：买家在确认收货后可对商品进行评价，包括评分（1-5星）、文字评论和图片；</p>
+<p class="normal">卖家回复：卖家可对买家的评价进行回复；</p>
+<p class="normal">评价列表：展示某商品的所有评价信息，支持分页浏览；</p>
+<p class="normal">评价审核：运营人员可审核评价内容，审核通过或驳回不当评价。</p>
+<p class="no-indent"><strong>（9）校园圈子模块</strong></p>
+<p class="normal">发布帖子：用户可发布校园动态帖子，包括标题、内容、图片和标签；</p>
+<p class="normal">帖子列表：展示所有已审核通过的帖子，支持分页浏览和标签筛选；</p>
+<p class="normal">帖子详情：展示帖子的完整内容，包括图片、点赞数和评论数；</p>
+<p class="normal">点赞与评论：用户可对帖子进行点赞和评论操作；</p>
+<p class="normal">我的帖子：用户可查看自己发布的所有帖子；</p>
+<p class="normal">帖子审核：运营人员可审核帖子内容，审核通过或驳回。</p>
+<p class="no-indent"><strong>（10）消息通知模块</strong></p>
+<p class="normal">消息列表：用户可查看所有通知消息，支持按类型筛选（系统通知、交易消息、审核消息、互动消息）和分页浏览；</p>
+<p class="normal">未读计数：系统实时统计用户的未读消息数量，在页面顶部以角标形式展示；</p>
+<p class="normal">标记已读：用户可标记单条消息为已读，也可一键全部标记已读；</p>
+<p class="normal">删除消息：用户可删除不需要的消息；</p>
+<p class="normal">消息中心下拉面板：在页面头部提供消息中心快捷入口，点击后展示最近消息的预览面板，支持快速查看和跳转。</p>
+<p class="no-indent"><strong>（11）AI智能助手模块</strong></p>
+<p class="normal">AI对话：用户可与AI智能助手进行自然语言对话，获取平台使用指导和交易建议；</p>
+<p class="normal">预设问题：系统根据用户角色提供预设问题列表，方便用户快速提问；</p>
+<p class="normal">会话历史：用户可查看最近的AI对话会话列表；</p>
+<p class="normal">消息记录：用户可查看某个会话的完整消息记录。</p>
+<p class="no-indent"><strong>（12）卖家数据统计模块</strong></p>
+<p class="normal">销售概览：卖家可查看总销售额、订单数和商品数等关键指标；</p>
+<p class="normal">销售趋势：卖家可查看近7天至30天的销售趋势图；</p>
+<p class="normal">商品排名：卖家可查看自己商品的销量排名情况。</p>
+<p class="no-indent"><strong>（13）运营管理模块</strong></p>
+<p class="normal">运营仪表盘：展示平台整体运营数据，包括用户数、商品数、订单数和交易额等统计信息；</p>
+<p class="normal">商品审核管理：运营人员可查看待审核商品列表，进行审核通过或驳回操作；</p>
+<p class="normal">评价审核管理：运营人员可审核用户评价内容；</p>
+<p class="normal">圈子审核管理：运营人员可审核用户发布的帖子内容；</p>
+<p class="normal">订单管理：运营人员可查看和管理平台所有订单；</p>
+<p class="normal">用户管理：运营人员可管理买家和卖家信息，包括角色分配和状态管理；</p>
+<p class="normal">待审核统计：系统统计待审核商品、评价和帖子的数量，便于运营人员快速处理。</p>
+<p class="no-indent"><strong>（14）文件上传模块</strong></p>
+<p class="normal">图片上传：已认证用户可通过接口上传商品图片、帖子图片等，支持jpg/png/gif/webp等常见图片格式；</p>
+<p class="normal">文件存储：系统采用Base64编码方式将图片数据存储在数据库的uploaded_file表中，同时记录原始文件名、存储名、文件路径、文件大小和内容类型等信息；</p>
+<p class="normal">上传列表：用户可查看自己上传的所有文件列表，便于管理和复用已上传的图片资源。</p>
+<p class="no-indent"><strong>（15）字典服务模块</strong></p>
+<p class="normal">字典数据获取：系统提供统一的字典数据接口，前端通过字典类型（dictType）获取对应的下拉选项数据；</p>
+<p class="normal">商品分类：提供数码、书籍、服装、生活、运动等商品分类选项，用于商品发布时的分类选择和列表筛选；</p>
+<p class="normal">成色等级：提供全新、几乎全新、轻微使用痕迹、明显使用痕迹等成色等级选项，用于商品发布时标注商品新旧程度；</p>
+<p class="normal">统一管理：字典服务将系统中所有下拉选项集中管理，便于维护和扩展，避免硬编码带来的维护困难。</p>
+<p class="no-indent"><strong>（16）全局异常处理模块</strong></p>
+<p class="normal">参数校验异常：统一处理接口请求中的参数校验失败情况，返回标准格式的错误信息；</p>
+<p class="normal">业务异常：捕获自定义业务异常（BusinessException），将业务错误码和错误消息转换为统一的响应格式返回给前端；</p>
+<p class="normal">认证授权异常：处理JWT令牌过期、无效令牌、权限不足等认证授权相关的异常，引导前端跳转至登录页或提示无权限；</p>
+<p class="normal">未预期异常：捕获所有未被上述处理器处理的异常，返回通用错误信息，同时记录详细日志便于排查问题；</p>
+<p class="normal">统一响应格式：所有异常均返回标准的JSON格式错误响应，包含错误码、错误消息和时间戳，确保前端能统一处理错误展示。</p>
+<br>
+<figcaption>具体功能需求如图3.1所示。</figcaption>
+<br>
+<figcaption>图3.1 前端功能需求图</figcaption>
+<p class="normal">用例图可以用于描述系统功能，它可以展示系统的用户、用例和它们之间的关系。用例图的目的是帮助分析和设计系统的需求，以及验证系统是否满足用户的期望。</p>
+<p class="normal">根据以上功能模块，本系统涉及三种角色：买家、卖家和运营人员。买家用例主要包括注册登录、浏览搜索商品、购物车管理、下单购买、收藏商品、评价商品、消息通知、AI助手和校园圈子等功能；卖家用例主要包括注册登录、商品发布管理、订单发货、退款处理、销售统计、评价回复、消息通知和校园圈子等功能；运营用例主要包括运营端登录、数据仪表盘、商品审核、评价审核、圈子审核、订单管理和用户管理等功能。买家用例图、卖家用例图和运营用例图，如图3.2所示。</p>
+<br>
+<figcaption>图3.2 买家、卖家、运营用例图</figcaption>
+<div class="table-placeholder">📊 表5.16 知识库片段表（knowledge_chunk）（待补充具体字段）</div>
+<p class="normal">知识库片段表（knowledge_chunk），如表5.16所示。</p>
+<h1 class="heading1">4 系统基础模块设计与实现</h1>
+<h2 class="heading2">4.1 系统流程</h2>
+<p class="normal">依照对功能的需求分析，设计系统流程图。用户访问平台后，首先进行注册或登录操作，系统根据用户角色（买家、卖家、运营）分配不同的功能入口。买家可浏览搜索商品、加入购物车、下单支付、确认收货和评价商品；卖家可发布商品、管理订单、发货和处理退款；运营人员可审核商品、评价和帖子，管理用户和订单。系统流程图如图4.1所示。</p>
+<br>
+<figcaption>图4.1 系统流程图</figcaption>
+<h2 class="heading2">4.2 基础功能模块设计概述</h2>
+<p class="normal">根据需求分析，对基础功能模块进行如下设计：</p>
+<p class="no-indent"><strong>（1）前端架构设计</strong></p>
+<p class="normal">前端采用Vue 3框架结合Composition API进行开发，使用Vite作为构建工具实现快速热更新。项目采用Monorepo架构，将公共代码抽取到@campus/common共享包中，实现代码复用。UI组件库选用Arco Design，提供统一的视觉风格。状态管理使用Pinia，路由管理使用Vue Router，通过路由守卫实现基于角色的访问控制（RBAC）。前端整体分为门户端（Portal）和运营端（Ops）两大模块，门户端面向买家和卖家，运营端面向运营管理人员。</p>
+<p class="no-indent"><strong>（2）后端架构设计</strong></p>
+<p class="normal">后端采用Spring Boot 3框架，整合Spring Security与JWT实现安全认证授权。数据访问层使用Spring JDBC与HikariCP连接池操作MySQL 8.x数据库。系统采用Controller-Service-Repository三层架构，Controller层负责接收和响应HTTP请求，Service层处理业务逻辑，Repository层负责数据持久化操作。通过@PreAuthorize注解实现方法级别的权限控制，确保不同角色只能访问对应的功能接口。</p>
+<p class="no-indent"><strong>（3）认证授权设计</strong></p>
+<p class="normal">系统采用JWT（JSON Web Token）无状态认证方案。用户登录成功后，服务端生成包含用户ID和角色信息的JWT令牌返回给前端，前端将令牌存储在localStorage中，后续请求通过Authorization请求头携带令牌。服务端的JwtAuthenticationFilter拦截器解析并验证令牌，将用户信息注入SecurityContext，实现请求级别的身份识别和权限校验。普通用户和运营人员使用独立的认证流程和令牌体系，保障管理权限安全。</p>
+<p class="no-indent"><strong>（4）数据库设计</strong></p>
+<p class="normal">数据库采用MySQL 8.x，设计遵循第三范式，同时兼顾查询性能适当冗余。核心数据表包括用户表（user_account）、商品表（item）、订单表（orders）、评价表（review）、购物车表（cart）、收藏表（favorite）、地址表（address）、商品统计表（item_stats）、圈子帖子表（circle_post）、圈子评论表（circle_comment）、圈子点赞表（circle_like）、消息表（message）、AI会话表（ai_session）、AI消息表（ai_message）和运营账号表（ops_account），共计15张数据表。各表通过外键关联，建立索引优化查询性能。</p>
+<h2 class="heading2">4.3 基础功能模块具体实现</h2>
+<h3 class="heading3">4.3.1 用户认证模块实现</h3>
+<p class="normal">用户认证模块由AuthController、AuthService和JwtUtil三个核心类协作实现。AuthController提供登录、注册、获取当前用户信息、更新个人资料和修改密码等RESTful接口；AuthService处理具体的认证业务逻辑，包括密码验证、令牌生成和用户信息查询；JwtUtil负责JWT令牌的生成、解析和验证。</p>
+<p class="normal">用户注册时，前端将用户名、密码、昵称和角色信息发送至/api/auth/register接口，AuthService对密码进行BCrypt加密后存储至数据库，同时为用户分配默认角色。用户登录时，AuthService验证用户名和密码，验证通过后调用JwtUtil生成包含用户ID和角色信息的JWT令牌返回给前端。前端收到令牌后存储至localStorage，并在后续请求的Authorization头中携带该令牌。</p>
+<figcaption>登录页面如图4.2所示。</figcaption>
+<br>
+<figcaption>图4.2 登录页面</figcaption>
+<h3 class="heading3">4.3.2 商品管理模块实现</h3>
+<p class="normal">商品管理模块由ItemController、ItemService和ItemRepository实现。卖家通过POST /api/items接口发布商品，需填写商品标题、价格、描述、图片URL列表、分类和成色等级，商品发布后默认进入待审核（PENDING）状态。买家通过GET /api/items接口浏览商品列表，支持关键词搜索、分类筛选和排序功能，系统仅展示审核通过（APPROVED）状态的商品。商品详情接口GET /api/items/{id}返回商品完整信息，同时通过ItemStatsService记录浏览量。</p>
+<p class="normal">商品热度统计通过ItemStatsService实现，采用加权计算公式hot_score = view_count × 0.2 + click_count × 0.3 + favorite_count × 0.5，支持热门商品推荐和降序排列。首页展示热门推荐商品，如图4.3所示。</p>
+<br>
+<figcaption>图4.3 首页</figcaption>
+<p class="normal">商品详情页展示商品的完整信息，包括图片、价格、描述、成色、卖家信息等，并提供收藏和加入购物车功能，如图4.4所示。</p>
+<br>
+<figcaption>图4.4 商品详情页</figcaption>
+<h3 class="heading3">4.3.3 购物车与订单模块实现</h3>
+<p class="normal">购物车模块由CartController和CartService实现。买家通过POST /api/cart接口将商品添加至购物车，可设置购买数量；通过PUT /api/cart/{id}接口修改商品数量；通过PUT /api/cart/{id}/select接口选择或取消选择商品；通过DELETE /api/cart/{id}接口删除购物车商品。购物车支持批量选择和清空操作。</p>
+<p class="normal">订单模块由OrderController和OrderService实现。买家确认购买后通过POST /api/orders接口创建订单，填写收货人信息，系统生成唯一订单编号。订单状态流转为：待支付（PENDING）→已支付（PAID）→已发货（SHIPPED）→已完成（COMPLETED），同时支持取消订单和退款流程。卖家通过POST /api/orders/{id}/ship接口填写快递信息发货，买家通过POST /api/orders/{id}/confirm接口确认收货。</p>
+<h3 class="heading3">4.3.4 消息通知模块实现</h3>
+<p class="normal">消息通知模块由MessageController和MessageService实现，是本系统的重要功能模块之一。消息表（message）设计包含发送者ID、发送者名称、接收者ID、消息内容、消息类型和消息状态等字段。消息类型分为四种：系统通知（SYSTEM）、交易消息（TRANSACTION）、审核消息（REVIEW）和互动消息（INTERACTION），通过type字段区分。</p>
+<p class="normal">MessageController提供以下核心接口：GET /api/messages获取消息列表，支持按类型筛选和分页；GET /api/messages/unread-count获取未读消息数量；POST /api/messages/{id}/read标记单条消息为已读；POST /api/messages/read-all一键全部标记已读；DELETE /api/messages/{id}删除消息。MessageService封装了发送消息的统一方法sendMessage，以及针对不同消息类型的便捷方法：sendSystemNotification发送系统通知、sendTransactionMessage发送交易消息、sendReviewResultMessage发送审核结果消息、sendInteractionMessage发送互动消息。</p>
+<p class="normal">前端消息中心包含两个组件：MessageList页面和MessageCenter下拉面板。MessageList页面提供完整的消息管理功能，包括分类标签切换（全部、系统通知、交易消息、审核消息、互动消息）、批量选择操作（批量标记已读、批量删除）、消息点击自动标记已读和跳转关联页面。MessageCenter下拉面板集成在页面头部导航栏，以角标形式展示未读消息数量，点击后展开最近5条消息的预览面板，支持快速查看和跳转。消息中心页面如图4.5所示。</p>
+<br>
+<figcaption>图4.5 消息中心页面</figcaption>
+<h3 class="heading3">4.3.5 校园圈子模块实现</h3>
+<p class="normal">校园圈子模块由CircleController和CircleService实现。用户通过POST /api/circle/posts接口发布帖子，填写标题、内容、图片和标签，帖子发布后进入待审核状态。审核通过的帖子通过GET /api/circle/posts接口展示，支持分页浏览和标签筛选。帖子详情接口GET /api/circle/posts/{id}返回帖子的完整信息，包括点赞数和评论数。用户可通过POST /api/circle/posts/{id}/like接口点赞或取消点赞（切换操作），通过POST /api/circle/posts/{id}/comments接口发表评论。运营人员可通过审核接口管理帖子内容。</p>
+<h3 class="heading3">4.3.6 AI智能助手模块实现</h3>
+<p class="normal">AI智能助手模块由AIController和AIService实现。用户通过POST /api/ai/chat接口与AI助手进行对话，发送消息后系统返回AI回复。AI助手根据用户角色提供不同的预设问题列表，通过GET /api/ai/presets接口获取。会话管理通过GET /api/ai/sessions/recent接口获取最近的会话列表，通过GET /api/ai/sessions/{sessionId}/messages接口获取某个会话的完整消息记录。AI对话基于知识库检索增强生成（RAG）技术，将平台使用指南和常见问题作为知识库，提升回复的准确性和相关性。</p>
+<h2 class="heading2">4.4 基础UI界面设计与实现</h2>
+<p class="normal">本系统前端采用Arco Design组件库，结合自定义主题配置，实现了统一的视觉风格。系统分为门户端和运营端两套独立的布局体系。</p>
+<p class="normal">门户端采用白色导航栏风格，包含首页、全部商品、购物车、订单、收藏、消息中心、校园圈子、个人中心等页面。页面布局采用PageContainer统一容器组件，配合PageHeader页面头部组件，确保页面结构一致性。商品列表采用瀑布流布局（MasonryLayout），商品卡片（ItemCard）展示商品图片、标题、价格和成色信息。</p>
+<p class="normal">运营端采用深色侧边栏风格，包含数据仪表盘、商品审核、评价审核、圈子审核、订单管理、用户管理等页面。仪表盘使用ECharts图表组件（OpsBarChart、OpsDonutChart、OpsLineChart）展示运营数据。审核工作台（ApprovalWorkspace）提供高效的审核操作界面。</p>
+<h1 class="heading1">5 系统核心模块设计与实现</h1>
+<h2 class="heading2">5.1 核心模块设计概述</h2>
+<p class="no-indent"><strong>（1）权限控制设计</strong></p>
+<p class="normal">系统采用基于角色的访问控制（RBAC）模型，定义了三种用户角色：买家（BUYER）、卖家（SELLER）和运营（OPS）。前端通过Vue Router的路由守卫实现页面级权限控制，未登录用户访问需认证页面时自动跳转至登录页，角色不匹配时跳转至403禁止访问页面。后端通过Spring Security的@PreAuthorize注解实现接口级权限控制，如商品发布接口限制SELLER角色访问，运营管理接口限制OPS角色访问。</p>
+<p class="no-indent"><strong>（2）商品审核流程设计</strong></p>
+<p class="normal">商品发布后进入待审核（PENDING）状态，运营人员在审核工作台中查看待审核商品列表，审核通过后商品状态变为APPROVED并上架展示，审核驳回时需填写驳回原因，商品状态变为REJECTED。审核操作记录在review_log表中，包含操作人、操作时间和操作原因。</p>
+<p class="no-indent"><strong>（3）订单状态机设计</strong></p>
+<p class="normal">订单状态采用状态机模式管理，定义了以下状态流转：待支付（PENDING）→已支付（PAID）→已发货（SHIPPED）→已完成（COMPLETED），同时支持从待支付状态取消订单（CANCELLED），从已支付状态申请退款（REFUNDING）→退款成功（REFUNDED）或退款拒绝（PAID）。每个状态流转操作都校验当前状态是否允许该操作，确保订单状态的合法性。</p>
+<p class="no-indent"><strong>（4）消息通知设计</strong></p>
+<p class="normal">消息通知系统设计为四种消息类型：系统通知用于平台公告和维护通知；交易消息用于订单状态变更通知（发货、收货、退款等）；审核消息用于商品和帖子审核结果通知；互动消息用于圈子点赞和评论通知。消息状态分为未读（UNREAD）和已读（READ），支持软删除。前端通过MessageCenter组件在导航栏实时展示未读消息数量，用户可快速查看和处理消息。</p>
+<p class="no-indent"><strong>（5）热度算法设计</strong></p>
+<p class="normal">商品热度算法采用加权计算方式，公式为hot_score = view_count × 0.2 + click_count × 0.3 + favorite_count × 0.5。浏览量通过商品详情接口自动记录，点击量通过track-click接口记录，收藏量通过track-favorite接口记录。热度分数存储在item_stats表中，支持降序排列查询热门商品。</p>
+<h2 class="heading2">5.2 核心功能模块具体实现</h2>
+<h3 class="heading3">5.2.1 权限控制模块实现</h3>
+<p class="normal">前端权限控制通过Vue Router的beforeEach守卫实现。守卫首先检查用户是否已登录（通过Pinia的auth store检查token和user信息），未登录用户访问需认证页面时跳转至登录页。登录后检查用户角色是否匹配路由要求的角色（通过meta.roles定义），角色不匹配时跳转至403页面。角色判断使用hasAnyRole函数，支持一个用户拥有多个角色。</p>
+<p class="normal">后端权限控制通过Spring Security的JwtAuthenticationFilter和@PreAuthorize注解实现。JwtAuthenticationFilter拦截所有请求，从Authorization头中提取JWT令牌，验证令牌有效性后解析用户ID和角色信息，将认证信息注入SecurityContext。@PreAuthorize注解在Controller方法上声明访问权限，如@PreAuthorize(&quot;hasRole(&#x27;SELLER&#x27;)&quot;)限制只有卖家角色才能访问商品发布接口，@PreAuthorize(&quot;isAuthenticated() and hasRole(&#x27;OPS&#x27;)&quot;)限制只有运营角色才能访问运营管理接口。</p>
+<h3 class="heading3">5.2.2 商品审核与订单管理实现</h3>
+<p class="normal">商品审核由OpsReviewController和ReviewService实现。运营人员通过POST /api/ops/reviews接口查询待审核商品队列，支持按状态、关键词和分类筛选。审核通过调用POST /api/ops/reviews/{itemId}/approve接口，审核驳回调用POST /api/ops/reviews/{itemId}/reject接口并填写驳回原因。审核操作记录在review_log表中，包含操作人ID、操作类型、操作原因和操作时间。</p>
+<p class="normal">订单管理由OrderController和OrderService实现。OrderService封装了订单的完整生命周期管理，创建订单时校验商品状态和库存，生成唯一订单编号（格式为时间戳+随机数），计算订单总金额。支付操作校验订单状态必须为PENDING，发货操作校验订单状态必须为PAID且当前用户为卖家，确认收货操作校验订单状态必须为SHIPPED且当前用户为买家。退款流程中，买家申请退款后订单状态变为REFUNDING，卖家可同意或拒绝退款。</p>
+<h3 class="heading3">5.2.3 消息通知系统实现</h3>
+<p class="normal">消息通知系统是本系统的核心功能之一，实现了完整的通知推送和管理机制。后端MessageService提供了统一的消息发送入口sendMessage方法，接收接收者ID、消息类型、标题、内容和关联链接五个参数，将消息存储至message表中。系统在关键业务节点自动触发消息发送：商品审核通过或驳回时发送审核结果消息，订单状态变更时发送交易消息，圈子收到点赞或评论时发送互动消息，平台发布公告时发送系统通知。</p>
+<p class="normal">前端MessageCenter组件集成在页面头部导航栏，通过a-badge组件展示未读消息数量角标。用户点击通知图标后展开下拉面板，展示最近5条消息的预览，每条消息根据类型显示不同的图标和颜色（系统通知为蓝色、交易消息为橙色、审核消息为绿色、互动消息为红色）。用户点击消息后自动标记为已读并跳转至关联页面。MessageList页面提供完整的消息管理功能，支持分类标签切换、批量选择操作和分页浏览。</p>
+<h3 class="heading3">5.2.4 运营数据统计实现</h3>
+<p class="normal">运营数据统计由OpsController、StatsService和SellerStatsService实现。OpsController提供运营统计数据聚合接口，StatsService计算平台整体数据，包括用户总数、商品总数、订单总数、交易总额、待审核数量等。SellerStatsService为卖家提供个人销售数据统计，包括销售概览（总销售额、订单数、商品数）、销售趋势（近7天至30天的每日销售额）和商品排名（按销量降序排列）。运营仪表盘使用ECharts图表组件展示数据，包括柱状图（OpsBarChart）、环形图（OpsDonutChart）和折线图（OpsLineChart）。</p>
+<h2 class="heading2">5.3 数据库设计与实现</h2>
+<figcaption>根据系统功能需求，设计数据库E-R图如图5.1所示。</figcaption>
+<br>
+<figcaption>图5.1 数据库E-R图</figcaption>
+<p class="normal">依照上述分析，创建数据表，具体设计如下：</p>
+<p class="normal">用户表（user_account），如表5.1所示。</p>
+<div class="table-placeholder">📊 表5.1 用户表（user_account）（待补充具体字段）</div>
+<p class="normal">商品表（item），如表5.2所示。</p>
+<div class="table-placeholder">📊 表5.2 商品表（item）（待补充具体字段）</div>
+<p class="normal">订单表（orders），如表5.3所示。</p>
+<div class="table-placeholder">📊 表5.3 订单表（orders）（待补充具体字段）</div>
+<p class="normal">评价表（review），如表5.4所示。</p>
+<div class="table-placeholder">📊 表5.4 评价表（review）（待补充具体字段）</div>
+<p class="normal">购物车表（cart），如表5.5所示。</p>
+<div class="table-placeholder">📊 表5.5 购物车表（cart）（待补充具体字段）</div>
+<p class="normal">收藏表（favorite），如表5.6所示。</p>
+<div class="table-placeholder">📊 表5.6 收藏表（favorite）（待补充具体字段）</div>
+<p class="normal">地址表（address），如表5.7所示。</p>
+<div class="table-placeholder">📊 表5.7 地址表（address）（待补充具体字段）</div>
+<p class="normal">商品统计表（item_stats），如表5.8所示。</p>
+<div class="table-placeholder">📊 表5.8 商品统计表（item_stats）（待补充具体字段）</div>
+<p class="normal">圈子帖子表（circle_post），如表5.9所示。</p>
+<div class="table-placeholder">📊 表5.9 圈子帖子表（circle_post）（待补充具体字段）</div>
+<p class="normal">圈子评论表（circle_comment），如表5.10所示。</p>
+<div class="table-placeholder">📊 表5.10 圈子评论表（circle_comment）（待补充具体字段）</div>
+<p class="normal">圈子点赞表（circle_like），如表5.11所示。</p>
+<div class="table-placeholder">📊 表5.11 圈子点赞表（circle_like）（待补充具体字段）</div>
+<p class="normal">消息表（message），如表5.12所示。</p>
+<div class="table-placeholder">📊 表5.12 消息表（message）（待补充具体字段）</div>
+<p class="normal">AI会话表（ai_session），如表5.13所示。</p>
+<div class="table-placeholder">📊 表5.13 AI会话表（ai_session）（待补充具体字段）</div>
+<p class="normal">AI消息表（ai_message），如表5.14所示。</p>
+<div class="table-placeholder">📊 表5.14 AI消息表（ai_message）（待补充具体字段）</div>
+<p class="normal">运营账号表（ops_account），如表5.15所示。</p>
+<div class="table-placeholder">📊 表5.15 运营账号表（ops_account）（待补充具体字段）</div>
+<h1 class="heading1">6 测试</h1>
+<h2 class="heading2">6.1 测试目的</h2>
+<p class="normal">通过软件测试，可以验证校园二手交易平台的所有功能设计都得到实现，系统运行是否稳定，页面交互是否流畅，并且在不断的测试中，也可以发现原本被忽略的系统缺陷。同时软件测试也是软件开发过程中不可缺少的一环，它决定着产品最终的品质。</p>
+<h2 class="heading2">6.2 测试环境</h2>
+<p class="normal">本系统测试环境如下：前端运行在Node.js 18.x环境中，使用Vite开发服务器；后端运行在JDK 17环境中，使用Spring Boot内嵌Tomcat服务器；数据库使用MySQL 8.x社区版。测试浏览器使用Google Chrome 120版本。操作系统为Windows 11，处理器为Intel i7-12700H，主频2.70GHz，内存16GB。</p>
+<h2 class="heading2">6.3 测试结果</h2>
+<p class="normal">系统采取的测试方案为黑盒测试，黑盒测试不需要关心程序内部的实现，可以测试程序是否满足所有的设计要求。</p>
+<p class="normal">系统功能测试用例表，如表6.1所示。</p>
+<div class="table-placeholder">📊 表6.1 系统功能测试用例表（待补充具体字段）</div>
+<h1 class="heading1">7 总结</h1>
+<p class="normal">本文设计并实现了一套基于Vue 3与Spring Boot的校园二手交易平台系统。该系统采用前后端分离架构，前端以Vue 3框架配合Pinia状态管理、Vue Router路由管理及Arco Design组件库构建用户界面，后端以Spring Boot 3框架整合Spring Security与JWT实现安全认证授权，通过Spring JDBC操作MySQL 8.x数据库实现数据持久化。系统实现了用户认证、商品管理、商品审核、购物车、订单管理、收藏、收货地址、评价、校园圈子、消息通知、AI智能助手、卖家数据统计和运营管理等核心功能模块。</p>
+<p class="normal">在技术实现方面，本系统具有以下特色：一是采用基于JWT的无状态认证方案，结合Spring Security的@PreAuthorize注解实现了细粒度的角色权限控制，确保不同角色只能访问对应的功能接口；二是设计了商品热度算法，通过浏览数、点击数和收藏数加权计算热度分，支持热门商品推荐；三是实现了完整的消息通知系统，支持系统通知、交易消息、审核消息和互动消息四种类型，前端通过消息中心下拉面板实时展示未读消息；四是引入AI智能助手功能，基于知识库检索增强生成技术，为用户提供平台使用指导和交易建议；五是采用Monorepo架构管理前端代码，将公共逻辑抽取到共享包中，提高了代码复用性和维护效率。</p>
+<p class="normal">尽管本系统已实现了预期的主要功能，但仍存在一些不足之处：一是消息通知目前采用轮询方式获取未读数量，未来可引入WebSocket实现实时推送；二是AI助手的知识库规模有限，回复准确性有待提升；三是缺少即时通讯功能，买卖双方无法直接在线沟通。未来可从以下方面进行改进：引入WebSocket实现消息实时推送，提升用户体验；扩展AI知识库并优化检索算法，提高回复质量；增加即时通讯模块，支持买卖双方在线沟通；引入支付系统对接，实现真实交易支付；优化移动端适配，提升移动设备上的使用体验。</p>
+<p class="normal">总而言之，本次毕业设计是对大学四年所学知识的一次综合实践，通过从需求分析、系统设计、编码实现到测试部署的完整开发流程，不仅巩固了Vue 3、Spring Boot、MySQL等技术栈的实际应用能力，也锻炼了项目管理和问题解决能力，为未来的职业发展奠定了坚实的基础。</p>
+<h1 class="heading1">参考文献</h1>
+<br>
+<h1 class="heading1">致  谢</h1>
+<p class="normal">蓦然回首，时光如梭。转眼就到了该分别的时候了，回想我刚踏入怀化学院的时候，那是在2022年的一个盛夏，当时的我刚到学校还很迷茫，是在志愿者的帮助下才办好了各种的手续，也是从那天起开始了我的本科生活。我的本科生活也算是比较的枯燥，因为疫情差不多有半年是待在学校里的，每天都在不停地学习，当疫情过去了我也到了该外出实习的学期了，在外出实习前我还参加了一次比赛，之后便是匆匆的离校。回首大学时光，百感交集，在这两年的时光里我得到了众多的帮助和支持，我衷心地向他们表达感谢。</p>
+<p class="normal">首先，我要向刘毅文老师致以最深的谢意。在整个论文撰写过程中，刘老师始终给予我悉心的指导和宝贵的建议。从开题之处的迷茫，到系统的功能设计上，再到毕设论文上的缺项，是刘老师始终耐心指出我的不足，为我一次次纠正论文中出现的错误。正是有了刘老师的帮助，我才能够不断完善论文，完成了最终作品。此外，刘老师还带领我们参加中国大学生计算机设计大赛，他不辞辛劳指导我们，一次次帮我们找出比赛作品上的不足。在他的指导下，我们一次次地完善作品，最终我们获得了国家级二等奖的佳绩。我衷心感谢刘老师对我的帮助和指导。</p>
+<p class="normal">其次，我要感谢班上的同学们。他们在我大学生涯中一直给予我无私的关怀和鼓励。我们一同探讨问题，相互学习，携手前行。从他们身上，我学到了许多我从未拥有过的技能和知识。其中我要特别感谢林典同学，我因之前参加湖南省第一届技能大赛获得铜奖，被授予湖南省青年岗位能手称号，但在需要办理手续时因在外实习，无法回学校办理，当时正在为考研而复习的他为我到处奔波，替我办好了各种手续。为了帮我盖好学校的章也是耽误他几天的复习时间，在此我十分感谢他的帮助。</p>
+<p class="normal">同时，我还要感谢我的母校——怀化学院。感谢母校为我们提供了优良的学习环境和资源，让我们能够专心致志地追求知识。学校的关心和帮助让我们在学习和生活中都倍感温暖。在这里，我不仅学到了专业知识，还收获了宝贵的人生经验和成长。</p>
+<p class="normal">最后，我要感谢我的父母。正是因为有他们在背后支持我鼓励我，我才能够在学校里毫无顾虑地追求我所热爱的知识。每当我遇到困难时，我的父母总是第一时间给予我鼓励和力量，让我勇往直前。我的父母为我付出了太多，我将永远铭记在心，感激不尽。</p>
+<p class="normal">在道德经中有句话，“人生如虚空大梦一场，韶华白首不过转瞬”。转眼人生已过20余载，我衷心感激所有在我成长道路上给予帮助和支持的人。在未来的岁月里，我将珍惜时光不断努力，为实现自己的价值和梦想而奋斗。希望我能以实际行动回报所有关心和支持我的人，不辜负这段宝贵的青春时光。</p>
+<h1 class="heading1">附  录</h1>
+<br>
+<br>
+
+</div>
+</body>
+</html>
