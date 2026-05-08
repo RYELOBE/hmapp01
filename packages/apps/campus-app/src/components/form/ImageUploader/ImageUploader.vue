@@ -23,7 +23,7 @@
       </div>
     </div>
     <a-typography-text class="image-uploader__tip">
-      支持 JPG/JPEG/PNG 格式，单张图片不超过 2M，最多上传 {{ limit }} 张
+      支持 JPG/JPEG/PNG 格式，单张图片不超过 5M，最多上传 {{ limit }} 张
     </a-typography-text>
   </div>
 </template>
@@ -55,21 +55,30 @@ const emit = defineEmits(['update:modelValue']);
 const fileList = ref([]);
 const uploadRef = ref(null);
 
+const normalizeUrls = (value) => {
+  if (!value) {
+    return [];
+  }
+  return (Array.isArray(value) ? value : [value]).filter(Boolean);
+};
+
+const emitModelValue = (urls) => {
+  if (props.limit === 1) {
+    emit('update:modelValue', urls[0] || '');
+    return;
+  }
+  emit('update:modelValue', urls);
+};
+
 watch(
   () => props.modelValue,
   (value) => {
-    if (value) {
-      const urls = Array.isArray(value) ? value : [value];
-      fileList.value = urls
-        .filter(url => url)
-        .map((url, index) => ({
-          uid: Date.now() + index,
-          url,
-          status: 'done',
-        }));
-    } else {
-      fileList.value = [];
-    }
+    const urls = normalizeUrls(value);
+    fileList.value = urls.map((url, index) => ({
+      uid: `${Date.now()}-${index}`,
+      url,
+      status: 'done',
+    }));
   },
   { immediate: true }
 );
@@ -80,16 +89,16 @@ const handleBeforeUpload = (file) => {
     Message.error('只支持 JPG/JPEG/PNG 格式');
     return false;
   }
-  const isLt2M = file.size / 1024 / 1024 < 2;
-  if (!isLt2M) {
-    Message.error('图片大小不能超过 2M');
+  const isLt5M = file.size / 1024 / 1024 < 5;
+  if (!isLt5M) {
+    Message.error('图片大小不能超过 5M');
     return false;
   }
   return true;
 };
 
 const handleUpload = async (options) => {
-  const { file, onProgress, onSuccess, onError } = options;
+  const { file, onSuccess, onError } = options;
   const rawFile = file?.file || file?.originFile || file;
 
   if (!rawFile) {
@@ -106,9 +115,9 @@ const handleUpload = async (options) => {
     const token = getToken();
     const headers = {};
     if (token) {
-      headers['Authorization'] = formatJWTToken(token);
+      headers.Authorization = formatJWTToken(token);
     }
-    
+
     const response = await fetch(props.uploadUrl, {
       method: 'POST',
       headers,
@@ -116,33 +125,29 @@ const handleUpload = async (options) => {
     });
 
     if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
-        Message.error('请先登录');
-      } else {
-        throw new Error('上传失败');
-      }
+      const error = new Error(response.status === 401 || response.status === 403 ? '请先登录' : '上传失败');
+      onError(error);
+      Message.error(error.message);
       return;
     }
 
     const result = await response.json();
     const url = result.url || result.data?.url || '';
-
-    onSuccess(url);
-    
-    const currentUrls = fileList.value
-      .filter(f => f.status === 'done' && f.url)
-      .map(f => f.url);
-    
-    if (props.limit === 1) {
-      emit('update:modelValue', url);
-    } else {
-      emit('update:modelValue', [...currentUrls, url]);
+    if (!url) {
+      throw new Error('上传结果缺少图片地址');
     }
-    
+
+    const currentUrls = normalizeUrls(props.modelValue);
+    const nextUrls = props.limit === 1
+      ? [url]
+      : Array.from(new Set([...currentUrls, url])).slice(0, props.limit);
+
+    emitModelValue(nextUrls);
+    onSuccess({ ...result, url });
     Message.success('上传成功');
   } catch (error) {
     onError(error);
-    Message.error('上传失败，请重试');
+    Message.error(error.message || '上传失败，请重试');
   }
 };
 
@@ -150,12 +155,8 @@ const handleRemove = (file) => {
   const urls = fileList.value
     .filter(f => f.uid !== file.uid && f.status === 'done' && f.url)
     .map(f => f.url);
-  
-  if (props.limit === 1) {
-    emit('update:modelValue', '');
-  } else {
-    emit('update:modelValue', urls);
-  }
+
+  emitModelValue(urls);
 };
 </script>
 

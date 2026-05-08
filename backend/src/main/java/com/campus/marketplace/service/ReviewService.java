@@ -4,6 +4,7 @@ import com.campus.marketplace.repository.ItemRepository;
 import com.campus.marketplace.repository.OrderRepository;
 import com.campus.marketplace.repository.ReviewRepository;
 import com.campus.marketplace.repository.UserRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +17,7 @@ public class ReviewService {
   private final OrderRepository orderRepository;
   private final UserRepository userRepository;
   private final ItemRepository itemRepository;
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   public ReviewService(ReviewRepository reviewRepository, OrderRepository orderRepository,
       UserRepository userRepository, ItemRepository itemRepository) {
@@ -25,11 +27,13 @@ public class ReviewService {
     this.itemRepository = itemRepository;
   }
 
-  public Map<String, Object> createReview(Long buyerId, Long orderId, Long itemId, int rating, String content, String images) {
+  public Map<String, Object> createReview(Long buyerId, Long orderId, Long itemId, int rating, String content, Object images) {
     if (rating < 1 || rating > 5) {
       throw new IllegalArgumentException("评分必须在1-5之间");
     }
 
+    String normalizedContent = content == null ? "" : content.trim();
+    String normalizedImages = normalizeImages(images);
     Long sellerId;
 
     if (orderId != null) {
@@ -42,6 +46,10 @@ public class ReviewService {
       }
       if (!"COMPLETED".equals(order.get("status"))) {
         throw new IllegalArgumentException("仅可评价已完成的订单");
+      }
+      Long orderItemId = ((Number) order.get("itemId")).longValue();
+      if (!orderItemId.equals(itemId)) {
+        throw new IllegalArgumentException("订单商品信息不匹配");
       }
       var existing = reviewRepository.findByOrderId(orderId);
       if (existing.isPresent()) {
@@ -56,16 +64,18 @@ public class ReviewService {
       sellerId = ((Number) item.get("sellerId")).longValue();
     }
 
-    Map<String, Object> review = reviewRepository.createWithNullableOrder(orderId, itemId, buyerId, sellerId, rating, content, images);
+    Map<String, Object> review = reviewRepository.createWithNullableOrder(
+        orderId, itemId, buyerId, sellerId, rating, normalizedContent, normalizedImages);
 
     Map<String, Object> enrichedReview = new java.util.HashMap<>(review);
     var userOpt = userRepository.findById(buyerId);
     userOpt.ifPresent(user -> {
       enrichedReview.put("buyerNickname", user.get("nickname"));
+      enrichedReview.put("buyerName", user.get("nickname"));
       enrichedReview.put("userName", user.get("nickname"));
     });
 
-    return Map.of("code", 200, "message", "评价成功", "data", enrichedReview);
+    return Map.of("code", 200, "message", "评价已提交，待审核后展示", "data", enrichedReview);
   }
 
   public Map<String, Object> getReviewsByItem(Long itemId, int page, int pageSize) {
@@ -122,18 +132,30 @@ public class ReviewService {
     List<Map<String, Object>> enrichedReviews = new ArrayList<>();
     for (Map<String, Object> review : reviews) {
       Map<String, Object> enriched = new java.util.HashMap<>(review);
-      Long buyerId = (Long) review.get("buyerId");
-      userRepository.findById(buyerId).ifPresent(user -> {
-        enriched.put("userName", user.get("nickname"));
-        enriched.put("buyerNickname", user.get("nickname"));
-      });
+      Object buyerIdObj = review.get("buyerId");
+      if (buyerIdObj instanceof Number buyerIdNumber) {
+        Long buyerId = buyerIdNumber.longValue();
+        userRepository.findById(buyerId).ifPresent(user -> {
+          enriched.put("userName", user.get("nickname"));
+          enriched.put("buyerNickname", user.get("nickname"));
+          enriched.put("buyerName", user.get("nickname"));
+        });
+      }
       enrichedReviews.add(enriched);
     }
     return enrichedReviews;
   }
 
-  public Map<String, Object> getMyReviews(Long buyerId, int page, int pageSize) {
+  public Map<String, Object> getMyReviews(Long buyerId, int page, int pageSize, String status) {
     List<Map<String, Object>> allReviews = reviewRepository.findByBuyerId(buyerId);
+    
+    // 按状态筛选
+    if (status != null && !status.isEmpty()) {
+      allReviews = allReviews.stream()
+          .filter(review -> status.equals(review.get("status")))
+          .toList();
+    }
+    
     int total = allReviews.size();
     int start = (page - 1) * pageSize;
     int end = Math.min(start + pageSize, total);
@@ -142,7 +164,7 @@ public class ReviewService {
     for (int i = start; i < end; i++) {
       Map<String, Object> review = allReviews.get(i);
       Map<String, Object> enriched = new java.util.HashMap<>(review);
-      Long itemId = (Long) review.get("itemId");
+      Long itemId = ((Number) review.get("itemId")).longValue();
       Map<String, Object> item = itemRepository.findById(itemId);
       if (item != null) {
         enriched.put("itemTitle", item.get("title"));
@@ -155,15 +177,38 @@ public class ReviewService {
   }
 
   public Map<String, Object> getPendingReviews(int page, int pageSize) {
-    return Map.of("code", 200, "data", List.of(), "total", 0);
+    List<Map<String, Object>> reviews = reviewRepository.findPendingPaged(page, pageSize);
+    int total = reviewRepository.countPending();
+    List<Map<String, Object>> enrichedReviews = enrichPendingReviews(reviews);
+    return Map.of(
+        "code", 200,
+        "data", Map.of(
+            "items", enrichedReviews,
+            "list", enrichedReviews,
+            "records", enrichedReviews,
+            "total", total,
+            "totalCount", total,
+            "pageNo", page,
+            "pageSize", pageSize
+        )
+    );
   }
 
   public Map<String, Object> approveReview(Long reviewId) {
-    return Map.of("code", 200, "message", "审核功能暂不可用");
+    Map<String, Object> review = reviewRepository.findById(reviewId)
+        .orElseThrow(() -> new IllegalArgumentException("评价不存在"));
+    String currentStatus = String.valueOf(review.getOrDefault("status", ""));
+    if (!"APPROVED".equals(currentStatus)) {
+      reviewRepository.updateStatus(reviewId, "APPROVED");
+    }
+    return Map.of("code", 200, "message", "评价审核通过");
   }
 
   public Map<String, Object> rejectReview(Long reviewId, String reason) {
-    return Map.of("code", 200, "message", "审核功能暂不可用");
+    reviewRepository.findById(reviewId)
+        .orElseThrow(() -> new IllegalArgumentException("评价不存在"));
+    reviewRepository.updateStatus(reviewId, "REJECTED");
+    return Map.of("code", 200, "message", "评价已驳回", "data", Map.of("reason", reason));
   }
 
   public Map<String, Object> getReviewByOrder(Long buyerId, Long orderId) {
@@ -171,7 +216,7 @@ public class ReviewService {
     if (order == null) {
       throw new IllegalArgumentException("订单不存在");
     }
-    if (((Number)order.get("buyerId")).longValue() != buyerId) {
+    if (((Number) order.get("buyerId")).longValue() != buyerId) {
       throw new IllegalArgumentException("无权查看此订单评价");
     }
 
@@ -205,7 +250,7 @@ public class ReviewService {
   }
 
   public long getPendingCount() {
-    return 0;
+    return reviewRepository.countPending();
   }
 
   public Map<String, Object> getReviewQueuePaged(String status, int pageNo, int pageSize) {
@@ -226,5 +271,86 @@ public class ReviewService {
   public Map<String, Object> reject(Long itemId, Long operatorId, String reason) {
     itemRepository.updateReviewStatus(itemId, "REJECTED", reason);
     return Map.of("code", 200, "message", "已驳回");
+  }
+
+  private List<Map<String, Object>> enrichPendingReviews(List<Map<String, Object>> reviews) {
+    List<Map<String, Object>> enrichedReviews = new ArrayList<>();
+    for (Map<String, Object> review : reviews) {
+      Map<String, Object> enriched = new java.util.HashMap<>(review);
+      Object buyerIdObj = review.get("buyerId");
+      if (buyerIdObj instanceof Number buyerIdNumber) {
+        Long buyerId = buyerIdNumber.longValue();
+        userRepository.findById(buyerId).ifPresent(user -> {
+          enriched.put("buyerName", user.get("nickname"));
+          enriched.put("buyerNickname", user.get("nickname"));
+          enriched.put("userName", user.get("nickname"));
+        });
+      }
+
+      Object itemIdObj = review.get("itemId");
+      if (itemIdObj instanceof Number itemIdNumber) {
+        Map<String, Object> item = itemRepository.findById(itemIdNumber.longValue());
+        if (item != null) {
+          enriched.put("itemTitle", item.get("title"));
+          enriched.put("itemImage", extractFirstImage(item.get("imageUrls")));
+        }
+      }
+
+      enrichedReviews.add(enriched);
+    }
+    return enrichedReviews;
+  }
+
+  private String extractFirstImage(Object imageValue) {
+    if (imageValue == null) {
+      return "";
+    }
+
+    if (imageValue instanceof String raw) {
+      String trimmed = raw.trim();
+      if (trimmed.isEmpty()) {
+        return "";
+      }
+      if (trimmed.startsWith("[")) {
+        try {
+          List<?> urls = objectMapper.readValue(trimmed, List.class);
+          if (!urls.isEmpty() && urls.get(0) != null) {
+            return String.valueOf(urls.get(0));
+          }
+          return "";
+        } catch (Exception ignored) {
+          return trimmed;
+        }
+      }
+      return trimmed;
+    }
+
+    if (imageValue instanceof List<?> urls && !urls.isEmpty() && urls.get(0) != null) {
+      return String.valueOf(urls.get(0));
+    }
+
+    return String.valueOf(imageValue);
+  }
+
+  private String normalizeImages(Object images) {
+    if (images == null) {
+      return null;
+    }
+
+    try {
+      if (images instanceof String raw) {
+        String trimmed = raw.trim();
+        if (trimmed.isEmpty()) {
+          return null;
+        }
+        if (trimmed.startsWith("[")) {
+          return trimmed;
+        }
+        return objectMapper.writeValueAsString(List.of(trimmed));
+      }
+      return objectMapper.writeValueAsString(images);
+    } catch (Exception e) {
+      throw new IllegalArgumentException("图片数据格式错误");
+    }
   }
 }

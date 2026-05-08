@@ -1,0 +1,168 @@
+// ── 运营后台主题变量 (Ops Theme) ──────────────────────────
+// 深蓝白色调设计系统
+
+:root {
+  // ===== 主色调 =====
+  --ops-primary: #165DFF;
+  --ops-primary-light: #4080FF;
+  --ops-primary-dark: #0E42D2;
+  --ops-primary-bg: rgba(22, 93, 255, 0.06);
+
+  // ===== 功能色 =====
+  --ops-success: #00B42A;
+  --ops-success-bg: rgba(0, 180, 42, 0.06);
+  --ops-warning: #FF7D00;
+  --ops-warning-bg: rgba(255, 125, 0, 0.06);
+  --ops-danger: #F53F3F;
+  --ops-danger-bg: rgba(245, 63, 63, 0.06);
+  --ops-info: #86909C;
+  --ops-info-bg: rgba(134, 144, 156, 0.06);
+
+  // ===== 背景色 =====
+  --ops-bg-dark: #0D1626;
+  --ops-bg-sidebar: #1A2332;
+  --ops-bg-sidebar-hover: #242E42;
+  --ops-bg-page: #F5F6F7;
+  --ops-bg-white: #FFFFFF;
+  --ops-bg-card: #FFFFFF;
+  --ops-bg-hover: #F7F8FA;
+  --ops-bg-active: #E6F1FF;
+
+  // ===== 文本色 =====
+  --ops-text-1: #1D2129;      // 主文本
+  --ops-text-2: #4E5969;      // 次要文本
+  --ops-text-3: #86909C;      // 辅助文本
+  --ops-text-4: #C9CDD4;      // 禁用/占位文本
+  --ops-text-white: #FFFFFF;
+  --ops-text-secondary: rgba(255, 255, 255, 0.65);
+  --ops-text-disabled: rgba(255, 255, 255, 0.35);
+
+  // ===== 边框色 =====
+  --ops-border-1: #F2F3F5;
+  --ops-border-2: #E5E6EB;
+  --ops-border-3: #C9CDD4;
+  --ops-border-color: rgba(255, 255, 255, 0.1);
+  --ops-border-sidebar: rgba(255, 255, 255, 0.08);
+
+  // ===== 圆角 =====
+  --ops-radius-xs: 4px;
+  --ops-radius-sm: 6px;
+  --ops-radius-md: 8px;
+  --ops-radius-lg: 12px;
+  --ops-radius-xl: 16px;
+
+  // ===== 阴影 =====
+  --ops-shadow-sm: 0 1px 4px rgba(0, 0, 0, 0.04);
+  --ops-shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --ops-shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+  --ops-shadow-sidebar: 4px 0 20px rgba(0, 0, 0, 0.25);
+
+  // ===== 过渡动画 =====
+  --ops-transition-fast: 150ms ease-out;
+  --ops-transition-normal: 200ms ease-out;
+  --ops-transition-slow: 300ms ease-out;
+
+  // ===== 间距 =====
+  --ops-space-xs: 4px;
+  --ops-space-sm: 8px;
+  --ops-space-md: 12px;
+  --ops-space-lg: 16px;
+  --ops-space-xl: 20px;
+  --ops-space-xxl: 24px;
+
+  // ===== 字体大小 =====
+  --ops-font-size-xs: 12px;
+  --ops-font-size-sm: 13px;
+  --ops-font-size-base: 14px;
+  --ops-font-size-md: 15px;
+  --ops-font-size-lg: 16px;
+  --ops-font-size-xl: 18px;
+  --ops-font-size-xxl: 20px;
+  --ops-font-size-title: 22px;
+
+  // ===== 字体粗细 =====
+  --ops-font-weight-normal: 400;
+  --ops-font-weight-medium: 500;
+  --ops-font-weight-semibold: 600;
+  --ops-font-weight-bold: 700;
+
+  // ===== z-index 层级 =====
+  --ops-z-dropdown: 100;
+  --ops-z-sticky: 200;
+  --ops-z-fixed: 300;
+  --ops-z-modal-backdrop: 400;
+  --ops-z-modal: 500;
+  --ops-tooltip: 600;
+}
+
+// ===== Mixins (混合) =====
+
+// 卡片基础样式
+@mixin ops-card {
+  background: var(--ops-bg-white);
+  border-radius: var(--ops-radius-lg);
+  border: 1px solid var(--ops-border-1);
+  box-shadow: var(--ops-shadow-sm);
+  transition: all var(--ops-transition-normal);
+
+  &:hover {
+    box-shadow: var(--ops-shadow-md);
+    transform: translateY(-2px);
+  }
+}
+
+// 页面容器
+@mixin ops-page-container {
+  background: var(--ops-bg-white);
+  border-radius: var(--ops-radius-lg);
+  padding: var(--ops-space-xxl);
+  min-height: calc(100vh - 64px);
+}
+
+// 工具栏样式
+@mixin ops-toolbar($bg-gradient-start: #f0f5ff, $bg-gradient-end: #fff, $border-color: #e8f3ff) {
+  padding: 16px 20px;
+  margin-bottom: 20px;
+  background: linear-gradient(135deg, $bg-gradient-start 0%, $bg-gradient-end 100%);
+  border-radius: 10px;
+  border: 1px solid $border-color;
+}
+
+// 表格操作按钮组
+@mixin ops-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .arco-btn {
+    font-size: 13px;
+    
+    &:hover {
+      background: var(--ops-bg-hover);
+    }
+  }
+}
+
+// 状态标签
+@mixin ops-status-tag($color) {
+  font-size: 12px;
+  font-weight: 500;
+  padding: 2px 10px;
+  border-radius: 4px;
+  color: $color;
+  background: rgba($color, 0.06);
+  border: 1px solid rgba($color, 0.15);
+}
+
+// 响应式断点
+@mixin respond-to($breakpoint) {
+  @if $breakpoint == 'sm' {
+    @media (max-width: 767px) { @content; }
+  } @else if $breakpoint == 'md' {
+    @media (max-width: 1023px) { @content; }
+  } @else if $breakpoint == 'lg' {
+    @media (max-width: 1279px) { @content; }
+  } @else if $breakpoint == 'xl' {
+    @media (max-width: 1535px) { @content; }
+  }
+}

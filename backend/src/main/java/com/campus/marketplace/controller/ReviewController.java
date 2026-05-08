@@ -52,9 +52,10 @@ public class ReviewController {
   @GetMapping("/my")
   public Map<String, Object> getMyReviews(
       @RequestParam(defaultValue = "1") @Min(1) int page,
-      @RequestParam(defaultValue = "10") @Max(50) int pageSize) {
+      @RequestParam(defaultValue = "10") @Max(50) int pageSize,
+      @RequestParam(required = false) String status) {
     Long userId = currentUserService.userId();
-    return reviewService.getMyReviews(userId, page, pageSize);
+    return reviewService.getMyReviews(userId, page, pageSize, status);
   }
 
   @GetMapping("/pending")
@@ -92,7 +93,7 @@ public class ReviewController {
       @NotNull(message = "商品ID不能为空") Long itemId,
       @Min(value = 1, message = "评分最少为1") @Max(value = 5, message = "评分最多为5") int rating,
       String content,
-      String images
+      Object images
   ) {}
 
   public record ReplyRequest(

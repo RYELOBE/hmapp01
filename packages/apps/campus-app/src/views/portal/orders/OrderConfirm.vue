@@ -9,33 +9,42 @@
     </div>
 
     <a-spin :loading="loading" style="width: 100%">
-      <div v-if="item" class="confirm-content">
+      <div v-if="orderItems.length > 0" class="confirm-content">
         <a-row :gutter="[16, 16]">
           <a-col :xs="24" :lg="16">
+            <!-- 商品列表 -->
             <a-card title="商品信息" :bordered="false" class="section-card">
-              <div class="item-info-card">
-                <div class="item-image-wrapper">
-                  <img
-                    v-if="getItemImage(item)"
-                    :src="getItemImage(item)"
-                    class="item-image"
-                  />
-                  <div v-else class="item-image item-image--empty">📷</div>
-                </div>
-                <div class="item-detail">
-                  <h3 class="item-title">{{ item.title }}</h3>
-                  <div class="item-meta">
-                    <ConditionTag v-if="item.conditionLevel" :condition="item.conditionLevel" />
-                    <span v-if="item.category" class="item-category">{{ getCategoryLabel(item.category) }}</span>
+              <div 
+                v-for="(orderItem, index) in orderItems" 
+                :key="orderItem.cartId || index"
+                class="order-item"
+              >
+                <div class="item-info-card">
+                  <div class="item-image-wrapper">
+                    <img
+                      v-if="getItemImage(orderItem.item)"
+                      :src="getItemImage(orderItem.item)"
+                      class="item-image"
+                    />
+                    <div v-else class="item-image item-image--empty">📷</div>
+                  </div>
+                  <div class="item-detail">
+                    <h3 class="item-title">{{ orderItem.item.title }}</h3>
+                    <div class="item-meta">
+                      <ConditionTag v-if="orderItem.item.conditionLevel" :condition="orderItem.item.conditionLevel" />
+                      <span v-if="orderItem.item.category" class="item-category">{{ getCategoryLabel(orderItem.item.category) }}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div class="price-info">
-                <span class="price-label">单价</span>
-                <span class="price-value">¥{{ (item.price || 0).toFixed(2) }}</span>
-                <span class="quantity-info">× {{ quantity }}</span>
-                <span class="subtotal">= ¥{{ ((item.price || 0) * quantity).toFixed(2) }}</span>
+                <div class="price-info">
+                  <span class="price-label">单价</span>
+                  <span class="price-value">¥{{ (orderItem.item.price || 0).toFixed(2) }}</span>
+                  <span class="quantity-info">× {{ orderItem.quantity }}</span>
+                  <span class="subtotal">= ¥{{ ((orderItem.item.price || 0) * orderItem.quantity).toFixed(2) }}</span>
+                </div>
+
+                <a-divider v-if="index < orderItems.length - 1" />
               </div>
             </a-card>
 
@@ -67,8 +76,12 @@
             <a-card title="订单明细" :bordered="false" class="summary-card">
               <div class="summary-list">
                 <div class="summary-item">
+                  <span>商品数量</span>
+                  <span>{{ totalQuantity }} 件</span>
+                </div>
+                <div class="summary-item">
                   <span>商品金额</span>
-                  <span>¥{{ ((item.price || 0) * quantity).toFixed(2) }}</span>
+                  <span>¥{{ totalAmount }}</span>
                 </div>
                 <div class="summary-item">
                   <span>运费</span>
@@ -77,7 +90,7 @@
                 <div class="summary-divider"></div>
                 <div class="summary-item summary-total">
                   <span>应付总额</span>
-                  <span class="total-amount">¥{{ ((item.price || 0) * quantity).toFixed(2) }}</span>
+                  <span class="total-amount">¥{{ totalAmount }}</span>
                 </div>
               </div>
 
@@ -87,10 +100,10 @@
                 long
                 :loading="submitting"
                 :disabled="!defaultAddress"
-                @click="submitOrder"
+                @click="submitOrders"
                 class="submit-btn"
               >
-                提交订单
+                提交订单 ({{ orderItems.length }}个商品)
               </a-button>
               <p v-if="!defaultAddress" class="address-tip">
                 请先选择或添加收货地址
@@ -109,7 +122,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { Message } from "@arco-design/web-vue";
 import {
@@ -122,15 +135,14 @@ import { getErrorMessage } from "../../../utils/error-utils";
 import AddressCard from "../../../components/data/AddressCard.vue";
 import ConditionTag from "../../../components/data/ConditionTag.vue";
 import EditAddressModal from "../../../components/data/EditAddressModal.vue";
-import { getItemDetail, createOrder, getDefaultAddress, getAddressList } from "../../../services/api";
+import { getItemDetail, createOrder, getDefaultAddress, getAddressList, getCartList } from "../../../services/api";
 
 const router = useRouter();
 const route = useRoute();
 
 const loading = ref(false);
 const submitting = ref(false);
-const item = ref(null);
-const quantity = ref(1);
+const orderItems = ref([]); // 改为数组，支持多商品
 const defaultAddress = ref(null);
 const showAddressModal = ref(false);
 
@@ -139,6 +151,18 @@ const CATEGORY_MAP = {
   daily: "生活", sport: "运动", instrument: "乐器", other: "其他",
   electronics: "数码", textbooks: "教材",
 };
+
+// 计算总金额
+const totalAmount = computed(() => {
+  return orderItems.value.reduce((sum, item) => {
+    return sum + (item.item?.price || 0) * item.quantity;
+  }, 0).toFixed(2);
+});
+
+// 计算总数量
+const totalQuantity = computed(() => {
+  return orderItems.value.reduce((sum, item) => sum + item.quantity, 0);
+});
 
 function getImageUrl(record) {
   const urls = record.imageUrls || record.images || [];
@@ -161,20 +185,73 @@ function getCategoryLabel(category) {
   return CATEGORY_MAP[category] || category || "";
 }
 
-async function loadItem() {
-  const itemId = route.params.id;
-  if (!itemId) {
-    Message.error("商品ID不存在");
-    router.back();
-    return;
-  }
-
+async function loadOrderItems() {
   loading.value = true;
+  
   try {
-    const res = await getItemDetail(itemId);
-    item.value = res;
+    const cartIdsStr = route.query.cartIds;
+    
+    if (!cartIdsStr) {
+      // 兼容旧的单商品模式
+      const itemId = route.params.id;
+      if (itemId) {
+        const res = await getItemDetail(itemId);
+        orderItems.value = [{ cartId: null, item: res, quantity: 1 }];
+      }
+      return;
+    }
+    
+    // 批量模式：从购物车加载多个商品
+    const cartIds = cartIdsStr.split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
+    
+    if (cartIds.length === 0) {
+      Message.error("无效的购物车项");
+      router.back();
+      return;
+    }
+    
+    // 获取购物车列表并筛选出选中的项
+    const allCartItems = await getCartList();
+    const selectedCartItems = allCartItems.filter(cartItem => 
+      cartIds.includes(cartItem.id)
+    );
+    
+    if (selectedCartItems.length === 0) {
+      Message.error("未找到购物车项");
+      router.back();
+      return;
+    }
+    
+    // 为每个购物车项加载完整的商品信息
+    const itemsWithDetails = await Promise.all(
+      selectedCartItems.map(async (cartItem) => {
+        try {
+          if (cartItem.item && cartItem.item.id) {
+            // 如果已有完整信息，直接使用
+            return { ...cartItem };
+          }
+          
+          // 否则加载商品详情
+          const itemDetail = await getItemDetail(cartItem.itemId);
+          return { ...cartItem, item: itemDetail };
+        } catch (e) {
+          console.error(`加载商品 ${cartItem.itemId} 失败:`, e);
+          return null;
+        }
+      })
+    );
+    
+    // 过滤掉加载失败的项
+    orderItems.value = itemsWithDetails.filter(item => item !== null);
+    
+    if (orderItems.value.length === 0) {
+      Message.error("无法加载商品信息");
+      router.back();
+    }
+    
   } catch (e) {
-    Message.error(e.message || "加载商品失败");
+    console.error('[OrderConfirm] 加载失败:', e);
+    Message.error(e.message || "加载订单信息失败");
   } finally {
     loading.value = false;
   }
@@ -203,7 +280,7 @@ function handleAddressSuccess(address) {
   defaultAddress.value = address;
 }
 
-async function submitOrder() {
+async function submitOrders() {
   if (!defaultAddress.value) {
     Message.warning("请先选择收货地址");
     return;
@@ -212,16 +289,32 @@ async function submitOrder() {
   submitting.value = true;
   try {
     const address = defaultAddress.value;
-    const orderData = {
-      itemId: item.value.id,
-      quantity: quantity.value,
-      receiverName: address.receiverName,
-      receiverPhone: address.receiverPhone,
-      receiverAddress: `${address.province}${address.city}${address.district || ''}${address.detailAddress}`
-    };
-    const res = await createOrder(orderData);
-    Message.success("订单创建成功");
-    router.push("/portal/orders");
+    let successCount = 0;
+    
+    // 批量创建订单（每个商品创建一个独立订单）
+    for (const orderItem of orderItems.value) {
+      try {
+        const orderData = {
+          itemId: orderItem.item.id,
+          quantity: orderItem.quantity,
+          receiverName: address.receiverName,
+          receiverPhone: address.receiverPhone,
+          receiverAddress: `${address.province}${address.city}${address.district || ''}${address.detailAddress}`
+        };
+        
+        await createOrder(orderData);
+        successCount++;
+      } catch (e) {
+        console.error(`创建订单失败 (${orderItem.item.title}):`, e);
+      }
+    }
+    
+    if (successCount > 0) {
+      Message.success(`成功创建 ${successCount} 个订单`);
+      router.push("/portal/orders");
+    } else {
+      throw new Error("所有订单创建失败");
+    }
   } catch (e) {
     const errorMsg = getErrorMessage(e);
     Message.error(errorMsg);
@@ -231,214 +324,7 @@ async function submitOrder() {
 }
 
 onMounted(() => {
-  loadItem();
+  loadOrderItems();
   loadDefaultAddress();
 });
 </script>
-
-<style lang="scss" scoped>
-.order-confirm-page {
-  padding: 24px;
-  max-width: 1200px;
-  margin: 0 auto;
-  background: linear-gradient(180deg, #f5f6f8 0%, #ffffff 100%);
-  min-height: 100vh;
-}
-
-.page-header {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
-  padding: 16px 20px;
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-
-  .page-title {
-    margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-    color: #1d2129;
-  }
-}
-
-.confirm-content {
-  animation: fadeIn 0.3s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.section-card {
-  margin-bottom: 16px;
-  border-radius: 12px;
-
-  :deep(.arco-card-header) {
-    font-weight: 600;
-  }
-}
-
-.item-info-card {
-  display: flex;
-  gap: 16px;
-  padding: 8px 0;
-
-  .item-image-wrapper {
-    flex-shrink: 0;
-  }
-
-  .item-image {
-    width: 100px;
-    height: 100px;
-    border-radius: 12px;
-    object-fit: cover;
-
-    &--empty {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f2f3f5;
-      font-size: 40px;
-    }
-  }
-
-  .item-detail {
-    flex: 1;
-    min-width: 0;
-
-    .item-title {
-      margin: 0 0 8px;
-      font-size: 16px;
-      font-weight: 500;
-      color: #1d2129;
-    }
-
-    .item-meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-
-      .item-category {
-        font-size: 12px;
-        color: #86909c;
-        background: #f2f3f5;
-        padding: 2px 8px;
-        border-radius: 4px;
-      }
-    }
-  }
-}
-
-.price-info {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  padding-top: 12px;
-  border-top: 1px solid #f0f0f0;
-  margin-top: 12px;
-  font-size: 14px;
-  gap: 12px;
-
-  .price-label {
-    color: #86909c;
-  }
-
-  .price-value {
-    font-weight: 600;
-    color: #1d2129;
-  }
-
-  .quantity-info {
-    color: #86909c;
-  }
-
-  .subtotal {
-    font-weight: 700;
-    color: #f53f3f;
-    font-size: 16px;
-  }
-}
-
-.address-card {
-  .default-address {
-    padding: 4px 0;
-  }
-
-  .no-address {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    padding: 32px 0;
-    color: #86909c;
-
-    :deep(.arco-icon) {
-      font-size: 40px;
-    }
-
-    p {
-      margin: 0;
-    }
-  }
-}
-
-.summary-card {
-  :deep(.arco-card-header) {
-    font-weight: 600;
-  }
-}
-
-.summary-list {
-  .summary-item {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 0;
-    font-size: 14px;
-    color: #4e5969;
-
-    &.summary-total {
-      font-size: 16px;
-      font-weight: 600;
-      color: #1d2129;
-
-      .total-amount {
-        color: #f53f3f;
-        font-size: 22px;
-      }
-    }
-  }
-
-  .free-shipping {
-    color: #00b42a;
-    font-weight: 500;
-  }
-
-  .summary-divider {
-    height: 1px;
-    background: #f0f0f0;
-    margin: 8px 0;
-  }
-}
-
-.submit-btn {
-  margin-top: 24px;
-  font-size: 16px;
-  font-weight: 500;
-}
-
-.address-tip {
-  text-align: center;
-  margin-top: 12px;
-  color: #86909c;
-  font-size: 12px;
-}
-</style>

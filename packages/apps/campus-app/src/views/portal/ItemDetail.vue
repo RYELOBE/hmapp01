@@ -662,13 +662,13 @@ async function submitReview() {
       ? reviewForm.images
       : [reviewForm.images].filter(Boolean);
 
-    await http.post(`/items/${route.params.id}/reviews`, {
+    const result = await http.post(`/items/${route.params.id}/reviews`, {
       rating: reviewForm.rating,
       content: reviewForm.content.trim(),
       images: imageUrls,
     });
 
-    Message.success("评价发布成功");
+    Message.success(result?.message || "评价已提交，待审核后展示");
     showReviewModal.value = false;
 
     reviewForm.rating = 5;
@@ -766,14 +766,19 @@ onMounted(loadDetail);
 .gallery-section {
   display: flex;
   align-items: flex-start;
-  gap: 20px;
-  margin-bottom: 20px;
+  gap: 24px;
+  margin-bottom: 24px;
 }
 
 .gallery-wrapper {
   flex-shrink: 0;
-  width: 200px;
-  max-width: 40%;
+  width: 280px;
+  max-width: 45%;
+  
+  @media (max-width: 768px) {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 
 .info-content {
@@ -782,13 +787,14 @@ onMounted(loadDetail);
   display: flex;
   flex-direction: column;
   justify-content: center;
+  gap: 12px;
 }
 
 .tags-group {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin-bottom: 4px;
   flex-wrap: wrap;
 
   .category-tag {
@@ -798,14 +804,22 @@ onMounted(loadDetail);
 }
 
 .item-title {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   color: #1d2129;
-  line-height: 1.5;
-  margin: 0 0 14px;
+  line-height: 1.4;
+  margin: 0 0 6px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
+  
+  @media (max-width: 768px) {
+    font-size: 20px;
+  }
 }
 
 .price-section {
@@ -1252,7 +1266,27 @@ onMounted(loadDetail);
   }
 
   .gallery-section {
+    flex-direction: column;
+    gap: 16px;
     padding: 12px;
+
+    .gallery-wrapper {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    .info-content {
+      gap: 10px;
+    }
+  }
+
+  .item-title {
+    font-size: 20px;
+    -webkit-line-clamp: 2;
+  }
+
+  .price-section .current-price .price-value {
+    font-size: 28px;
   }
 
   .info-card,

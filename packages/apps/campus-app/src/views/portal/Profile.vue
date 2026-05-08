@@ -4,9 +4,27 @@
     <section class="profile-header">
       <div class="user-card">
         <div class="avatar-section">
-          <a-avatar :size="100" class="user-avatar">
-            {{ userInitial }}
-          </a-avatar>
+          <div class="avatar-wrapper" @click="$refs.avatarUploader?.querySelector('input')?.click()">
+            <a-avatar :size="100" :image-url="avatarUrl || user?.avatar" class="user-avatar">
+              {{ userInitial }}
+            </a-avatar>
+            <div class="avatar-overlay" v-if="!uploadingAvatar">
+              <icon-camera size="20" />
+              <span>更换头像</span>
+            </div>
+            <a-spin v-else :loading="uploadingAvatar" class="avatar-loading" />
+          </div>
+          
+          <!-- 隐藏的上传组件 -->
+          <div ref="avatarUploader" style="display: none;">
+            <ImageUploader
+              v-model="avatarUrl"
+              :limit="1"
+              upload-url="/api/upload"
+              @update:modelValue="handleAvatarChange"
+            />
+          </div>
+          
           <h2 class="user-name">{{ user?.nickname || user?.username || '用户' }}</h2>
           <p class="user-roles">
             <a-tag 
@@ -234,6 +252,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from "vue";
 import { useAuthStore } from "../../stores/auth";
+import { http } from "../../services/core/http";
 import { Message } from "@arco-design/web-vue";
 import {
   IconUser,
@@ -246,12 +265,18 @@ import {
   IconApps,
   IconPlusCircle,
   IconLocation,
+  IconCamera,
 } from "@arco-design/web-vue/es/icon";
+import ImageUploader from "../../components/form/ImageUploader/ImageUploader.vue";
+import { formatJWTToken } from "../../utils/jwt";
+import { getToken } from "../../services/auth";
 
 const authStore = useAuthStore();
 const saving = ref(false);
 const changingPwd = ref(false);
 const showChangePassword = ref(false);
+const uploadingAvatar = ref(false);
+const avatarUrl = ref('');
 
 // 用户数据
 const user = computed(() => authStore.user);
@@ -335,25 +360,23 @@ function maskPhone(phone) {
 async function handleSaveProfile() {
   saving.value = true;
   try {
-    // TODO: 调用API保存用户信息
-    await new Promise(resolve => setTimeout(resolve, 800)); // 模拟API调用
+    const result = await http.put('/auth/profile', {
+      nickname: profileForm.nickname || undefined,
+      email: profileForm.email || undefined,
+      bio: profileForm.bio || undefined,
+      phone: profileForm.phone || undefined,
+    });
     
     // 更新本地store
-    authStore.user = {
-      ...authStore.user,
-      nickname: profileForm.nickname,
-      phone: profileForm.phone,
-      email: profileForm.email,
-      bio: profileForm.bio,
-    };
-    
-    // 保存到localStorage
-    localStorage.setItem('user', JSON.stringify(authStore.user));
+    if (result.data) {
+      authStore.user = result.data;
+      localStorage.setItem('user', JSON.stringify(result.data));
+    }
     
     Message.success('个人信息保存成功！');
   } catch (error) {
     console.error('[Profile] 保存失败:', error);
-    Message.error('保存失败，请稍后重试');
+    Message.error(error.message || '保存失败，请稍后重试');
   } finally {
     saving.value = false;
   }
@@ -370,10 +393,22 @@ function resetForm() {
 }
 
 async function handleChangePassword() {
+  if (!passwordForm.oldPassword || !passwordForm.newPassword) {
+    Message.warning('请填写完整信息');
+    return;
+  }
+  
+  if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    Message.error('两次输入的密码不一致');
+    return;
+  }
+  
   changingPwd.value = true;
   try {
-    // TODO: 调用API修改密码
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await http.put('/auth/password', {
+      oldPassword: passwordForm.oldPassword,
+      newPassword: passwordForm.newPassword,
+    });
     
     Message.success('密码修改成功！');
     showChangePassword.value = false;
@@ -384,9 +419,34 @@ async function handleChangePassword() {
     passwordForm.confirmPassword = '';
   } catch (error) {
     console.error('[Password] 修改失败:', error);
-    Message.error('密码修改失败，请检查原密码是否正确');
+    Message.error(error.message || '密码修改失败，请检查原密码是否正确');
   } finally {
     changingPwd.value = false;
+  }
+}
+
+async function handleAvatarChange(urls) {
+  if (!urls || urls.length === 0) return;
+  
+  const newAvatarUrl = Array.isArray(urls) ? urls[0] : urls;
+  uploadingAvatar.value = true;
+  
+  try {
+    const result = await http.put('/auth/avatar', { avatar: newAvatarUrl });
+    
+    // 更新本地store
+    if (authStore.user) {
+      authStore.user.avatar = newAvatarUrl;
+      localStorage.setItem('user', JSON.stringify(authStore.user));
+    }
+    
+    avatarUrl.value = newAvatarUrl;
+    Message.success('头像更新成功！');
+  } catch (error) {
+    console.error('[Avatar] 上传失败:', error);
+    Message.error('头像更新失败');
+  } finally {
+    uploadingAvatar.value = false;
   }
 }
 </script>
@@ -419,14 +479,55 @@ async function handleChangePassword() {
 .avatar-section {
   text-align: center;
   
+  .avatar-wrapper {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    margin-bottom: 16px;
+    
+    &:hover {
+      .avatar-overlay {
+        opacity: 1;
+      }
+    }
+  }
+  
   .user-avatar {
     font-size: 42px !important;
     font-weight: 700;
     background: rgba(255, 255, 255, 0.95) !important;
     color: var(--primary-blue, #165DFF) !important;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
-    margin-bottom: 16px;
     border: 4px solid rgba(255, 255, 255, 0.3);
+  }
+  
+  .avatar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    color: #fff;
+    opacity: 0;
+    transition: all 0.3s ease;
+    
+    span {
+      font-size: 12px;
+    }
+  }
+  
+  .avatar-loading {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
 
   .user-name {

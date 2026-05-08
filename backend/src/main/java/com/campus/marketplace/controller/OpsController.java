@@ -3,6 +3,7 @@ package com.campus.marketplace.controller;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.campus.marketplace.service.CircleService;
 import com.campus.marketplace.service.OpsService;
+import com.campus.marketplace.service.ReviewService;
 import com.campus.marketplace.service.StatsService;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,11 +25,13 @@ public class OpsController {
   private final OpsService opsService;
   private final StatsService statsService;
   private final CircleService circleService;
+  private final ReviewService reviewService;
 
-  public OpsController(OpsService opsService, StatsService statsService, CircleService circleService) {
+  public OpsController(OpsService opsService, StatsService statsService, CircleService circleService, ReviewService reviewService) {
     this.opsService = opsService;
     this.statsService = statsService;
     this.circleService = circleService;
+    this.reviewService = reviewService;
   }
 
   /**
@@ -187,7 +190,7 @@ public class OpsController {
   public Map<String, Object> getPendingCounts() {
     Map<String, Object> counts = new HashMap<>();
     counts.put("items", opsService.getPendingItemsCount());
-    counts.put("reviews", 0);
+    counts.put("reviews", reviewService.getPendingCount());
     counts.put("circle", circleService.getPendingCount());
     return buildSuccessResponse(counts);
   }

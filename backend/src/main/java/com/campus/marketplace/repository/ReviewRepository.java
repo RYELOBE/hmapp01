@@ -1,5 +1,7 @@
 package com.campus.marketplace.repository;
 
+import java.sql.Statement;
+import java.sql.Types;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -9,8 +11,6 @@ import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
-
-import java.sql.Statement;
 
 @Repository
 public class ReviewRepository {
@@ -44,14 +44,20 @@ public class ReviewRepository {
     KeyHolder kh = new GeneratedKeyHolder();
     jdbc.update(con -> {
       var ps = con.prepareStatement(
-          "INSERT INTO review (order_id, item_id, buyer_id, rating, content, images) VALUES (?, ?, ?, ?, ?, ?)",
+          "INSERT INTO review (order_id, item_id, buyer_id, seller_id, rating, content, images, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
           Statement.RETURN_GENERATED_KEYS);
       ps.setLong(1, orderId);
       ps.setLong(2, itemId);
       ps.setLong(3, buyerId);
-      ps.setInt(4, rating);
-      ps.setString(5, content);
-      ps.setString(6, images);
+      if (sellerId != null) {
+        ps.setLong(4, sellerId);
+      } else {
+        ps.setNull(4, Types.BIGINT);
+      }
+      ps.setInt(5, rating);
+      ps.setString(6, content);
+      ps.setString(7, images);
+      ps.setString(8, "PENDING");
       return ps;
     }, kh);
     Long id = kh.getKey().longValue();
@@ -63,23 +69,24 @@ public class ReviewRepository {
     KeyHolder kh = new GeneratedKeyHolder();
     jdbc.update(con -> {
       var ps = con.prepareStatement(
-          "INSERT INTO review (order_id, item_id, buyer_id, seller_id, rating, content, images) VALUES (?, ?, ?, ?, ?, ?, ?)",
+          "INSERT INTO review (order_id, item_id, buyer_id, seller_id, rating, content, images, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
           Statement.RETURN_GENERATED_KEYS);
       if (orderId != null) {
         ps.setLong(1, orderId);
       } else {
-        ps.setNull(1, java.sql.Types.BIGINT);
+        ps.setNull(1, Types.BIGINT);
       }
       ps.setLong(2, itemId);
       ps.setLong(3, buyerId);
       if (sellerId != null) {
         ps.setLong(4, sellerId);
       } else {
-        ps.setNull(4, java.sql.Types.BIGINT);
+        ps.setNull(4, Types.BIGINT);
       }
       ps.setInt(5, rating);
       ps.setString(6, content);
       ps.setString(7, images);
+      ps.setString(8, "PENDING");
       return ps;
     }, kh);
     Long id = kh.getKey().longValue();
@@ -116,6 +123,10 @@ public class ReviewRepository {
         replyContent, id);
   }
 
+  public void updateStatus(Long id, String status) {
+    jdbc.update("UPDATE review SET status = ? WHERE id = ?", status, id);
+  }
+
   public List<Map<String, Object>> findByItemIdPaged(Long itemId, int page, int pageSize) {
     int offset = (page - 1) * pageSize;
     return jdbc.query(
@@ -131,6 +142,13 @@ public class ReviewRepository {
         ROW_MAPPER, itemId, status, pageSize, offset);
   }
 
+  public List<Map<String, Object>> findPendingPaged(int page, int pageSize) {
+    int offset = (page - 1) * pageSize;
+    return jdbc.query(
+        "SELECT * FROM review WHERE status = 'PENDING' ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        ROW_MAPPER, pageSize, offset);
+  }
+
   public int countByItemId(Long itemId) {
     Integer count = jdbc.queryForObject(
         "SELECT COUNT(*) FROM review WHERE item_id = ? AND status = 'APPROVED'", Integer.class, itemId);
@@ -140,6 +158,12 @@ public class ReviewRepository {
   public int countByItemIdAndStatus(Long itemId, String status) {
     Integer count = jdbc.queryForObject(
         "SELECT COUNT(*) FROM review WHERE item_id = ? AND status = ?", Integer.class, itemId, status);
+    return count != null ? count : 0;
+  }
+
+  public int countPending() {
+    Integer count = jdbc.queryForObject(
+        "SELECT COUNT(*) FROM review WHERE status = 'PENDING'", Integer.class);
     return count != null ? count : 0;
   }
 

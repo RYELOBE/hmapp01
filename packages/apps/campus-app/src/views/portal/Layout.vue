@@ -146,6 +146,40 @@
                   </template>
                   我的订单
                 </a-doption>
+                <a-doption @click="router.push('/portal/my-reviews')">
+                  <template #icon>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M12 20h9" />
+                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                    </svg>
+                  </template>
+                  我的评价
+                </a-doption>
+                <a-doption @click="router.push('/portal/cart')">
+                  <template #icon>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <circle cx="9" cy="21" r="1" />
+                      <circle cx="20" cy="21" r="1" />
+                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                    </svg>
+                  </template>
+                  购物车
+                  <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
+                </a-doption>
                 <a-doption
                   v-if="authStore.roles.includes('SELLER')"
                   @click="router.push('/portal/seller/publish')"
@@ -209,17 +243,19 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/auth";
 import { Message } from "@arco-design/web-vue";
 import AiAssistant from "../../components/common/AiAssistant.vue";
+import { getCartList } from "../../services/api";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 
 const mobileMenuOpen = ref(false);
+const cartCount = ref(0);
 
 const navItems = [
   { label: "首页", path: "/portal/home" },
@@ -292,6 +328,32 @@ const handleLogout = () => {
   Message.success("已退出登录");
   router.push("/portal/home");
 };
+
+async function loadCartCount() {
+  if (!authStore.isLoggedIn) {
+    cartCount.value = 0;
+    return;
+  }
+  
+  try {
+    const cartItems = await getCartList();
+    // 计算购物车中商品的总数量（不是商品种类数）
+    const totalCount = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
+    cartCount.value = totalCount;
+  } catch (e) {
+    console.warn("[Layout] 加载购物车数量失败:", e);
+    cartCount.value = 0;
+  }
+}
+
+onMounted(() => {
+  loadCartCount();
+  
+  // 监听路由变化，更新购物车数量
+  router.afterEach(() => {
+    loadCartCount();
+  });
+});
 </script>
 
 <style lang="scss" scoped>
@@ -675,5 +737,21 @@ const handleLogout = () => {
   .user-info .username {
     display: none;
   }
+}
+
+.cart-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background-color: #165DFF;
+  border-radius: 9px;
+  line-height: 1;
 }
 </style>

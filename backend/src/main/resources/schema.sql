@@ -245,7 +245,7 @@ CREATE TABLE review (
   images TEXT,
   reply TEXT,
   reply_time DATETIME,
-  status VARCHAR(20) NOT NULL DEFAULT 'APPROVED',
+  status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_item_id (item_id),
   INDEX idx_order_id (order_id),

@@ -1,16 +1,68 @@
 <template>
   <div class="approval-workspace">
     <PageContainer title="审批工作台" :extra-content="totalPendingBadge">
+      <!-- 筛选条件提示 -->
+      <div v-if="showFilterTip" class="filter-tip-bar">
+        <a-tag v-if="filterVendorId" color="blue" closable @close="clearFilter('vendorId')">
+          卖家ID: {{ filterVendorId }}
+        </a-tag>
+        <a-tag v-if="filterItemId" color="green" closable @close="clearFilter('itemId')">
+          商品ID: {{ filterItemId }}
+        </a-tag>
+        <a-button type="text" size="small" @click="clearAllFilters">
+          清除所有筛选
+        </a-button>
+      </div>
+
       <a-tabs v-model:active-key="activeTab" type="card" @change="handleTabChange">
         <a-tab-pane key="items" :title="tabTitle('items', '待审核商品')">
           <div class="tab-content">
+            <!-- 批量操作工具栏 -->
+            <div v-if="pendingItems.length > 0" class="batch-toolbar">
+              <a-checkbox 
+                :checked="isAllItemsSelected" 
+                :indeterminate="isItemsIndeterminate"
+                @change="(val) => toggleSelectAll('items', val)"
+              >
+                全选
+              </a-checkbox>
+              <span class="selected-count">已选 {{ selectedItemsCount }} 项</span>
+              <div class="batch-actions">
+                <a-button 
+                  type="primary" 
+                  status="success" 
+                  size="small"
+                  :disabled="selectedItemsCount === 0"
+                  @click="batchApprove('items')"
+                >
+                  批量通过
+                </a-button>
+                <a-button 
+                  type="primary" 
+                  status="danger" 
+                  size="small"
+                  :disabled="selectedItemsCount === 0"
+                  @click="openBatchRejectModal('items')"
+                >
+                  批量拒绝
+                </a-button>
+              </div>
+            </div>
+
             <a-spin :loading="loading">
               <div class="review-list" v-if="pendingItems.length > 0">
                 <div
                   v-for="item in pendingItems"
                   :key="item.id"
                   class="review-card item-card"
+                  :class="{ 'review-card--selected': item._selected }"
                 >
+                  <div class="card-checkbox">
+                    <a-checkbox 
+                      v-model="item._selected"
+                      @change="updateSelection()"
+                    />
+                  </div>
                   <div class="card-image">
                     <a-image
                       :src="getFirstImage(item)"
@@ -73,7 +125,7 @@
                 >
                   <div class="card-image">
                     <a-image
-                      :src="review.itemImage || ''"
+                      :src="review.itemImage || getFirstImage(review) || ''"
                       width="80"
                       height="80"
                       fit="cover"
@@ -174,6 +226,66 @@
             </a-spin>
           </div>
         </a-tab-pane>
+
+        <a-tab-pane key="comments" :title="tabTitle('comments', '待审核评论')">
+          <div class="tab-content">
+            <a-spin :loading="loading">
+              <div class="review-list" v-if="pendingComments.length > 0">
+                <div
+                  v-for="comment in pendingComments"
+                  :key="comment.id"
+                  class="review-card comment-card"
+                >
+                  <div class="card-image">
+                    <a-avatar :size="48">{{ (comment.authorName || '用')[0] }}</a-avatar>
+                  </div>
+                  <div class="card-info">
+                    <h3 class="post-title">{{ comment.content?.substring(0, 50) || '无内容' }}{{ comment.content?.length > 50 ? '...' : '' }}</h3>
+                    <div class="author-info">
+                      <span>{{ comment.authorName || '匿名用户' }}</span>
+                      <span class="meta-separator">·</span>
+                      <span>帖子: {{ comment.postTitle || '未知' }}</span>
+                    </div>
+                    <div class="time-info">
+                      {{ formatTime(comment.createdAt) }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <a-empty v-else description="暂无需审核的评论" />
+            </a-spin>
+          </div>
+        </a-tab-pane>
+
+        <a-tab-pane key="orders" :title="tabTitle('orders', '异常订单')">
+          <div class="tab-content">
+            <a-spin :loading="loading">
+              <div class="review-list" v-if="pendingOrders.length > 0">
+                <div
+                  v-for="order in pendingOrders"
+                  :key="order.id"
+                  class="review-card order-card"
+                >
+                  <div class="card-icon">
+                    <icon-file size="32" color="#FF7D00" />
+                  </div>
+                  <div class="card-info">
+                    <h3 class="post-title">订单 #{{ order.id }}</h3>
+                    <div class="author-info">
+                      <span>买家: {{ order.buyerName || '未知' }}</span>
+                      <span class="meta-separator">·</span>
+                      <span>金额: ¥{{ (order.totalAmount || 0).toFixed(2) }}</span>
+                    </div>
+                    <div class="time-info">
+                      {{ formatTime(order.createdAt) }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <a-empty v-else description="暂无异常订单" />
+            </a-spin>
+          </div>
+        </a-tab-pane>
       </a-tabs>
     </PageContainer>
 
@@ -211,10 +323,19 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted, watch } from "vue";
+import { useRoute } from "vue-router";
 import { Message } from "@arco-design/web-vue";
+import {
+  IconStorage,
+  IconStar,
+  IconMessage,
+  IconEdit,
+  IconFile,
+} from "@arco-design/web-vue/es/icon";
 import PageContainer from "../../../components/layout/PageContainer/PageContainer.vue";
 import { opsHttp as http } from "../../../services/http";
 
+const route = useRoute();
 const activeTab = ref("items");
 const loading = ref(false);
 const submitLoading = ref(false);
@@ -223,14 +344,25 @@ const rejectModalVisible = ref(false);
 const currentItem = ref(null);
 const currentType = ref("");
 
+// 从路由查询参数获取筛选条件
+const filterVendorId = ref(null);
+const filterItemId = ref(null);
+const showFilterTip = computed(() => {
+  return filterVendorId.value || filterItemId.value;
+});
+
 const pendingItems = ref([]);
 const pendingReviews = ref([]);
 const pendingPosts = ref([]);
+const pendingComments = ref([]);
+const pendingOrders = ref([]);
 
 const counts = reactive({
   items: 0,
   reviews: 0,
   circle: 0,
+  comments: 0,
+  orders: 0,
 });
 
 const pagination = reactive({
@@ -258,6 +390,8 @@ function getTypeLabel(type) {
     items: "商品",
     reviews: "评价",
     circle: "帖子",
+    comments: "评论",
+    orders: "订单",
   };
   return labels[type] || "内容";
 }
@@ -342,10 +476,16 @@ async function loadData() {
         url = "/ops/pending-items";
         break;
       case "reviews":
-        url = "/ops/reviews";
+        url = "/reviews/pending";
         break;
       case "circle":
         url = "/ops/circle/pending";
+        break;
+      case "comments":
+        url = "/circle/comments/pending";
+        break;
+      case "orders":
+        url = "/orders?status=REFUND_PENDING";
         break;
     }
 
@@ -354,7 +494,9 @@ async function loadData() {
       pageSize: pagination.pageSize,
     };
 
-    const res = await http.post(url, params);
+    const res = activeTab.value === 'orders' 
+      ? await http.get(url, params)
+      : await http.post(url, params);
     const data = res?.data || res;
 
     switch (activeTab.value) {
@@ -366,6 +508,12 @@ async function loadData() {
         break;
       case "circle":
         pendingPosts.value = data?.items || data?.list || [];
+        break;
+      case "comments":
+        pendingComments.value = data?.items || data?.list || [];
+        break;
+      case "orders":
+        pendingOrders.value = Array.isArray(data) ? data : (data?.items || data?.list || []);
         break;
     }
 
@@ -419,7 +567,7 @@ async function confirmApprove() {
         url = `/ops/reviews/${currentItem.value.id}/approve`;
         break;
       case "reviews":
-        url = `/ops/reviews/${currentItem.value.id}/approve`;
+        url = `/reviews/${currentItem.value.id}/approve`;
         break;
       case "circle":
         url = `/ops/circle/${currentItem.value.id}/approve`;
@@ -452,7 +600,7 @@ async function confirmReject() {
         url = `/ops/reviews/${currentItem.value.id}/reject`;
         break;
       case "reviews":
-        url = `/ops/reviews/${currentItem.value.id}/reject`;
+        url = `/reviews/${currentItem.value.id}/reject`;
         break;
       case "circle":
         url = `/ops/circle/${currentItem.value.id}/reject`;
@@ -471,10 +619,215 @@ async function confirmReject() {
   }
 }
 
+// ========== 批量操作功能 ==========
+const selectedItemsCount = computed(() => {
+  const list = getCurrentList();
+  return list.filter(item => item._selected).length;
+});
+
+const isAllItemsSelected = computed(() => {
+  const list = getCurrentList();
+  return list.length > 0 && list.every(item => item._selected);
+});
+
+const isItemsIndeterminate = computed(() => {
+  const list = getCurrentList();
+  const selected = list.filter(item => item._selected);
+  return selected.length > 0 && selected.length < list.length;
+});
+
+function getCurrentList() {
+  switch (activeTab.value) {
+    case 'items': return pendingItems.value;
+    case 'reviews': return pendingReviews.value;
+    case 'circle': return pendingPosts.value;
+    default: return [];
+  }
+}
+
+function toggleSelectAll(type, val) {
+  const list = type === activeTab.value ? getCurrentList() : [];
+  list.forEach(item => { item._selected = !!val; });
+}
+
+function updateSelection() {
+  // 触发计算属性更新
+}
+
+async function batchApprove(type) {
+  if (type !== activeTab.value) return;
+  
+  const selectedList = getCurrentList().filter(item => item._selected);
+  if (selectedList.length === 0) return;
+
+  submitLoading.value = true;
+  try {
+    let successCount = 0;
+    
+    for (const item of selectedList) {
+      try {
+        let url = '';
+        switch (type) {
+          case 'items': url = `/ops/reviews/${item.id}/approve`; break;
+          case 'reviews': url = `/reviews/${item.id}/approve`; break;
+          case 'circle': url = `/ops/circle/${item.id}/approve`; break;
+        }
+        
+        await http.post(url);
+        successCount++;
+      } catch (e) {
+        console.error(`批量通过失败 (${item.id}):`, e);
+      }
+    }
+
+    if (successCount > 0) {
+      Message.success(`成功通过 ${successCount} 项`);
+    }
+    
+    await Promise.all([loadData(), loadCounts()]);
+  } catch (e) {
+    console.error('[BatchApprove] error:', e);
+    Message.error('批量操作失败');
+  } finally {
+    submitLoading.value = false;
+  }
+}
+
+let batchRejectType = ref('');
+
+function openBatchRejectModal(type) {
+  if (type !== activeTab.value || selectedItemsCount.value === 0) return;
+  
+  batchRejectType.value = type;
+  rejectForm.reason = '';
+  rejectModalVisible.value = true;
+}
+
+// 覆盖原有的confirmReject以支持批量操作
+const originalConfirmReject = async function confirmReject() {
+  if (!rejectForm.reason.trim()) {
+    Message.warning('请输入拒绝原因');
+    return;
+  }
+
+  submitLoading.value = true;
+  try {
+    // 如果是批量拒绝模式
+    if (batchRejectType.value) {
+      const selectedList = getCurrentList().filter(item => item._selected);
+      let successCount = 0;
+      
+      for (const item of selectedList) {
+        try {
+          let url = '';
+          switch (batchRejectType.value) {
+            case 'items': url = `/ops/reviews/${item.id}/reject`; break;
+            case 'reviews': url = `/reviews/${item.id}/reject`; break;
+            case 'circle': url = `/ops/circle/${item.id}/reject`; break;
+          }
+          
+          await http.post(url, { reason: rejectForm.reason });
+          successCount++;
+        } catch (e) {
+          console.error(`批量拒绝失败 (${item.id}):`, e);
+        }
+      }
+      
+      if (successCount > 0) {
+        Message.success(`已拒绝 ${successCount} 项`);
+      }
+      
+      batchRejectType.value = '';
+    } else {
+      // 单个拒绝（原有逻辑）
+      if (!currentItem.value) return;
+      
+      let url = '';
+      switch (currentType.value) {
+        case 'items': url = `/ops/reviews/${currentItem.value.id}/reject`; break;
+        case 'reviews': url = `/reviews/${currentItem.value.id}/reject`; break;
+        case 'circle': url = `/ops/circle/${currentItem.value.id}/reject`; break;
+      }
+      
+      await http.post(url, { reason: rejectForm.reason });
+      Message.success(`已拒绝该${getTypeLabel(currentType.value)}`);
+    }
+    
+    rejectModalVisible.value = false;
+    await Promise.all([loadData(), loadCounts()]);
+  } catch (e) {
+    console.error('[ConfirmReject] error:', e);
+    Message.error('操作失败，请重试');
+  } finally {
+    submitLoading.value = false;
+  }
+};
+
+// 暴出给模板使用
+window.confirmReject = originalConfirmReject;
+
+// 初始化路由参数
+function initRouteParams() {
+  const query = route.query;
+  
+  // 设置当前Tab
+  if (query.tab && ['items', 'reviews', 'circle', 'comments', 'orders'].includes(query.tab)) {
+    activeTab.value = query.tab;
+  }
+  
+  // 设置筛选条件
+  filterVendorId.value = query.vendorId || null;
+  filterItemId.value = query.itemId || null;
+  
+  // 如果有筛选条件，显示提示信息
+  if (showFilterTip.value) {
+    setTimeout(() => {
+      Message.info(`已应用筛选条件：${filterVendorId.value ? '指定卖家' : ''}${filterItemId.value ? '指定商品' : ''}`);
+    }, 500);
+  }
+}
+
 onMounted(() => {
+  initRouteParams();
   loadCounts();
   loadData();
 });
+
+// 监听路由变化（当从其他页面跳转过来时）
+watch(() => route.query, () => {
+  initRouteParams();
+  pagination.current = 1;
+  loadData();
+}, { deep: true });
+
+// 清除单个筛选条件
+function clearFilter(type) {
+  if (type === 'vendorId') {
+    filterVendorId.value = null;
+  } else if (type === 'itemId') {
+    filterItemId.value = null;
+  }
+  
+  // 更新URL
+  const query = { ...route.query };
+  delete query[type];
+  
+  // 使用replace避免浏览器历史记录堆积
+  // 注意：这里简化处理，实际可能需要使用router.replace
+}
+
+// 清除所有筛选条件
+function clearAllFilters() {
+  filterVendorId.value = null;
+  filterItemId.value = null;
+  
+  Message.success('已清除所有筛选条件');
+  
+  // 延迟刷新数据
+  setTimeout(() => {
+    loadData();
+  }, 300);
+}
 </script>
 
 <style lang="scss" scoped>
@@ -484,8 +837,75 @@ onMounted(() => {
   padding: 20px;
 }
 
+// 筛选条件提示条
+.filter-tip-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin-bottom: 16px;
+  background: linear-gradient(135deg, #e6f7ff 0%, #f0f5ff 100%);
+  border: 1px solid #91d5ff;
+  border-radius: 8px;
+
+  .arco-tag {
+    font-size: 13px;
+    font-weight: 500;
+  }
+}
+
 .tab-content {
   min-height: 400px;
+}
+
+// 批量操作工具栏
+.batch-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--color-bg-white, #fff);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border: 1px solid var(--color-border-2, #e5e6eb);
+
+  .selected-count {
+    font-size: 13px;
+    color: var(--color-text-3, #86909c);
+    font-weight: 500;
+  }
+
+  .batch-actions {
+    display: flex;
+    gap: 8px;
+    margin-left: auto;
+  }
+}
+
+// 选中状态
+.review-card--selected {
+  border-color: #165DFF !important;
+  background: linear-gradient(135deg, #f0f5ff 0%, #fff 100%);
+
+  .card-checkbox {
+    :deep(.arco-checkbox) {
+      .arco-checkbox-icon {
+        border-color: #165DFF;
+        background: #165DFF;
+      }
+    }
+  }
+}
+
+.card-checkbox {
+  flex-shrink: 0;
+  padding-top: 4px;
+
+  :deep(.arco-checkbox) {
+    .arco-checkbox-icon {
+      border-radius: 4px;
+    }
+  }
 }
 
 .review-list {

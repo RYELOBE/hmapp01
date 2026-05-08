@@ -211,7 +211,7 @@ function getImageUrl(item) {
 
 function goToItem(itemId) {
   if (itemId) {
-    router.push(`/item/${itemId}`);
+    router.push(`/portal/item/${itemId}`);
   }
 }
 
@@ -284,15 +284,21 @@ async function clearSelected() {
 
 function checkout() {
   const selectedItems = cartItems.value.filter((item) => item.selected && isItemAvailable(item.item));
+  
   if (selectedItems.length === 0) {
     Message.warning("请选择要结算的商品");
     return;
   }
-  if (selectedItems.length > 1) {
-    Message.warning("暂不支持多商品批量结算，请选择单个商品进行结算");
-    return;
-  }
-  router.push(`/portal/orders/confirm/${selectedItems[0].itemId}`);
+  
+  // 将选中的购物车项ID列表传递到确认页
+  const cartItemIds = selectedItems.map(item => item.id);
+  router.push({
+    path: '/portal/orders/confirm',
+    query: { 
+      cartIds: cartItemIds.join(','),
+      count: selectedItems.length
+    }
+  });
 }
 
 onMounted(loadCart);

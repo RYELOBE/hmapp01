@@ -75,22 +75,11 @@
         <a-card title="晒图评价" class="image-card">
           <div class="upload-section">
             <p class="upload-tip">支持上传最多5张图片，单张不超过5MB</p>
-            <a-upload
-              action="/api/upload"
-              list-type="picture-card"
-              :file-list="form.images"
+            <ImageUploader
+              v-model="form.images"
               :limit="5"
-              image-preview
-              @change="handleImageChange"
-              @before-upload="beforeUpload"
-            >
-              <template #upload-button>
-                <div class="upload-trigger">
-                  <icon-plus :size="24" />
-                  <div style="margin-top: 8px; font-size: 12px;">上传图片</div>
-                </div>
-              </template>
-            </a-upload>
+              upload-url="/api/upload"
+            />
           </div>
         </a-card>
 
@@ -126,9 +115,9 @@ import {
   IconCamera,
   IconCalendar,
   IconClockCircle,
-  IconPlus,
 } from '@arco-design/web-vue/es/icon';
 import RichEditor from '../../components/form/RichEditor/RichEditor.vue';
+import ImageUploader from '../../components/form/ImageUploader/ImageUploader.vue';
 import { getOrderDetail, createReview } from '../../services/api';
 
 const router = useRouter();
@@ -200,7 +189,7 @@ function formatTime(dateStr) {
 }
 
 async function loadOrder() {
-  const orderId = route.query.orderId;
+  const orderId = route.params.orderId;
   if (!orderId) {
     Message.error('订单ID不存在');
     router.back();
@@ -210,31 +199,12 @@ async function loadOrder() {
   loading.value = true;
   try {
     const res = await getOrderDetail(orderId);
-    order.value = res;
+    order.value = res?.data || res || null;
   } catch (e) {
-    Message.error(e.message || '加载订单失败');
+    Message.error(e.response?.data?.message || e.message || '加载订单失败');
   } finally {
     loading.value = false;
   }
-}
-
-function handleImageChange(fileList) {
-  form.value.images = fileList;
-}
-
-function beforeUpload(file) {
-  const isImage = file.type.startsWith('image/');
-  const isLt5M = file.size / 1024 / 1024 < 5;
-
-  if (!isImage) {
-    Message.error('只能上传图片文件');
-    return false;
-  }
-  if (!isLt5M) {
-    Message.error('图片大小不能超过 5MB');
-    return false;
-  }
-  return true;
 }
 
 async function submitReview() {
@@ -246,18 +216,18 @@ async function submitReview() {
   submitting.value = true;
   try {
     const images = Array.isArray(form.value.images)
-      ? form.value.images.map(img => img.url || img.response?.url).filter(Boolean)
-      : [];
-    await createReview(order.value.id, {
+      ? form.value.images.filter(Boolean)
+      : [form.value.images].filter(Boolean);
+    const result = await createReview(order.value.id, {
       itemId: order.value.itemId,
       rating: form.value.rating,
-      content: form.value.content,
-      images: images.length > 0 ? images : [],
+      content: form.value.content.trim(),
+      images,
     });
-    Message.success('评价提交成功！');
+    Message.success(result?.message || '评价已提交，待审核后展示');
     router.push('/portal/orders');
   } catch (e) {
-    Message.error(e.message || '提交失败');
+    Message.error(e.response?.data?.message || e.message || '提交失败');
   } finally {
     submitting.value = false;
   }

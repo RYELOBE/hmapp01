@@ -8,7 +8,7 @@
             :src="currentUrl"
             :alt="'图片 ' + (currentIndex + 1)"
             class="image-gallery__img"
-            fit="cover"
+            fit="contain"
             :preview="false"
             @click="openPreview"
             @error="handleImageError"
@@ -163,15 +163,34 @@ function handleThumbError(event, idx) {
     width: 100%;
     border-radius: var(--border-radius-medium, 8px);
     overflow: hidden;
-    aspect-ratio: 4 / 3;
+    background: #fafafa;
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    &::before {
+      content: '';
+      display: block;
+      padding-top: 75%; // 4:3 比例的最小高度
+    }
+
+    > * {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
   }
 
   &__img {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain; // 改为 contain，确保图片完整显示
     cursor: zoom-in;
     transition: transform 250ms ease-out;
+    padding: 8px;
 
     &:hover {
       transform: scale(1.02);
@@ -193,6 +212,8 @@ function handleThumbError(event, idx) {
 
     .placeholder-logo {
       object-fit: contain;
+      max-width: 120px;
+      max-height: 120px;
     }
 
     .placeholder-text {
@@ -209,7 +230,7 @@ function handleThumbError(event, idx) {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.95);
     border: none;
     cursor: pointer;
     display: flex;
@@ -220,6 +241,7 @@ function handleThumbError(event, idx) {
     transition: all 150ms ease-out;
     backdrop-filter: blur(4px);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 10;
 
     &:hover {
       background: rgba(255, 255, 255, 1);
@@ -233,23 +255,25 @@ function handleThumbError(event, idx) {
 
   &__counter {
     position: absolute;
-    bottom: 12px;
-    right: 12px;
-    background: rgba(0, 0, 0, 0.6);
+    bottom: 16px;
+    right: 16px;
+    background: rgba(0, 0, 0, 0.65);
     color: #fff;
-    padding: 4px 10px;
-    border-radius: 12px;
-    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
     -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
+    z-index: 10;
   }
 
   &__thumbs {
     display: flex;
-    gap: 8px;
+    gap: 10px;
     margin-top: 12px;
     overflow-x: auto;
-    padding-bottom: 4px;
+    padding-bottom: 6px;
 
     &::-webkit-scrollbar {
       height: 6px;
@@ -258,35 +282,80 @@ function handleThumbError(event, idx) {
     &::-webkit-scrollbar-thumb {
       background: var(--color-border-3, #d9d9d9);
       border-radius: 3px;
+      
+      &:hover {
+        background: var(--color-border-2, #c9cdd4);
+      }
     }
   }
 
   &__thumb {
-    width: 60px;
-    height: 60px;
+    width: 64px;
+    height: 64px;
     border-radius: var(--border-radius-small, 6px);
     overflow: hidden;
     cursor: pointer;
-    border: 2px solid transparent;
+    border: 2.5px solid transparent;
     flex-shrink: 0;
     transition: all 150ms ease-out;
     opacity: 0.7;
+    background: #f5f5f5;
 
     &:hover {
       opacity: 1;
-      transform: scale(1.05);
+      transform: scale(1.08);
+      border-color: rgba(22, 93, 255, 0.3);
     }
 
     &--active {
       border-color: var(--color-primary, #165DFF);
       opacity: 1;
-      box-shadow: 0 0 0 2px rgba(22, 93, 255, 0.2);
+      box-shadow: 0 0 0 3px rgba(22, 93, 255, 0.15);
+      transform: scale(1.05);
     }
 
     img {
       width: 100%;
       height: 100%;
       object-fit: cover;
+    }
+  }
+}
+
+// 响应式适配
+@media (max-width: 768px) {
+  .image-gallery {
+    &__main {
+      min-height: 240px;
+      
+      &::before {
+        padding-top: 80%; // 移动端稍微高一点
+      }
+    }
+
+    &__arrow {
+      width: 32px;
+      height: 32px;
+      font-size: 14px;
+      
+      &--left { left: 8px; }
+      &--right { right: 8px; }
+    }
+
+    &__thumb {
+      width: 56px;
+      height: 56px;
+    }
+
+    &__counter {
+      bottom: 12px;
+      right: 12px;
+      font-size: 12px;
+      padding: 4px 10px;
+    }
+
+    &__img {
+      padding: 6px;
     }
   }
 }

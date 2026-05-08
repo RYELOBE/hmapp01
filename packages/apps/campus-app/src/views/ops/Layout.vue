@@ -34,6 +34,28 @@
         </router-link>
       </nav>
 
+      <!-- 用户信息 + 退出登录 -->
+      <div class="sidebar-user-section">
+        <div class="user-info-area">
+          <a-avatar :size="36" class="user-avatar">
+            {{ userInitial }}
+          </a-avatar>
+          <div v-show="!collapsed" class="user-details">
+            <span class="user-name">{{ userName }}</span>
+            <span class="user-role">运营人员</span>
+          </div>
+        </div>
+
+        <button 
+          class="logout-btn" 
+          @click="handleLogout"
+          :title="collapsed ? '退出登录' : ''"
+        >
+          <icon-export />
+          <span v-show="!collapsed" class="logout-text">退出</span>
+        </button>
+      </div>
+
       <button class="collapse-btn" @click="toggleCollapse" :title="collapsed ? '展开侧边栏' : '折叠侧边栏'">
         <icon-right v-if="collapsed" />
         <icon-left v-else />
@@ -68,7 +90,8 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { Message, Modal } from '@arco-design/web-vue'
 import {
   IconDashboard,
   IconStorage,
@@ -80,12 +103,42 @@ import {
   IconSettings,
   IconMenu,
   IconRight,
-  IconLeft
+  IconLeft,
+  IconExport,
 } from '@arco-design/web-vue/es/icon'
 
 const route = useRoute()
 const collapsed = ref(false)
 const showMobileOverlay = ref(false)
+
+// 用户信息
+const userName = ref('运营管理员')
+const userInitial = computed(() => {
+  return userName.value ? userName.value.charAt(0).toUpperCase() : 'O'
+})
+
+function handleLogout() {
+  Modal.confirm({
+    title: '确认退出',
+    content: '确定要退出运营后台吗？',
+    okText: '确认退出',
+    cancelText: '取消',
+    onOk: async () => {
+      try {
+        // 清除本地存储的运营登录信息
+        localStorage.removeItem('ops_token')
+        localStorage.removeItem('ops_user')
+        
+        Message.success('已成功退出登录')
+        router.push('/ops/login')
+      } catch (error) {
+        console.error('[Logout] error:', error)
+        // 即使接口失败也跳转到登录页
+        router.push('/ops/login')
+      }
+    }
+  })
+}
 
 const pendingCounts = ref({
   items: 12,
@@ -208,7 +261,7 @@ onUnmounted(() => {
 .sidebar {
   width: 240px;
   min-height: 100vh;
-  background: linear-gradient(180deg, #1D2129 0%, #2A2F36 100%);
+  background: linear-gradient(180deg, #0D1626 0%, #1A2332 50%, #242E42 100%);
   color: #FFFFFF;
   padding: 20px 0;
   display: flex;
@@ -216,6 +269,18 @@ onUnmounted(() => {
   transition: width 0.3s ease;
   position: relative;
   z-index: 100;
+  box-shadow: 4px 0 20px rgba(0, 0, 0, 0.25);
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(ellipse at 30% 10%, rgba(22, 93, 255, 0.08) 0%, transparent 60%);
+    pointer-events: none;
+  }
 
   &.collapsed {
     width: 64px;
@@ -237,6 +302,79 @@ onUnmounted(() => {
     .collapse-btn {
       left: 50%;
       transform: translateX(-50%);
+    }
+
+    .user-details,
+    .logout-text {
+      display: none;
+    }
+  }
+}
+
+// 用户信息区域
+.sidebar-user-section {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  
+  .user-info-area {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+    
+    .user-avatar {
+      flex-shrink: 0;
+      background: linear-gradient(135deg, #165DFF 0%, #69b1ff 100%);
+      color: #fff;
+      font-weight: 600;
+      font-size: 16px;
+      box-shadow: 0 2px 8px rgba(22, 93, 255, 0.35);
+    }
+    
+    .user-details {
+      flex: 1;
+      min-width: 0;
+      
+      .user-name {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .user-role {
+        display: block;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.55);
+        margin-top: 2px;
+      }
+    }
+  }
+  
+  .logout-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 16px;
+    margin-top: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.75);
+    cursor: pointer;
+    transition: all 200ms ease-out;
+    font-size: 13px;
+    
+    &:hover {
+      background: rgba(245, 80, 80, 0.15);
+      border-color: rgba(245, 80, 80, 0.4);
+      color: #ff7875;
     }
   }
 }

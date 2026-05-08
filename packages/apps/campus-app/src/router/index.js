@@ -52,7 +52,7 @@ const OpsLayout = () =>
   import(/* webpackChunkName: "ops-layout" */ "../views/ops/Layout.vue");
 const OpsDashboard = () =>
   import(
-    /* webpackChunkName: "ops-dashboard" */ "../views/ops/dashboard/index.vue"
+    /* webpackChunkName: "ops-dashboard" */ "../views/ops/dashboard/EnhancedDashboard.vue"
   );
 const OpsReview = () =>
   import(
@@ -168,6 +168,12 @@ const routes = [
         path: "favorites",
         component: () => import("../views/portal/Favorites.vue"),
         meta: { roles: ["BUYER"] },
+      },
+      {
+        path: "my-reviews",
+        name: "portalMyReviews",
+        component: () => import("../views/portal/MyReviews.vue"),
+        meta: { title: "我的评价", roles: ["BUYER"] },
       },
       {
         path: "review/:orderId",
