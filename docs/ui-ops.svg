@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1000" height="700" xmlns="http://www.w3.org/2000/svg" style="background:#fff; font-family: -apple-system, sans-serif;">
+  <text x="500" y="30" text-anchor="middle" font-size="16" fill="#333">运营后台界面设计图（图4.11）</text>
+  
+  <!-- Mockup border -->
+  <rect x="20" y="50" width="960" height="620" rx="4" fill="#fff" stroke="#333" stroke-width="2"/>
+  
+  <!-- Top Bar -->
+  <defs><linearGradient id="topGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#165DFF"/><stop offset="100%" style="stop-color:#4C6EF5"/></linearGradient></defs>
+  <rect x="20" y="50" width="960" height="42" rx="2" fill="url(#topGrad)"/>
+  <text x="50" y="77" font-size="14" fill="#fff" font-weight="bold">🏫 校园运营后台</text>
+  <text x="300" y="77" font-size="13" fill="#fff">🏠 首页</text>
+  <text x="370" y="77" font-size="13" fill="#fff">🔔 消息</text>
+  <circle cx="430" cy="70" r="8" fill="#f53f3f"/>
+  <text x="430" y="74" text-anchor="middle" font-size="9" fill="#fff">5</text>
+  <text x="460" y="77" font-size="13" fill="#fff">👤 运营员 ▾</text>
+  
+  <!-- Sidebar -->
+  <rect x="20" y="92" width="180" height="576" fill="#fff" stroke="#e5e6eb"/>
+  <text x="50" y="125" font-size="13" fill="#165DFF" font-weight="bold"> 数据仪表盘</text>
+  <line x1="190" y1="110" x2="190" y2="135" stroke="#165DFF" stroke-width="3"/>
+  
+  <text x="50" y="165" font-size="13" fill="#666">📦 商品管理</text>
+  <text x="50" y="205" font-size="13" fill="#666">📋 订单管理</text>
+  <text x="50" y="245" font-size="13" fill="#666">👥 用户管理</text>
+  <text x="50" y="285" font-size="13" fill="#666">✅ 审批工作台</text>
+  <text x="50" y="325" font-size="13" fill="#666">⚙️ 系统设置</text>
+  
+  <!-- Main Content Area -->
+  <rect x="202" y="92" width="776" height="576" fill="#fff"/>
+  
+  <!-- Stat Cards -->
+  <rect x="220" y="110" width="170" height="80" rx="6" fill="#fff" stroke="#e5e6eb"/>
+  <text x="305" y="140" text-anchor="middle" font-size="12" fill="#888">今日订单</text>
+  <text x="305" y="175" text-anchor="middle" font-size="28" fill="#333" font-weight="bold">128</text>
+  
+  <rect x="405" y="110" width="170" height="80" rx="6" fill="#fff" stroke="#e5e6eb"/>
+  <text x="490" y="140" text-anchor="middle" font-size="12" fill="#888">今日完成</text>
+  <text x="490" y="175" text-anchor="middle" font-size="28" fill="#00b42a" font-weight="bold">96</text>
+  
+  <rect x="590" y="110" width="170" height="80" rx="6" fill="#fff" stroke="#e5e6eb"/>
+  <text x="675" y="140" text-anchor="middle" font-size="12" fill="#888">今日金额</text>
+  <text x="675" y="175" text-anchor="middle" font-size="28" fill="#165DFF" font-weight="bold">¥3,580</text>
+  
+  <rect x="775" y="110" width="170" height="80" rx="6" fill="#fff" stroke="#e5e6eb"/>
+  <text x="860" y="140" text-anchor="middle" font-size="12" fill="#888">总金额</text>
+  <text x="860" y="175" text-anchor="middle" font-size="28" fill="#ff7d00" font-weight="bold">¥128,600</text>
+  
+  <!-- Line Chart -->
+  <rect x="220" y="210" width="725" height="180" rx="6" fill="#fff" stroke="#e5e6eb"/>
+  <text x="240" y="235" font-size="13" fill="#333" font-weight="bold">📈 订单趋势</text>
+  
+  <!-- Line chart bars -->
+  <rect x="250" y="320" width="30" height="50" rx="3" fill="#165DFF" opacity="0.7"/>
+  <rect x="295" y="290" width="30" height="80" rx="3" fill="#165DFF" opacity="0.7"/>
+  <rect x="340" y="300" width="30" height="70" rx="3" fill="#165DFF" opacity="0.7"/>
+  <rect x="385" y="270" width="30" height="100" rx="3" fill="#165DFF" opacity="0.7"/>
+  <rect x="430" y="290" width="30" height="80" rx="3" fill="#165DFF" opacity="0.7"/>
+  <rect x="475" y="260" width="30" height="110" rx="3" fill="#165DFF" opacity="0.7"/>
+  <rect x="520" y="275" width="30" height="95" rx="3" fill="#165DFF" opacity="0.7"/>
+  <rect x="565" y="295" width="30" height="75" rx="3" fill="#165DFF" opacity="0.7"/>
+  <rect x="610" y="265" width="30" height="105" rx="3" fill="#165DFF" opacity="0.7"/>
+  <rect x="655" y="280" width="30" height="90" rx="3" fill="#165DFF" opacity="0.7"/>
+  <rect x="700" y="255" width="30" height="115" rx="3" fill="#165DFF" opacity="0.7"/>
+  <rect x="745" y="290" width="30" height="80" rx="3" fill="#165DFF" opacity="0.7"/>
+  <rect x="790" y="270" width="30" height="100" rx="3" fill="#165DFF" opacity="0.7"/>
+  <rect x="835" y="310" width="30" height="60" rx="3" fill="#165DFF" opacity="0.7"/>
+  
+  <!-- Pie Chart -->
+  <rect x="220" y="410" width="350" height="240" rx="6" fill="#fff" stroke="#e5e6eb"/>
+  <text x="240" y="435" font-size="13" fill="#333" font-weight="bold"> 商品分类统计</text>
+  <circle cx="395" cy="520" r="60" fill="none"/>
+  <path d="M395,460 A60,60 0 0,1 455,520 L395,520 Z" fill="#165DFF"/>
+  <path d="M455,520 A60,60 0 0,1 410,575 L395,520 Z" fill="#00b42a"/>
+  <path d="M410,575 A60,60 0 0,1 340,560 L395,520 Z" fill="#ff7d00"/>
+  <path d="M340,560 A60,60 0 0,1 335,480 L395,520 Z" fill="#f53f3f"/>
+  
+  <!-- Pie labels -->
+  <text x="500" y="480" font-size="11" fill="#333">电子产品 40%</text>
+  <text x="500" y="500" font-size="11" fill="#333">图书教材 25%</text>
+  <text x="500" y="520" font-size="11" fill="#333">服饰鞋包 20%</text>
+  <text x="500" y="540" font-size="11" fill="#333">其他 15%</text>
+  
+  <!-- Bar Chart -->
+  <rect x="590" y="410" width="355" height="240" rx="6" fill="#fff" stroke="#e5e6eb"/>
+  <text x="610" y="435" font-size="13" fill="#333" font-weight="bold">📊 订单状态分布</text>
+  
+  <rect x="620" y="520" width="40" height="60" rx="3" fill="#165DFF"/>
+  <text x="640" y="600" text-anchor="middle" font-size="11" fill="#888">待付款</text>
+  <text x="640" y="510" text-anchor="middle" font-size="11" fill="#333">40</text>
+  
+  <rect x="690" y="470" width="40" height="110" rx="3" fill="#00b42a"/>
+  <text x="710" y="600" text-anchor="middle" font-size="11" fill="#888">已付款</text>
+  <text x="710" y="460" text-anchor="middle" font-size="11" fill="#333">80</text>
+  
+  <rect x="760" y="500" width="40" height="80" rx="3" fill="#ff7d00"/>
+  <text x="780" y="600" text-anchor="middle" font-size="11" fill="#888">待发货</text>
+  <text x="780" y="490" text-anchor="middle" font-size="11" fill="#333">60</text>
+  
+  <rect x="830" y="460" width="40" height="120" rx="3" fill="#165DFF"/>
+  <text x="850" y="600" text-anchor="middle" font-size="11" fill="#888">已完成</text>
+  <text x="850" y="450" text-anchor="middle" font-size="11" fill="#333">90</text>
+</svg>

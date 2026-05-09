@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>首页界面设计图</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 20px; }
+  .title { text-align: center; font-size: 16px; margin-bottom: 20px; color: #333; }
+  .mockup { max-width: 1000px; margin: 0 auto; border: 2px solid #333; background: #fff; overflow: hidden; }
+  .nav { display: flex; align-items: center; height: 56px; padding: 0 24px; background: #fff; border-bottom: 1px solid #e5e6eb; gap: 24px; }
+  .nav-logo { font-size: 16px; font-weight: bold; }
+  .nav-menu { display: flex; gap: 20px; font-size: 14px; color: #666; }
+  .nav-menu span { cursor: pointer; }
+  .nav-menu .active { color: #165DFF; font-weight: bold; }
+  .nav-search { flex: 1; max-width: 200px; }
+  .nav-search input { width: 100%; border: 1px solid #e5e6eb; border-radius: 20px; padding: 6px 14px; font-size: 13px; outline: none; }
+  .nav-icons { display: flex; gap: 16px; font-size: 18px; color: #666; }
+  .hero { background: linear-gradient(135deg, #165DFF, #4080FF, #4A90FF, #E8F3FF); padding: 60px 24px; text-align: center; color: #fff; }
+  .hero h1 { font-size: 36px; margin-bottom: 12px; }
+  .hero p { font-size: 16px; opacity: 0.9; }
+  .section { padding: 32px 24px; }
+  .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .section-header h3 { font-size: 18px; color: #333; }
+  .section-header a { font-size: 13px; color: #165DFF; text-decoration: none; }
+  .item-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .item-card { border: 1px solid #e5e6eb; border-radius: 8px; overflow: hidden; }
+  .item-img { height: 120px; background: #f5f5f5; display: flex; align-items: center; justify-content: center; color: #999; font-size: 13px; }
+  .item-info { padding: 10px; }
+  .item-title { font-size: 13px; color: #333; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 6px; }
+  .item-price { font-size: 16px; font-weight: bold; color: #f53f3f; margin-bottom: 4px; }
+  .item-seller { font-size: 12px; color: #888; }
+  .cat-grid { display: grid; grid-template-columns: repeat(8, 1fr); gap: 12px; }
+  .cat-card { border: 1px solid #e5e6eb; border-radius: 8px; padding: 16px 8px; text-align: center; }
+  .cat-icon { font-size: 28px; margin-bottom: 8px; }
+  .cat-name { font-size: 12px; color: #333; }
+</style>
+</head>
+<body>
+<div class="title">首页界面设计图（图4.9）</div>
+<div class="mockup">
+<div class="nav">
+<div class="nav-logo">🎓 CampusTrade</div>
+<div class="nav-menu"><span class="active">首页</span><span>商品</span><span>圈子</span><span>AI助手</span></div>
+<div class="nav-search"><input type="text" placeholder=" 搜索商品"></div>
+<div class="nav-icons"><span>🛒</span><span>🔔</span><span></span></div>
+</div>
+<div class="hero">
+<h1>校园二手交易平台</h1>
+<p>闲置不浪费，校园淘好物</p>
+</div>
+<div class="section">
+<div class="section-header"><h3>🔥 热门推荐</h3><a href="#">查看更多 →</a></div>
+<div class="item-grid">
+<div class="item-card"><div class="item-img">📱 商品图片</div><div class="item-info"><div class="item-title">iPhone 14 Pro 256G</div><div class="item-price">¥ 3,299</div><div class="item-seller">卖家：张同学</div></div></div>
+<div class="item-card"><div class="item-img">📚 商品图片</div><div class="item-info"><div class="item-title">高等数学教材 第七版</div><div class="item-price">¥ 25</div><div class="item-seller">卖家：李同学</div></div></div>
+<div class="item-card"><div class="item-img"> 商品图片</div><div class="item-info"><div class="item-title">AirPods Pro 第二代</div><div class="item-price">¥ 899</div><div class="item-seller">卖家：王同学</div></div></div>
+<div class="item-card"><div class="item-img">🚲 商品图片</div><div class="item-info"><div class="item-title">山地自行车 九成新</div><div class="item-price">¥ 450</div><div class="item-seller">卖家：赵同学</div></div></div>
+</div>
+</div>
+<div class="section" style="padding-top:0;">
+<div class="section-header"><h3>分类浏览</h3></div>
+<div class="cat-grid">
+<div class="cat-card"><div class="cat-icon"></div><div class="cat-name">电子产品</div></div>
+<div class="cat-card"><div class="cat-icon">📚</div><div class="cat-name">图书教材</div></div>
+<div class="cat-card"><div class="cat-icon">👟</div><div class="cat-name">服饰鞋包</div></div>
+<div class="cat-card"><div class="cat-icon"></div><div class="cat-name">生活用品</div></div>
+<div class="cat-card"><div class="cat-icon">⚽</div><div class="cat-name">运动器材</div></div>
+<div class="cat-card"><div class="cat-icon">💄</div><div class="cat-name">美妆护肤</div></div>
+<div class="cat-card"><div class="cat-icon">🍕</div><div class="cat-name">食品零食</div></div>
+<div class="cat-card"><div class="cat-icon">📦</div><div class="cat-name">其他物品</div></div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

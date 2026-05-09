@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录/注册界面设计图</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 20px; }
+  .title { text-align: center; font-size: 16px; margin-bottom: 20px; color: #333; }
+  .mockup { max-width: 1200px; margin: 0 auto; border: 2px solid #333; background: #fff; }
+  .row { display: flex; height: 500px; }
+  .left-panel { width: 50%; background: linear-gradient(135deg, #165DFF, #4080FF, #69C0FF); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; }
+  .left-panel svg { width: 120px; height: 80px; margin-bottom: 20px; }
+  .left-panel h2 { font-size: 24px; margin-bottom: 8px; }
+  .left-panel p { font-size: 14px; opacity: 0.9; }
+  .right-panel { width: 50%; padding: 40px; display: flex; flex-direction: column; }
+  .logo { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+  .logo-icon { width: 24px; height: 24px; background: #333; border-radius: 4px; }
+  .logo span { font-size: 18px; font-weight: bold; }
+  h3 { font-size: 20px; margin-bottom: 8px; color: #333; }
+  .subtitle { font-size: 13px; color: #888; margin-bottom: 24px; }
+  .input-group { margin-bottom: 16px; }
+  .input-box { border: 1px solid #ddd; border-radius: 8px; padding: 12px 14px; height: 46px; display: flex; align-items: center; gap: 8px; color: #999; font-size: 14px; }
+  .btn { height: 44px; border-radius: 8px; border: none; color: #fff; font-size: 16px; cursor: pointer; margin-top: 8px; }
+  .btn-blue { background: linear-gradient(135deg, #165DFF, #4080FF); width: 100%; }
+  .btn-orange { background: linear-gradient(135deg, #FF7D00, #FF9500); width: 100%; }
+  .link-row { display: flex; justify-content: space-between; margin-top: 12px; font-size: 13px; color: #888; }
+  .link-row a { color: #165DFF; text-decoration: none; }
+  .role-section { margin: 16px 0; }
+  .role-label { font-size: 13px; color: #333; margin-bottom: 10px; }
+  .role-label .star { color: #f00; }
+  .role-cards { display: flex; gap: 12px; }
+  .role-card { flex: 1; border: 2px solid #165DFF; border-radius: 10px; padding: 16px; text-align: center; position: relative; }
+  .role-card .check { position: absolute; top: 6px; right: 6px; width: 18px; height: 18px; background: #165DFF; border-radius: 50%; color: #fff; font-size: 12px; line-height: 18px; text-align: center; }
+  .role-icon { font-size: 28px; margin-bottom: 6px; }
+  .role-name { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 4px; }
+  .role-desc { font-size: 12px; color: #888; }
+  .terms { font-size: 12px; color: #888; margin: 12px 0; }
+  .terms a { color: #165DFF; }
+  .divider { width: 1px; background: #ddd; margin: 0 40px; }
+</style>
+</head>
+<body>
+<div class="title">登录/注册界面设计图（图4.8）</div>
+<div style="display:flex; gap:40px; justify-content:center; flex-wrap:wrap;">
+<div class="mockup" style="width:560px;">
+<div class="row">
+<div class="left-panel">
+<svg viewBox="0 0 120 80" fill="none">
+<rect x="20" y="30" width="80" height="40" rx="4" fill="#fff" opacity="0.3"/>
+<rect x="30" y="20" width="60" height="15" rx="3" fill="#fff" opacity="0.5"/>
+<circle cx="35" cy="50" r="5" fill="#FFD666"/>
+<circle cx="85" cy="45" r="4" fill="#73D13D"/>
+<circle cx="50" cy="15" r="4" fill="#FF4D4F" opacity="0.6"/>
+</svg>
+<h2>校园二手交易平台</h2>
+<p>闲置不浪费，校园淘好物</p>
+</div>
+<div class="right-panel">
+<div class="logo"><div class="logo-icon"></div><span>CampusTrade</span></div>
+<h3>普通师生登陆</h3>
+<p class="subtitle">请输入您的账号信息</p>
+<div class="input-group"><div class="input-box">👤 用户名 / 手机号 / 邮箱</div></div>
+<div class="input-group"><div class="input-box">🔒 密码</div></div>
+<div class="link-row"><label>☐ 记住我</label><a href="#">忘记密码?</a></div>
+<button class="btn btn-blue">登  录</button>
+<div class="link-row" style="justify-content:center;"><span>还没有账号？</span><a href="#">立即注册</a></div>
+</div>
+</div>
+</div>
+
+<div class="mockup" style="width:560px;">
+<div class="row">
+<div class="left-panel">
+<svg viewBox="0 0 120 80" fill="none">
+<rect x="20" y="30" width="80" height="40" rx="4" fill="#fff" opacity="0.3"/>
+<rect x="30" y="20" width="60" height="15" rx="3" fill="#fff" opacity="0.5"/>
+<circle cx="35" cy="50" r="5" fill="#FFD666"/>
+<circle cx="85" cy="45" r="4" fill="#73D13D"/>
+<circle cx="50" cy="15" r="4" fill="#FF4D4F" opacity="0.6"/>
+</svg>
+<h2>校园二手交易平台</h2>
+<p>闲置不浪费，校园淘好物</p>
+</div>
+<div class="right-panel">
+<div class="logo"><div class="logo-icon"></div><span>CampusTrade</span></div>
+<h3>创建新账号</h3>
+<p class="subtitle">加入校园二手交易平台</p>
+<div class="input-group"><div class="input-box">用户名（用于登录）</div></div>
+<div class="input-group"><div class="input-box">📱 手机号</div></div>
+<div class="input-group"><div class="input-box">🔒 密码（至少6位）</div></div>
+<div class="input-group"><div class="input-box">🔒 确认密码</div></div>
+<div class="role-section">
+<div class="role-label"><span class="star">*</span> 选择身份（可多选）</div>
+<div class="role-cards">
+<div class="role-card"><div class="check">✓</div><div class="role-icon">🛍️</div><div class="role-name">我是买家</div><div class="role-desc">淘好物 省钱省心</div></div>
+<div class="role-card" style="border-color:#ddd;"><div class="role-icon">💰</div><div class="role-name">我是卖家</div><div class="role-desc">卖闲置 回收资金</div></div>
+</div>
+</div>
+<div class="terms">☐ 我已阅读并同意 <a href="#">《用户协议》</a> 和 <a href="#">《隐私政策》</a></div>
+<button class="btn btn-orange">注  册</button>
+<div class="link-row" style="justify-content:center;"><span>已有账号？</span><a href="#">返回登录</a></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>运营后台界面设计图</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 20px; }
+  .title { text-align: center; font-size: 16px; margin-bottom: 20px; color: #333; }
+  .mockup { max-width: 1000px; margin: 0 auto; border: 2px solid #333; background: #fff; overflow: hidden; display: flex; min-height: 600px; }
+  .topbar { position: fixed; top: 0; left: 0; right: 0; height: 48px; background: linear-gradient(135deg, #165DFF, #4C6EF5); display: flex; align-items: center; padding: 0 20px; color: #fff; z-index: 10; }
+  .topbar-logo { font-size: 15px; font-weight: bold; margin-right: 40px; }
+  .topbar-menu { display: flex; gap: 20px; font-size: 13px; flex: 1; }
+  .topbar-menu span { cursor: pointer; opacity: 0.9; }
+  .topbar-menu .active { opacity: 1; font-weight: bold; }
+  .topbar-icons { display: flex; gap: 16px; font-size: 15px; align-items: center; }
+  .badge { background: #f53f3f; color: #fff; font-size: 10px; padding: 1px 5px; border-radius: 8px; margin-left: -6px; }
+  .sidebar { width: 200px; background: #fff; border-right: 1px solid #e5e6eb; padding-top: 48px; box-shadow: 2px 0 8px rgba(0,0,0,0.05); }
+  .sidebar-item { padding: 12px 20px; font-size: 14px; color: #666; cursor: pointer; display: flex; align-items: center; gap: 8px; }
+  .sidebar-item:hover { background: #f5f5f5; }
+  .sidebar-item.active { background: #E8F3FF; color: #165DFF; border-right: 3px solid #165DFF; font-weight: bold; }
+  .main { flex: 1; padding: 20px 24px; padding-top: 68px; background: #fff; }
+  .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card { border: 1px solid #e5e6eb; border-radius: 8px; padding: 20px; text-align: center; }
+  .stat-card h4 { font-size: 13px; color: #888; margin-bottom: 8px; font-weight: normal; }
+  .stat-card .num { font-size: 28px; font-weight: bold; color: #333; }
+  .stat-card.green .num { color: #00b42a; }
+  .stat-card.blue .num { color: #165DFF; }
+  .stat-card.orange .num { color: #ff7d00; }
+  .charts-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .chart-card { border: 1px solid #e5e6eb; border-radius: 8px; padding: 16px; }
+  .chart-card h4 { font-size: 14px; color: #333; margin-bottom: 12px; }
+  .chart-placeholder { height: 180px; background: #f9f9f9; border-radius: 6px; display: flex; align-items: center; justify-content: center; color: #999; font-size: 13px; }
+  .line-chart { display: flex; align-items: flex-end; gap: 8px; height: 120px; padding: 0 20px; }
+  .line-bar { flex: 1; background: linear-gradient(to top, #165DFF, #4080FF); border-radius: 4px 4px 0 0; min-width: 20px; }
+  .pie-placeholder { width: 120px; height: 120px; border-radius: 50%; background: conic-gradient(#165DFF 0% 40%, #00b42a 40% 65%, #ff7d00 65% 85%, #f53f3f 85% 100%); margin: 0 auto; }
+  .bar-chart { display: flex; align-items: flex-end; gap: 12px; height: 120px; padding: 0 20px; }
+  .bar-item { flex: 1; text-align: center; }
+  .bar { height: 80px; background: #165DFF; border-radius: 4px 4px 0 0; margin: 0 auto; width: 24px; }
+  .bar-label { font-size: 11px; color: #888; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div class="title">运营后台界面设计图（图4.11）</div>
+<div class="mockup">
+<div class="topbar">
+<div class="topbar-logo">🏫 校园运营后台</div>
+<div class="topbar-menu"><span class="active">🏠 首页</span><span>🔔 消息</span><span>👤 运营员 </span></div>
+</div>
+<div class="sidebar">
+<div class="sidebar-item active">📊 数据仪表盘</div>
+<div class="sidebar-item">📦 商品管理</div>
+<div class="sidebar-item">📋 订单管理</div>
+<div class="sidebar-item">👥 用户管理</div>
+<div class="sidebar-item">✅ 审批工作台</div>
+<div class="sidebar-item">⚙️ 系统设置</div>
+</div>
+<div class="main">
+<div class="stat-cards">
+<div class="stat-card"><h4>今日订单</h4><div class="num">128</div></div>
+<div class="stat-card green"><h4>今日完成</h4><div class="num">96</div></div>
+<div class="stat-card blue"><h4>今日金额</h4><div class="num">¥3,580</div></div>
+<div class="stat-card orange"><h4>总金额</h4><div class="num">¥128,600</div></div>
+</div>
+<div class="charts-row">
+<div class="chart-card" style="grid-column: 1 / -1;">
+<h4>📈 订单趋势</h4>
+<div class="line-chart">
+<div class="line-bar" style="height:40%;"></div>
+<div class="line-bar" style="height:65%;"></div>
+<div class="line-bar" style="height:50%;"></div>
+<div class="line-bar" style="height:80%;"></div>
+<div class="line-bar" style="height:60%;"></div>
+<div class="line-bar" style="height:90%;"></div>
+<div class="line-bar" style="height:75%;"></div>
+<div class="line-bar" style="height:55%;"></div>
+<div class="line-bar" style="height:85%;"></div>
+<div class="line-bar" style="height:70%;"></div>
+<div class="line-bar" style="height:95%;"></div>
+<div class="line-bar" style="height:60%;"></div>
+</div>
+</div>
+</div>
+<div class="charts-row">
+<div class="chart-card">
+<h4>📊 商品分类统计</h4>
+<div class="pie-placeholder"></div>
+</div>
+<div class="chart-card">
+<h4>📊 订单状态分布</h4>
+<div class="bar-chart">
+<div class="bar-item"><div class="bar" style="height:40%;"></div><div class="bar-label">待付款</div></div>
+<div class="bar-item"><div class="bar" style="height:80%;background:#00b42a;"></div><div class="bar-label">已付款</div></div>
+<div class="bar-item"><div class="bar" style="height:60%;background:#ff7d00;"></div><div class="bar-label">待发货</div></div>
+<div class="bar-item"><div class="bar" style="height:90%;background:#165DFF;"></div><div class="bar-label">已完成</div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
