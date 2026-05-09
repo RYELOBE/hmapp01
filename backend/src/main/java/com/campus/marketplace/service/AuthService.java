@@ -89,12 +89,20 @@ public class AuthService {
       throw new IllegalArgumentException("至少需要选择一个角色");
     }
 
+    List<String> allowedRoles = List.of("BUYER", "SELLER");
+    List<String> filteredRoles = roles.stream()
+        .filter(allowedRoles::contains)
+        .toList();
+    if (filteredRoles.isEmpty()) {
+      filteredRoles = List.of("BUYER");
+    }
+
     var existingUser = userRepository.findByUsername(username);
     if (existingUser.isPresent()) {
       throw new IllegalArgumentException("用户名已存在");
     }
 
-    var user = userRepository.create(username, passwordEncoder.encode(password), nickname, roles);
+    var user = userRepository.create(username, passwordEncoder.encode(password), nickname, filteredRoles);
 
     Long userId = ((Number) user.get("id")).longValue();
 

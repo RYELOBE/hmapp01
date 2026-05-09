@@ -169,11 +169,14 @@
 import { ref, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
-  IconMenuFold,
-  IconMenuUnfold,
+  IconSearch,
+  IconFilter,
+  IconHeart,
+  IconStar,
   IconRefresh,
 } from "@arco-design/web-vue/es/icon";
-import { getItems, getDictOptions, trackClick } from "../../../services/api";
+import { getItems } from "../../../services/items";
+import { getDictOptions, trackClick } from "../../../services/api";
 import ItemCard from "../../../components/data/ItemCard/ItemCard.vue";
 import CircleStylePagination from "../../../components/common/CircleStylePagination.vue";
 

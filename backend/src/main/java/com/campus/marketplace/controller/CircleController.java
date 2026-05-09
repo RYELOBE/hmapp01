@@ -101,6 +101,69 @@ public class CircleController {
     return buildSuccessResponse(data);
   }
 
+  @PostMapping("/posts/list")
+  @PreAuthorize("hasRole('OPS')")
+  public Map<String, Object> getAllPostsPost(
+      @RequestBody(required = false) Map<String, Object> params) {
+    int page = params != null && params.get("pageNo") != null ?
+        ((Number) params.get("pageNo")).intValue() : 1;
+    int pageSize = params != null && params.get("pageSize") != null ?
+        ((Number) params.get("pageSize")).intValue() : 10;
+    String status = params != null ? (String) params.get("status") : null;
+    Map<String, Object> data = circleService.getAllPosts(page, pageSize, status);
+    return buildSuccessResponse(data);
+  }
+
+  /** 获取待审核评论列表 */
+  @GetMapping("/comments/pending")
+  @PreAuthorize("hasRole('OPS')")
+  public Map<String, Object> getPendingComments(
+      @RequestParam(defaultValue = "1") int page,
+      @RequestParam(defaultValue = "10") int size) {
+    List<Map<String, Object>> comments = circleService.getPendingComments(page, size);
+    long pendingCount = circleService.getPendingCommentCount();
+    Map<String, Object> data = new HashMap<>();
+    data.put("comments", comments);
+    data.put("totalCount", pendingCount);
+    return buildSuccessResponse(data);
+  }
+
+  /** POST版本：获取待审核评论（兼容前端调用） */
+  @PostMapping("/comments/pending")
+  @PreAuthorize("hasRole('OPS')")
+  public Map<String, Object> getPendingCommentsPost(
+      @RequestBody(required = false) Map<String, Object> params) {
+    int page = params != null && params.get("pageNo") != null ? 
+        ((Number) params.get("pageNo")).intValue() : 1;
+    int pageSize = params != null && params.get("pageSize") != null ? 
+        ((Number) params.get("pageSize")).intValue() : 10;
+    
+    List<Map<String, Object>> comments = circleService.getPendingComments(page, pageSize);
+    long pendingCount = circleService.getPendingCommentCount();
+    Map<String, Object> data = new HashMap<>();
+    data.put("comments", comments);
+    data.put("totalCount", pendingCount);
+    return buildSuccessResponse(data);
+  }
+
+  /** POST版本：获取已审核评论列表 */
+  @PostMapping("/comments/list")
+  @PreAuthorize("hasRole('OPS')")
+  public Map<String, Object> getReviewedCommentsPost(
+      @RequestBody(required = false) Map<String, Object> params) {
+    int page = params != null && params.get("pageNo") != null ? 
+        ((Number) params.get("pageNo")).intValue() : 1;
+    int pageSize = params != null && params.get("pageSize") != null ? 
+        ((Number) params.get("pageSize")).intValue() : 10;
+    
+    List<Map<String, Object>> comments = circleService.getReviewedComments(page, pageSize);
+    long totalCount = circleService.getReviewedCommentCount();
+    Map<String, Object> data = new HashMap<>();
+    data.put("comments", comments);
+    data.put("totalCount", totalCount);
+    return buildSuccessResponse(data);
+  }
+
   @PostMapping("/posts/{id}/approve")
   @PreAuthorize("hasRole('OPS')")
   public Map<String, Object> approvePost(@PathVariable Long id) {
@@ -114,6 +177,22 @@ public class CircleController {
       @RequestBody Map<String, String> body) {
     Map<String, Object> post = circleService.rejectPost(id, body.get("reason"));
     return buildSuccessResponse(post);
+  }
+
+  /** 审核通过评论 */
+  @PostMapping("/comments/{id}/approve")
+  @PreAuthorize("hasRole('OPS')")
+  public Map<String, Object> approveComment(@PathVariable Long id) {
+    circleService.approveComment(id);
+    return buildSuccessResponse(Map.of("message", "评论已通过审核"));
+  }
+
+  /** 审核拒绝/删除评论 */
+  @PostMapping("/comments/{id}/reject")
+  @PreAuthorize("hasRole('OPS')")
+  public Map<String, Object> rejectComment(@PathVariable Long id) {
+    circleService.rejectComment(id);
+    return buildSuccessResponse(Map.of("message", "评论已删除"));
   }
 
   private Map<String, Object> buildSuccessResponse(Object data) {

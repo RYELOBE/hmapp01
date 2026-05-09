@@ -28,7 +28,7 @@ export async function createReview(orderId, data) {
 }
 
 export async function getReview(orderId) {
-  return await http.get(`/reviews/${orderId}`);
+  return await http.get(`/reviews/order/${orderId}`);
 }
 
 export async function getDictOptions() {

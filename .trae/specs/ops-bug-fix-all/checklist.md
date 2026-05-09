@@ -1,0 +1,36 @@
+- [ ] SecurityConfig 放行 /api/auth/ops/login，运营人员可以正常登录
+- [ ] 圈子写操作需要认证，未登录用户发帖返回401
+- [ ] 密码修改验证旧密码，新密码BCrypt加密存储
+- [ ] 注册接口拒绝OPS角色，只允许BUYER和SELLER
+- [ ] 退款审批仅卖家或OPS角色可执行
+- [ ] GlobalExceptionHandler返回通用错误信息，不泄露内部细节
+- [ ] MessageRepository SQL查询使用message表实际列名，消息系统可用
+- [ ] NotificationRepository 使用LinkedHashMap保证参数顺序
+- [ ] StatsService评价总数使用countAll()
+- [ ] CirclePostRepository.save()包含user_name字段
+- [ ] CircleCommentRepository.save()包含user_name字段
+- [ ] circle_comment表有status列，评论审核功能有效
+- [ ] AddressService创建地址先保存再设置默认
+- [ ] OrderService买卖家订单分页合并后记录数不超过pageSize
+- [ ] ReviewService评价审核只允许PENDING→APPROVED/REJECTED
+- [ ] NotificationController分页total返回总记录数
+- [ ] POST /api/ops/circle/posts端点存在
+- [ ] POST /api/orders/{id}/refund/approve 和 reject 端点存在
+- [ ] DELETE /api/reviews/{id} 端点存在
+- [ ] SellerStatsController路径为 /api/seller/*
+- [ ] POST /api/items/mine 端点存在
+- [ ] GET /api/reviews/{id} 端点存在
+- [ ] ItemController有@Validated注解
+- [ ] CircleManage.vue调用正确的后端端点
+- [ ] OrderReview.vue退款审核路径正确
+- [ ] orders/index.vue不调用不存在的DELETE端点
+- [ ] ReviewManage.vue评价列表调用/reviews/list
+- [ ] ops/Layout.vue退出登录使用authStore.logout()并跳转/login
+- [ ] ApprovalWorkspace.vue只有一个confirmReject定义
+- [ ] EnhancedDashboard.vue featuresGrid只生成有效3级路径
+- [ ] 前端 updateUserRole 路径和请求体正确
+- [ ] services/ops/index.js无废弃的角色管理API函数
+- [ ] ReviewAudit.vue筛选参数与后端匹配
+- [ ] services/items/index.js getMyItems使用正确HTTP方法
+- [ ] services/api.js评价详情路径正确
+- [ ] 所有运营后台页面功能正常，无500/404错误

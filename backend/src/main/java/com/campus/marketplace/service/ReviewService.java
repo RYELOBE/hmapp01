@@ -194,21 +194,76 @@ public class ReviewService {
     );
   }
 
+  /** 获取所有评价列表（支持状态筛选） */
+  public Map<String, Object> getAllReviews(int page, int pageSize, String status) {
+    List<Map<String, Object>> reviews;
+    int total;
+    
+    if (status != null && !status.isEmpty()) {
+      reviews = reviewRepository.findByStatusPaged(status, page, pageSize);
+      total = reviewRepository.countByStatus(status);
+    } else {
+      reviews = reviewRepository.findAllPaged(page, pageSize);
+      total = reviewRepository.countAll();
+    }
+    
+    List<Map<String, Object>> enrichedReviews = enrichPendingReviews(reviews);
+    return Map.of(
+        "code", 200,
+        "data", Map.of(
+            "items", enrichedReviews,
+            "list", enrichedReviews,
+            "records", enrichedReviews,
+            "total", total,
+            "totalCount", total,
+            "pageNo", page,
+            "pageSize", pageSize
+        )
+    );
+  }
+
   public Map<String, Object> approveReview(Long reviewId) {
     Map<String, Object> review = reviewRepository.findById(reviewId)
         .orElseThrow(() -> new IllegalArgumentException("评价不存在"));
     String currentStatus = String.valueOf(review.getOrDefault("status", ""));
-    if (!"APPROVED".equals(currentStatus)) {
-      reviewRepository.updateStatus(reviewId, "APPROVED");
+    if (!"PENDING".equals(currentStatus)) {
+      throw new IllegalArgumentException("只能审核待审核状态的评价");
     }
+    reviewRepository.updateStatus(reviewId, "APPROVED");
     return Map.of("code", 200, "message", "评价审核通过");
   }
 
   public Map<String, Object> rejectReview(Long reviewId, String reason) {
-    reviewRepository.findById(reviewId)
+    Map<String, Object> review = reviewRepository.findById(reviewId)
         .orElseThrow(() -> new IllegalArgumentException("评价不存在"));
+    String currentStatus = String.valueOf(review.getOrDefault("status", ""));
+    if (!"PENDING".equals(currentStatus)) {
+      throw new IllegalArgumentException("只能驳回待审核状态的评价");
+    }
     reviewRepository.updateStatus(reviewId, "REJECTED");
     return Map.of("code", 200, "message", "评价已驳回", "data", Map.of("reason", reason));
+  }
+
+  public void deleteReview(Long reviewId) {
+    reviewRepository.findById(reviewId)
+        .orElseThrow(() -> new IllegalArgumentException("评价不存在"));
+    reviewRepository.deleteById(reviewId);
+  }
+
+  public Map<String, Object> getReviewById(Long reviewId) {
+    Map<String, Object> review = reviewRepository.findById(reviewId)
+        .orElseThrow(() -> new IllegalArgumentException("评价不存在"));
+    Map<String, Object> enriched = new java.util.HashMap<>(review);
+    Object buyerIdObj = review.get("buyerId");
+    if (buyerIdObj instanceof Number buyerIdNumber) {
+      Long buyerId = buyerIdNumber.longValue();
+      userRepository.findById(buyerId).ifPresent(user -> {
+        enriched.put("userName", user.get("nickname"));
+        enriched.put("buyerNickname", user.get("nickname"));
+        enriched.put("buyerName", user.get("nickname"));
+      });
+    }
+    return Map.of("code", 200, "data", enriched);
   }
 
   public Map<String, Object> getReviewByOrder(Long buyerId, Long orderId) {

@@ -252,7 +252,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from "vue";
 import { useAuthStore } from "../../stores/auth";
-import { http } from "../../services/core/http";
+import { http } from "../../services/http";
 import { Message } from "@arco-design/web-vue";
 import {
   IconUser,

@@ -36,15 +36,15 @@ public class AddressService {
 
     int addressCount = addressRepository.countByUserId(userId);
     boolean setAsDefault = isDefault != null && isDefault;
-    if (setAsDefault) {
-      addressRepository.setDefault(0L, userId);
-    } else if (addressCount == 0) {
-      setAsDefault = true;
-    }
 
     Map<String, Object> address = addressRepository.create(
         userId, receiverName, receiverPhone, province, city, district, detailAddress,
-        postalCode, setAsDefault);
+        postalCode, addressCount == 0 ? true : setAsDefault);
+
+    if (setAsDefault && addressCount > 0) {
+      Long newId = ((Number) address.get("id")).longValue();
+      addressRepository.setDefault(newId, userId);
+    }
 
     return Map.of("code", 200, "data", address);
   }

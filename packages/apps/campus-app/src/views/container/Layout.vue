@@ -12,8 +12,8 @@
           <span v-else>CT</span>
         </div>
         <a-menu
-          :selected-keys="currentMenuKeys"
-          :default-open-keys="['portal', 'seller']"
+          :selected-keys="[selectedKey]"
+          :open-keys="openKeys"
           mode="inline"
           class="sidebar-menu"
           @menu-item-click="handleMenuClick"
@@ -26,7 +26,7 @@
               <component :is="menu.icon" />
               <span>{{ menu.label }}</span>
             </a-menu-item>
-            <a-sub-menu v-else :key="`${menu.key}-sub`">
+            <a-sub-menu v-else :key="menu.key">
               <template #title>
                 <component :is="menu.icon" />
                 <span>{{ menu.label }}</span>
@@ -82,7 +82,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import {
   IconMenu,
@@ -99,6 +99,7 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 const collapsed = ref(false);
+const openKeys = ref(['ops-users', 'ops-orders', 'ops-items', 'ops-circles', 'ops-review-manage', 'portal', 'seller']);
 
 const showSidebar = computed(() => {
   return !["login", "forbidden"].includes(route.name);
@@ -108,13 +109,35 @@ const pageTitle = computed(() => {
   return route.meta?.title || "CampusTrade";
 });
 
-const currentMenuKeys = computed(() => {
+// 映射：路径 -> 菜单key（包含父级key）
+const menuKeyMap = {
+  '/ops/dashboard': 'ops-dashboard',
+  '/ops/users/vendor-manage': 'ops-vendor',
+  '/ops/users/buyer-manage': 'ops-buyer',
+  '/ops/users/user-manage': 'ops-user-manage',
+  '/ops/orders/list': 'ops-orders-list',
+  '/ops/orders/review': 'ops-order-review',
+  '/ops/items/manage': 'ops-items-manage',
+  '/ops/items/review': 'ops-reviews',
+  '/ops/circles/manage': 'ops-circle',
+  '/ops/circles/review': 'ops-circle-review',
+  '/ops/reviews/manage': 'ops-review-manage-list',
+  '/ops/reviews/audit': 'ops-review-audit',
+  '/ops/messages/center': 'ops-messages',
+  '/portal/home': 'portal-home',
+  '/portal/orders': 'portal-orders',
+  '/portal/cart': 'portal-cart',
+  '/portal/favorites': 'portal-favorites',
+  '/portal/addresses': 'portal-addresses',
+  '/portal/seller/publish': 'seller-publish',
+  '/portal/seller/items': 'seller-items',
+  '/portal/seller/orders': 'seller-orders',
+  '/portal/seller/stats': 'seller-stats',
+};
+
+const selectedKey = computed(() => {
   const path = route.path;
-  // 匹配当前路径对应的菜单key
-  if (path.startsWith('/ops')) return ['ops'];
-  if (path.startsWith('/portal/seller')) return ['seller'];
-  if (path.startsWith('/portal')) return ['portal'];
-  return [route.name || 'home'];
+  return menuKeyMap[path] || route.name || 'home';
 });
 
 // 查找所有菜单项（包括子菜单）的完整列表
@@ -131,28 +154,21 @@ function flattenMenuItems(items) {
 }
 
 function handleMenuClick(key) {
-  console.log('[Menu Click] 点击菜单项:', key);
-  
-  // 查找对应菜单项的path
   const allItems = flattenMenuItems(menuItems.value);
   const menuItem = allItems.find(item => item.key === key);
   
   if (menuItem && menuItem.path) {
-    console.log('[Menu Navigate] 跳转到:', menuItem.path);
     router.push(menuItem.path).catch(err => {
       if (err.name !== 'NavigationDuplicated') {
         console.error('[Menu Error] 导航失败:', err);
       }
     });
   } else if (key === 'home') {
-    // 首页特殊处理
     router.push('/').catch(err => {
       if (err.name !== 'NavigationDuplicated') {
         console.error('[Menu Error] 导航失败:', err);
       }
     });
-  } else {
-    console.warn('[Menu Warning] 未找到菜单项路径:', key);
   }
 }
 
@@ -204,40 +220,56 @@ const menuItems = computed(() => {
       path: "/ops/dashboard",
     });
     items.push({
+      key: "ops-users",
+      label: "用户管理",
+      icon: IconList,
+      children: [
+        { key: "ops-vendor", label: "卖家管理", path: "/ops/users/vendor-manage" },
+        { key: "ops-buyer", label: "买家管理", path: "/ops/users/buyer-manage" },
+        { key: "ops-user-manage", label: "用户管理", path: "/ops/users/user-manage" },
+      ],
+    });
+    items.push({
       key: "ops-orders",
       label: "订单管理",
       icon: IconList,
-      path: "/ops/orders",
+      children: [
+        { key: "ops-orders-list", label: "订单列表", path: "/ops/orders/list" },
+        { key: "ops-order-review", label: "订单审核", path: "/ops/orders/review" },
+      ],
     });
     items.push({
-      key: "ops-reviews",
-      label: "审核管理",
+      key: "ops-items",
+      label: "商品管理",
       icon: IconList,
-      path: "/ops/reviews",
+      children: [
+        { key: "ops-items-manage", label: "商品管理", path: "/ops/items/manage" },
+        { key: "ops-reviews", label: "商品审核", path: "/ops/items/review" },
+      ],
     });
     items.push({
-      key: "ops-vendor",
-      label: "商家管理",
+      key: "ops-circles",
+      label: "圈子管理",
       icon: IconList,
-      path: "/ops/vendor",
+      children: [
+        { key: "ops-circle", label: "圈子管理", path: "/ops/circles/manage" },
+        { key: "ops-circle-review", label: "圈子审核", path: "/ops/circles/review" },
+      ],
     });
     items.push({
-      key: "ops-buyer",
-      label: "买家管理",
+      key: "ops-review-manage",
+      label: "评价管理",
       icon: IconList,
-      path: "/ops/buyer",
+      children: [
+        { key: "ops-review-manage-list", label: "评价管理", path: "/ops/reviews/manage" },
+        { key: "ops-review-audit", label: "评价审核", path: "/ops/reviews/audit" },
+      ],
     });
     items.push({
-      key: "ops-user-manage",
-      label: "用户管理",
+      key: "ops-messages",
+      label: "消息",
       icon: IconList,
-      path: "/ops/user-manage",
-    });
-    items.push({
-      key: "ops-role-manage",
-      label: "角色管理",
-      icon: IconList,
-      path: "/ops/role-manage",
+      path: "/ops/messages/center",
     });
   }
 
@@ -274,6 +306,19 @@ function handleLogout() {
 
 .sidebar-menu {
   border-right: none;
+}
+
+/* 左侧菜单激活态 - 蓝色高亮 */
+:deep(.arco-menu-item-active),
+:deep(.arco-menu-inline-item-active) {
+  color: #165DFF !important;
+  background-color: rgba(22, 93, 255, 0.1) !important;
+  border-right: 3px solid #165DFF !important;
+  font-weight: 500;
+}
+
+:deep(.arco-menu-item:hover) {
+  background-color: rgba(22, 93, 255, 0.05);
 }
 
 .header {

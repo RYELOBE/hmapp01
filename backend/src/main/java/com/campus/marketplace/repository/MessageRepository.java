@@ -19,13 +19,12 @@ public class MessageRepository {
   private static final RowMapper<Map<String, Object>> ROW_MAPPER = (rs, rowNum) -> {
     Map<String, Object> row = new HashMap<>();
     row.put("id", rs.getLong("id"));
-    row.put("userId", rs.getLong("user_id"));
-    row.put("type", rs.getString("type"));
-    row.put("title", rs.getString("title"));
+    row.put("senderId", rs.getLong("sender_id"));
+    row.put("senderName", rs.getString("sender_name"));
+    row.put("receiverId", rs.getLong("receiver_id"));
     row.put("content", rs.getString("content"));
+    row.put("type", rs.getString("type"));
     row.put("status", rs.getString("status"));
-    row.put("link", rs.getString("link"));
-    row.put("isDeleted", rs.getBoolean("is_deleted"));
     row.put("createTime", rs.getTimestamp("create_time") != null ? rs.getTimestamp("create_time").toString() : null);
     return row;
   };
@@ -34,17 +33,17 @@ public class MessageRepository {
     this.jdbc = jdbc;
   }
 
-  public Map<String, Object> save(Long userId, String type, String title, String content, String link) {
+  public Map<String, Object> save(Long senderId, String senderName, Long receiverId, String content, String type) {
     KeyHolder kh = new GeneratedKeyHolder();
     jdbc.update(con -> {
       var ps = con.prepareStatement(
-          "INSERT INTO message (user_id, type, title, content, status, link, is_deleted) VALUES (?, ?, ?, ?, 'UNREAD', ?, false)",
+          "INSERT INTO message (sender_id, sender_name, receiver_id, content, type, status) VALUES (?, ?, ?, ?, ?, 'UNREAD')",
           Statement.RETURN_GENERATED_KEYS);
-      ps.setLong(1, userId);
-      ps.setString(2, type);
-      ps.setString(3, title);
+      ps.setLong(1, senderId);
+      ps.setString(2, senderName);
+      ps.setLong(3, receiverId);
       ps.setString(4, content);
-      ps.setString(5, link);
+      ps.setString(5, type);
       return ps;
     }, kh);
     Long id = kh.getKey().longValue();
@@ -56,29 +55,29 @@ public class MessageRepository {
     return results.isEmpty() ? null : results.get(0);
   }
 
-  public List<Map<String, Object>> findByUserIdAndIsDeletedFalseOrderByCreateTimeDesc(Long userId, int pageNo, int pageSize) {
-    String sql = "SELECT * FROM message WHERE user_id = ? AND is_deleted = false ORDER BY create_time DESC LIMIT ? OFFSET ?";
+  public List<Map<String, Object>> findByReceiverId(Long receiverId, int pageNo, int pageSize) {
+    String sql = "SELECT * FROM message WHERE receiver_id = ? ORDER BY create_time DESC LIMIT ? OFFSET ?";
     int offset = (pageNo - 1) * pageSize;
-    return jdbc.query(sql, ROW_MAPPER, userId, pageSize, offset);
+    return jdbc.query(sql, ROW_MAPPER, receiverId, pageSize, offset);
   }
 
-  public List<Map<String, Object>> findByUserIdAndTypeAndIsDeletedFalse(Long userId, String type, int pageNo, int pageSize) {
-    String sql = "SELECT * FROM message WHERE user_id = ? AND type = ? AND is_deleted = false ORDER BY create_time DESC LIMIT ? OFFSET ?";
+  public List<Map<String, Object>> findByReceiverIdAndType(Long receiverId, String type, int pageNo, int pageSize) {
+    String sql = "SELECT * FROM message WHERE receiver_id = ? AND type = ? ORDER BY create_time DESC LIMIT ? OFFSET ?";
     int offset = (pageNo - 1) * pageSize;
-    return jdbc.query(sql, ROW_MAPPER, userId, type, pageSize, offset);
+    return jdbc.query(sql, ROW_MAPPER, receiverId, type, pageSize, offset);
   }
 
-  public long countByUserIdAndStatusAndIsDeletedFalse(Long userId, String status) {
+  public long countByReceiverIdAndStatus(Long receiverId, String status) {
     Long count = jdbc.queryForObject(
-        "SELECT COUNT(*) FROM message WHERE user_id = ? AND status = ? AND is_deleted = false",
-        Long.class, userId, status);
+        "SELECT COUNT(*) FROM message WHERE receiver_id = ? AND status = ?",
+        Long.class, receiverId, status);
     return count != null ? count : 0;
   }
 
-  public long countByUserIdAndIsDeletedFalse(Long userId) {
+  public long countByReceiverId(Long receiverId) {
     Long count = jdbc.queryForObject(
-        "SELECT COUNT(*) FROM message WHERE user_id = ? AND is_deleted = false",
-        Long.class, userId);
+        "SELECT COUNT(*) FROM message WHERE receiver_id = ?",
+        Long.class, receiverId);
     return count != null ? count : 0;
   }
 
@@ -86,17 +85,21 @@ public class MessageRepository {
     jdbc.update("UPDATE message SET status = ? WHERE id = ?", status, id);
   }
 
-  public List<Map<String, Object>> findUnreadByUserId(Long userId) {
+  public List<Map<String, Object>> findUnreadByReceiverId(Long receiverId) {
     return jdbc.query(
-        "SELECT * FROM message WHERE user_id = ? AND status = 'UNREAD' AND is_deleted = false ORDER BY create_time DESC",
-        ROW_MAPPER, userId);
+        "SELECT * FROM message WHERE receiver_id = ? AND status = 'UNREAD' ORDER BY create_time DESC",
+        ROW_MAPPER, receiverId);
   }
 
-  public void markAllAsReadByUserId(Long userId) {
-    jdbc.update("UPDATE message SET status = 'READ' WHERE user_id = ? AND status = 'UNREAD'", userId);
+  public void markAsRead(Long id) {
+    jdbc.update("UPDATE message SET status = 'READ' WHERE id = ?", id);
   }
 
-  public void softDelete(Long id) {
-    jdbc.update("UPDATE message SET is_deleted = true WHERE id = ?", id);
+  public void markAllAsReadByReceiverId(Long receiverId) {
+    jdbc.update("UPDATE message SET status = 'READ' WHERE receiver_id = ? AND status = 'UNREAD'", receiverId);
+  }
+
+  public void deleteById(Long id) {
+    jdbc.update("DELETE FROM message WHERE id = ?", id);
   }
 }

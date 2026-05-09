@@ -62,7 +62,7 @@
           <a-col :xs="24" :lg="12">
             <a-card title="待审核商品" :bordered="false" class="todo-card">
               <template #extra>
-                <a-link @click="$router.push('/ops/review')">查看全部 →</a-link>
+                <a-link @click="$router.push('/ops/items/review')">查看全部 →</a-link>
               </template>
               <a-table
                 :data="pendingReviews"
@@ -94,7 +94,7 @@
           <a-col :xs="24" :lg="12">
             <a-card title="最新订单" :bordered="false" class="todo-card">
               <template #extra>
-                <a-link @click="$router.push('/ops/orders')">查看全部 →</a-link>
+                <a-link @click="$router.push('/ops/orders/list')">查看全部 →</a-link>
               </template>
               <a-table
                 :data="recentOrders"
@@ -248,8 +248,8 @@ const orderColumns = [
 ];
 
 const quickActions = [
-  { label: "进入审批工作台", iconComponent: IconCheckCircle, path: "/ops/review", color: "#165DFF", bgColor: "#E6F1FF" },
-  { label: "查看最新订单", iconComponent: IconEye, path: "/ops/orders", color: "#00B42A", bgColor: "#E8FFEA" },
+  { label: "进入审批工作台", iconComponent: IconCheckCircle, path: "/ops/items/review", color: "#165DFF", bgColor: "#E6F1FF" },
+  { label: "查看最新订单", iconComponent: IconEye, path: "/ops/orders/list", color: "#00B42A", bgColor: "#E8FFEA" },
   { label: "批量导出数据", iconComponent: IconExport, handler: "exportData", color: "#FF7D00", bgColor: "#FFF7E8" },
   { label: "发布系统公告", iconComponent: IconNotification, handler: "publishNotice", color: "#722ED1", bgColor: "#F5E8FF" },
 ];

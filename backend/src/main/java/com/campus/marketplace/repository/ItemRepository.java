@@ -401,33 +401,66 @@ public class ItemRepository {
 
   // ── 供方统计 ──────────────────────────
   public List<Map<String, Object>> findVendorsWithStats(String keyword, int pageNo, int pageSize) {
-    StringBuilder sql = new StringBuilder(
-        "SELECT u.id, u.username, u.nickname, " +
-        "COUNT(i.id) AS totalItems, " +
-        "SUM(CASE WHEN i.review_status = 'APPROVED' THEN 1 ELSE 0 END) AS activeItems, " +
-        "SUM(CASE WHEN i.review_status = 'PENDING_REVIEW' THEN 1 ELSE 0 END) AS pendingItems " +
-        "FROM user_account u LEFT JOIN item i ON u.id = i.seller_id " +
-        "WHERE u.roles LIKE ?");
+    String baseSql = "SELECT u.id, u.username, u.nickname, u.status, u.created_at AS createdAt " +
+                     "FROM user_account u WHERE u.roles LIKE ? ";
+    
     List<Object> params = new ArrayList<>();
     params.add("%SELLER%");
-
+    
     if (keyword != null && !keyword.isEmpty()) {
-      sql.append(" AND u.username LIKE ?");
+      baseSql += "AND u.username LIKE ? ";
       params.add("%" + keyword + "%");
     }
-    sql.append(" GROUP BY u.id, u.username, u.nickname ORDER BY u.id LIMIT ? OFFSET ?");
+    
+    // 先获取基本用户列表
+    String userSql = baseSql + "ORDER BY u.id LIMIT ? OFFSET ?";
     params.add(pageSize);
     params.add((pageNo - 1) * pageSize);
-    return jdbc.query(sql.toString(), (rs, rowNum) -> {
+    
+    List<Map<String, Object>> users = jdbc.query(userSql, (rs, rowNum) -> {
       Map<String, Object> row = new HashMap<>();
       row.put("id", rs.getLong("id"));
       row.put("username", rs.getString("username"));
       row.put("nickname", rs.getString("nickname"));
-      row.put("totalItems", rs.getInt("totalItems"));
-      row.put("activeItems", rs.getInt("activeItems"));
-      row.put("pendingItems", rs.getInt("pendingItems"));
+      row.put("status", rs.getString("status"));
+      row.put("createdAt", rs.getTimestamp("createdAt") != null ? rs.getTimestamp("createdAt").toString() : null);
       return row;
-    });
+    }, params.toArray());
+    
+    // 对每个用户统计商品数据
+    for (Map<String, Object> user : users) {
+      Long userId = (Long) user.get("id");
+      
+      int totalItems = countItemsBySellerId(userId);
+      int activeItems = countItemsBySellerAndStatus(userId, "APPROVED");
+      int pendingItems = countItemsBySellerAndStatus(userId, "PENDING_REVIEW");
+      
+      user.put("totalItems", totalItems);
+      user.put("activeItems", activeItems);
+      user.put("soldItems", 0); // 暂时返回0
+      user.put("pendingItems", pendingItems);
+    }
+    
+    return users;
+  }
+
+  /**
+   * 统计卖家的商品总数
+   */
+  private int countItemsBySellerId(Long sellerId) {
+    Integer count = jdbc.queryForObject(
+        "SELECT COUNT(*) FROM item WHERE seller_id = ?", Integer.class, sellerId);
+    return count != null ? count : 0;
+  }
+
+  /**
+   * 统计卖家特定状态的商品数
+   */
+  private int countItemsBySellerAndStatus(Long sellerId, String status) {
+    Integer count = jdbc.queryForObject(
+        "SELECT COUNT(*) FROM item WHERE seller_id = ? AND review_status = ?", 
+        Integer.class, sellerId, status);
+    return count != null ? count : 0;
   }
 
   public int countVendors(String keyword) {
@@ -440,5 +473,37 @@ public class ItemRepository {
     }
     Integer count = jdbc.queryForObject(sql.toString(), Integer.class, params.toArray());
     return count != null ? count : 0;
+  }
+
+  /**
+   * 查询分类统计数据
+   * @param sql SQL查询语句
+   * @return 分类统计列表
+   */
+  public List<Map<String, Object>> queryForCategoryStats(String sql) {
+    return jdbc.query(sql, (rs, rowNum) -> {
+      Map<String, Object> row = new HashMap<>();
+      row.put("name", rs.getString("category"));
+      row.put("count", rs.getInt("count"));
+      return row;
+    });
+  }
+
+  /**
+   * 获取最近发布的商品
+   * @param limit 数量限制
+   * @return 最近商品列表
+   */
+  public List<Map<String, Object>> findRecentItems(int limit) {
+    String sql = "SELECT id, title, seller_id, price, created_at AS createdAt FROM item WHERE review_status = 'APPROVED' ORDER BY created_at DESC LIMIT ?";
+    return jdbc.query(sql, (rs, rowNum) -> {
+      Map<String, Object> row = new HashMap<>();
+      row.put("id", rs.getLong("id"));
+      row.put("title", rs.getString("title"));
+      row.put("sellerId", rs.getLong("seller_id"));
+      row.put("price", rs.getDouble("price"));
+      row.put("createdAt", rs.getTimestamp("createdAt") != null ? rs.getTimestamp("createdAt").toString() : null);
+      return row;
+    }, limit);
   }
 }

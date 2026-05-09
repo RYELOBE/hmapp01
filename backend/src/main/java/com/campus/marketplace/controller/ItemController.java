@@ -5,11 +5,13 @@ import com.campus.marketplace.service.CurrentUserService;
 import com.campus.marketplace.service.ItemService;
 import com.campus.marketplace.service.ItemStatsService;
 import com.campus.marketplace.service.ReviewService;
+import com.campus.marketplace.service.NotificationService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import java.util.Map;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,22 +24,25 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/items")
+@Validated
 public class ItemController {
   private final ItemService itemService;
   private final CurrentUserService currentUserService;
   private final ItemStatsService itemStatsService;
   private final ReviewService reviewService;
+  private final NotificationService notificationService;
 
-  public ItemController(ItemService itemService, CurrentUserService currentUserService, ItemStatsService itemStatsService, ReviewService reviewService) {
+  public ItemController(ItemService itemService, CurrentUserService currentUserService, ItemStatsService itemStatsService, ReviewService reviewService, NotificationService notificationService) {
     this.itemService = itemService;
     this.currentUserService = currentUserService;
     this.itemStatsService = itemStatsService;
     this.reviewService = reviewService;
+    this.notificationService = notificationService;
   }
 
   @PostMapping
   @PreAuthorize("hasRole('SELLER')")
-  public Map<String, Object> createItem(@RequestBody CreateItemRequest request) {
+  public Map<String, Object> createItem(@RequestBody @Validated CreateItemRequest request) {
     return itemService.createItem(
         currentUserService.userId(),
         request.title(),
@@ -100,6 +105,14 @@ public class ItemController {
     return itemService.listMyItemsPaged(currentUserService.userId(), status, pageNo, pageSize);
   }
 
+  @PostMapping("/mine")
+  public Map<String, Object> myItemsPost(@RequestBody(required = false) MineItemRequest request) {
+    if (request == null) {
+      request = new MineItemRequest(null, 1, 10);
+    }
+    return itemService.listMyItemsPaged(currentUserService.userId(), request.status(), request.pageNo(), request.pageSize());
+  }
+
   @GetMapping("/{id}")
   public Map<String, Object> detail(@PathVariable("id") Long id) {
     Map<String, Object> item = itemService.getItemDetail(id);
@@ -115,12 +128,27 @@ public class ItemController {
   @PreAuthorize("hasRole('SELLER')")
   public Map<String, Object> offShelf(@PathVariable("id") Long id) {
     itemService.offShelfItem(id, currentUserService.userId());
+    
+    // 发送商品下架通知给运营人员
+    try {
+      notificationService.createBusinessNotification(
+        "ITEM", 
+        id.toString(), 
+        "商品已下架", 
+        "卖家已下架商品，ID: " + id, 
+        null
+      );
+    } catch (Exception e) {
+      // 记录日志但不影响主流程
+      System.err.println("Failed to send off-shelf notification: " + e.getMessage());
+    }
+    
     return Map.of("code", 200, "message", "已下架");
   }
 
   @PutMapping("/{id}")
   @PreAuthorize("hasRole('SELLER')")
-  public Map<String, Object> updateItem(@PathVariable("id") Long id, @RequestBody CreateItemRequest request) {
+  public Map<String, Object> updateItem(@PathVariable("id") Long id, @RequestBody @Validated CreateItemRequest request) {
     return itemService.updateItem(
         id, currentUserService.userId(),
         request.title(), request.price(), request.description(),
@@ -185,7 +213,7 @@ public class ItemController {
   @PreAuthorize("isAuthenticated()")
   public Map<String, Object> createItemReview(
       @PathVariable("id") Long id,
-      @RequestBody ItemReviewRequest request) {
+      @RequestBody @Validated ItemReviewRequest request) {
     Long userId = currentUserService.userId();
     
     String imagesJson = null;
@@ -229,4 +257,9 @@ public class ItemController {
       @Max(value = 5, message = "评分最多为5") int rating,
       String content,
       java.util.List<String> images) {}
+
+  public record MineItemRequest(
+      String status,
+      @Min(1) Integer pageNo,
+      @Min(1) Integer pageSize) {}
 }

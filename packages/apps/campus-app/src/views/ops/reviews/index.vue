@@ -1,435 +1,226 @@
 <template>
-  <div class="reviews-page">
-    <div class="page-header">
-      <h2 class="page-title">商品审核</h2>
-      <a-breadcrumb class="breadcrumb">
-        <a-breadcrumb-item>运营中心</a-breadcrumb-item>
-        <a-breadcrumb-item>商品审核</a-breadcrumb-item>
-      </a-breadcrumb>
-    </div>
+  <OpsUnifiedTable
+    title="商品审核"
+    :data="tableData"
+    :columns="tableColumns"
+    :loading="loading"
+    :pagination="pagination"
+    row-key="id"
+    :stripe="true"
+    @page-change="handlePageChange"
+  >
+    <!-- Tabs 插槽 -->
+    <template #tabs>
+      <a-tabs v-model:active-key="activeTab" @change="handleTabChange">
+        <a-tab-pane key="pending">
+          <template #title>待审核</template>
+        </a-tab-pane>
+        <a-tab-pane key="approved">
+          <template #title>已通过</template>
+        </a-tab-pane>
+        <a-tab-pane key="rejected">
+          <template #title>已拒绝</template>
+        </a-tab-pane>
+      </a-tabs>
+    </template>
 
-    <FilterBar
-      :filters="filterConfig"
-      v-model="filterParams"
-      @search="handleSearch"
-      @reset="handleReset"
-    >
-      <template #extra-buttons>
-        <a-button @click="loadData">
-          <template #icon><icon-refresh /></template>
-          刷新
-        </a-button>
-      </template>
-    </FilterBar>
-
-    <a-card :bordered="false" class="table-card">
-      <template #title>
-        <div class="card-title">
-          <span>待审核商品列表</span>
-          <a-tag color="arcoblue" size="small" v-if="pagination.total > 0">
-            共 {{ pagination.total }} 条
-          </a-tag>
-        </div>
-      </template>
-
-      <a-table
-        :data="tableData"
-        :loading="loading"
-        :pagination="pagination"
-        :columns="REVIEW_COLUMNS"
-        row-key="id"
-        :stripe="true"
-        :scroll="{ x: 1200 }"
-        @page-change="handlePageChange"
-        @selection-change="handleSelectionChange"
-        :row-selection="{ type: 'checkbox', showCheckedAll: true }"
-      >
-        <template #thumbnail="{ record }">
-          <a-image
-            :src="getFirstImage(record)"
-            width="50"
-            height="50"
-            fit="cover"
-            style="border-radius: 4px;"
-          />
-        </template>
-
-        <template #title="{ record }">
-          <a-typography-text style="font-weight: 500; color: #1d2129;" :ellipsis="true" :tooltip="true">
-            {{ record.title }}
-          </a-typography-text>
-        </template>
-
-        <template #price="{ record }">
-          <a-typography-text type="danger" strong>¥{{ formatPrice(record.price) }}</a-typography-text>
-        </template>
-
-        <template #category="{ record }">
-          <a-tag size="small">{{ record.category || '未分类' }}</a-tag>
-        </template>
-
-        <template #conditionLevel="{ record }">
-          <a-tag size="small" :color="getConditionColor(record.conditionLevel)">
-            {{ getConditionLabel(record.conditionLevel) }}
-          </a-tag>
-        </template>
-
-        <template #reviewStatus="{ record }">
-          <a-tag :color="REVIEW_STATUS_MAP[record.reviewStatus]?.color || 'gray'" size="small">
-            {{ REVIEW_STATUS_MAP[record.reviewStatus]?.label || record.reviewStatus }}
-          </a-tag>
-        </template>
-
-        <template #createdAt="{ record }">
-          {{ formatDate(record.createdAt) }}
-        </template>
-
-        <template #actions="{ record }">
-          <a-space>
-            <a-button
-              v-if="record.reviewStatus === 'PENDING_REVIEW'"
-              type="primary"
-              size="small"
-              @click="openReviewDrawer(record)"
-            >
-              审核
-            </a-button>
-            <a-button
-              v-else
-              type="text"
-              size="small"
-              @click="openReviewDrawer(record)"
-            >
-              查看
-            </a-button>
-          </a-space>
-        </template>
-      </a-table>
-
-      <div v-if="selectedKeys.length > 0" class="batch-actions-bar">
-        <a-space>
-          <span class="batch-info">已选择 {{ selectedKeys.length }} 项</span>
-          <a-button type="primary" status="success" size="small" @click="batchApprove" :loading="batchLoading">
-            <template #icon><icon-check-circle /></template>
-            批量通过
-          </a-button>
-          <a-button size="small" @click="clearSelection">取消选择</a-button>
-        </a-space>
-      </div>
-    </a-card>
-
-    <a-drawer
-      v-model:visible="drawerVisible"
-      :width="720"
-      title="商品审核详情"
-      placement="right"
-      :footer="drawerFooter"
-      unmount-on-close
-    >
-      <ReviewDetail
-        v-if="currentItem"
-        :item="currentItem"
-        @approve="handleApproveSuccess"
-        @reject="handleRejectSuccess"
+    <!-- 操作栏 -->
+    <template #actions>
+      <a-input-search
+        v-model="keyword"
+        placeholder="搜索商品名称/卖家"
+        style="width: 200px"
+        search-button
+        @search="handleSearch"
+        allow-clear
       />
-    </a-drawer>
-  </div>
+      <a-select v-model="categoryFilter" placeholder="商品分类" style="width: 140px" allow-clear @change="handleSearch">
+        <a-option value="ELECTRONICS">电子产品</a-option>
+        <a-option value="BOOKS">书籍</a-option>
+        <a-option value="CLOTHING">服装</a-option>
+        <a-option value="DAILY">日用品</a-option>
+        <a-option value="OTHER">其他</a-option>
+      </a-select>
+    </template>
+
+    <template #extra>
+      <a-button type="primary" @click="handleSearch">查询</a-button>
+      <a-button @click="handleReset">重置</a-button>
+    </template>
+
+    <!-- 列插槽 -->
+    <template #image="{ record }">
+      <a-image :src="getFirstImage(record)" width="60" height="60" fit="cover" style="border-radius:6px" />
+    </template>
+
+    <template #price="{ record }">
+      <span style="color:#f53f3f;font-weight:600">¥{{ formatPrice(record.price) }}</span>
+    </template>
+
+    <template #status="{ record }">
+      <a-tag size="small" :color="getStatusColor(record.status)">{{ getStatusLabel(record.status) }}</a-tag>
+    </template>
+
+    <template #createdAt="{ record }">
+      {{ formatDate(record.createdAt) }}
+    </template>
+
+    <template #operations="{ record }">
+      <a-space>
+        <a-button type="text" size="small" @click="viewDetail(record)">查看详情</a-button>
+        <a-button v-if="activeTab === 'pending'" type="primary" size="small" status="success" @click="approveItem(record)">通过</a-button>
+        <a-button v-if="activeTab === 'pending'" type="primary" size="small" status="danger" @click="rejectItem(record)">拒绝</a-button>
+        <a-popconfirm v-if="activeTab !== 'pending'" content="确定删除该商品吗？" @ok="deleteItem(record)">
+          <a-button type="text" size="small" status="danger">删除</a-button>
+        </a-popconfirm>
+      </a-space>
+    </template>
+  </OpsUnifiedTable>
+
+  <!-- 商品详情抽屉 -->
+  <a-drawer v-model:visible="detailVisible" :width="600" title="商品详情" placement="right" unmount-on-close>
+    <div v-if="currentItem">
+      <div style="margin-bottom:16px">
+        <a-image-preview-group>
+          <a-space wrap>
+            <a-image v-for="(img, i) in getImages(currentItem)" :key="i" :src="img" width="90" height="90" fit="cover" style="border-radius:6px" />
+          </a-space>
+        </a-image-preview-group>
+      </div>
+      <a-descriptions :column="2" bordered size="medium">
+        <a-descriptions-item label="商品名称" :span="2"><span style="font-weight:600">{{ currentItem.title }}</span></a-descriptions-item>
+        <a-descriptions-item label="价格"><span style="color:#f53f3f;font-weight:600">¥{{ formatPrice(currentItem.price) }}</span></a-descriptions-item>
+        <a-descriptions-item label="分类">{{ getCategoryLabel(currentItem.category) }}</a-descriptions-item>
+        <a-descriptions-item label="卖家">{{ currentItem.sellerName }}</a-descriptions-item>
+        <a-descriptions-item label="状态">
+          <a-tag size="small" :color="getStatusColor(currentItem.status)">{{ getStatusLabel(currentItem.status) }}</a-tag>
+        </a-descriptions-item>
+        <a-descriptions-item label="发布时间">{{ formatDate(currentItem.createdAt) }}</a-descriptions-item>
+        <a-descriptions-item label="商品描述" :span="2"><span style="white-space:pre-wrap">{{ currentItem.description || '-' }}</span></a-descriptions-item>
+      </a-descriptions>
+    </div>
+    <template #footer><a-button @click="detailVisible = false">关闭</a-button></template>
+  </a-drawer>
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted } from "vue";
-import { Message } from "@arco-design/web-vue";
-import { IconRefresh, IconCheckCircle } from "@arco-design/web-vue/es/icon";
-import FilterBar from "../../../components/data/FilterBar.vue";
-import ReviewDetail from "../ReviewDetail.vue";
-import { opsHttp as http } from "../../../services/http";
-import {
-  REVIEW_STATUS_OPTIONS,
-  REVIEW_STATUS_MAP,
-  REVIEW_COLUMNS,
-} from "./const";
+import { ref, reactive, onMounted } from 'vue'
+import { Message } from '@arco-design/web-vue'
+import OpsUnifiedTable from '../../../components/ops/OpsUnifiedTable.vue'
+import { opsHttp as http } from '../../../services/http'
 
-const tableData = ref([]);
-const loading = ref(false);
-const batchLoading = ref(false);
-const drawerVisible = ref(false);
-const currentItem = ref(null);
-const selectedKeys = ref([]);
+const loading = ref(false)
+const keyword = ref('')
+const categoryFilter = ref('')
+const activeTab = ref('pending')
+const tableData = ref([])
+const pagination = reactive({ current: 1, pageSize: 10, total: 0, showTotal: true, showPageSize: true, pageSizeOptions: [10, 15, 20, 50] })
+const detailVisible = ref(false)
+const currentItem = ref(null)
 
-const filterParams = reactive({
-  keyword: "",
-  category: "",
-  dateRange: [],
-  status: "",
-});
-
-const filterConfig = [
-  {
-    field: "keyword",
-    label: "关键词",
-    type: "input",
-    placeholder: "搜索商品标题/卖家名称",
-    span: 6,
-  },
-  {
-    field: "category",
-    label: "分类",
-    type: "select",
-    placeholder: "全部分类",
-    span: 5,
-    options: [
-      { value: "", label: "全部分类" },
-      { value: "ELECTRONICS", label: "电子产品" },
-      { value: "BOOKS", label: "图书教材" },
-      { value: "CLOTHING", label: "服饰鞋包" },
-      { value: "DAILY", label: "生活用品" },
-      { value: "SPORTS", label: "运动器材" },
-      { value: "BEAUTY", label: "美妆护肤" },
-      { value: "FOOD", label: "食品零食" },
-      { value: "OTHER", label: "其他物品" },
-    ],
-  },
-  {
-    field: "dateRange",
-    label: "时间范围",
-    type: "daterange",
-    span: 8,
-  },
-  {
-    field: "status",
-    label: "审核状态",
-    type: "select",
-    placeholder: "全部状态",
-    span: 5,
-    options: REVIEW_STATUS_OPTIONS,
-  },
-];
-
-const pagination = reactive({
-  current: 1,
-  pageSize: 20,
-  total: 0,
-  showTotal: true,
-  showPageSize: true,
-  pageSizeOptions: [10, 20, 50],
-});
-
-function getFirstImage(record) {
-  const urls = record.imageUrls || record.images || [];
-  if (typeof urls === "string") {
-    try {
-      const parsed = JSON.parse(urls);
-      return parsed[0] || "";
-    } catch {
-      return urls || "";
-    }
-  }
-  return Array.isArray(urls) && urls.length > 0 ? urls[0] : "";
-}
-
-function formatPrice(price) {
-  if (!price && price !== 0) return "0.00";
-  return Number(price).toFixed(2);
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return "-";
-  const date = new Date(dateStr);
-  return date.toLocaleString("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-function getConditionColor(condition) {
-  const colors = {
-    NEW: "green",
-    LIKE_NEW: "cyan",
-    GOOD: "blue",
-    FAIR: "orange",
-    POOR: "red",
-  };
-  return colors[condition] || "gray";
-}
-
-function getConditionLabel(condition) {
-  const labels = {
-    NEW: "全新",
-    LIKE_NEW: "99新",
-    EXCELLENT: "95新",
-    GOOD: "8成新",
-    FAIR: "一般",
-    POOR: "较差",
-  };
-  return labels[condition] || condition;
-}
+// 表格列定义 (对齐 operation-portal 格式)
+const tableColumns = [
+  { title: '商品图片', dataIndex: 'image', width: 100, slotName: 'image' },
+  { title: '商品名称', dataIndex: 'title', width: 200, ellipsis: true },
+  { title: '卖家', dataIndex: 'sellerName', width: 120 },
+  { title: '价格', dataIndex: 'price', width: 100, slotName: 'price' },
+  { title: '状态', dataIndex: 'reviewStatus', width: 100, slotName: 'status' },
+  { title: '发布时间', dataIndex: 'createdAt', width: 160, slotName: 'createdAt' },
+  { title: '操作', width: 200, fixed: 'right', slotName: 'operations' }
+]
 
 async function loadData() {
-  loading.value = true;
+  loading.value = true
   try {
     const params = {
-      status: filterParams.status || undefined,
-      keyword: filterParams.keyword || undefined,
-      category: filterParams.category || undefined,
+      keyword: keyword.value || undefined,
+      category: categoryFilter.value || undefined,
+      status: activeTab.value === 'pending' ? 'PENDING' : activeTab.value === 'approved' ? 'APPROVED' : 'REJECTED',
       pageNo: pagination.current,
       pageSize: pagination.pageSize,
-    };
-
-    if (filterParams.dateRange && filterParams.dateRange.length === 2) {
-      params.startDate = filterParams.dateRange[0];
-      params.endDate = filterParams.dateRange[1];
     }
-
-    const res = await http.post("/ops/reviews", params);
-    const data = res?.data || res;
-    tableData.value = data?.items || data?.rows || [];
-    pagination.total = data?.totalCount ?? data?.total ?? 0;
+    const res = await http.post('/reviews/pending', params)
+    const data = res?.data?.data ?? res?.data ?? res
+    tableData.value = data?.items || data?.rows || []
+    pagination.total = data?.totalCount ?? data?.total ?? 0
   } catch (e) {
-    console.error("[Reviews] load error:", e);
-    Message.error(e.message || "加载审核列表失败");
+    console.error('[ItemReview] load error:', e)
+    Message.error('加载商品列表失败')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 }
 
-function handleSearch() {
-  pagination.current = 1;
-  loadData();
+function handleTabChange() {
+  pagination.current = 1
+  loadData()
 }
 
-function handleReset() {
-  Object.keys(filterParams).forEach((key) => {
-    if (Array.isArray(filterParams[key])) {
-      filterParams[key] = [];
-    } else {
-      filterParams[key] = "";
-    }
-  });
-  handleSearch();
-}
+function handleSearch() { pagination.current = 1; loadData() }
+function handleReset() { keyword.value = ''; categoryFilter.value = ''; handleSearch() }
+function handlePageChange(page) { pagination.current = page; loadData() }
 
-function handlePageChange(page) {
-  pagination.current = page;
-  loadData();
-}
+function viewDetail(record) { currentItem.value = record; detailVisible.value = true }
 
-function handleSelectionChange(keys) {
-  selectedKeys.value = keys;
-}
-
-function clearSelection() {
-  selectedKeys.value = [];
-}
-
-function openReviewDrawer(record) {
-  currentItem.value = record;
-  drawerVisible.value = true;
-}
-
-async function batchApprove() {
-  if (selectedKeys.value.length === 0) {
-    Message.warning("请选择要审核的商品");
-    return;
-  }
-
-  batchLoading.value = true;
+async function approveItem(record) {
   try {
-    await Promise.all(
-      selectedKeys.value.map((id) => http.post(`/ops/reviews/${id}/approve`))
-    );
-    Message.success(`已批量通过 ${selectedKeys.value.length} 件商品`);
-    selectedKeys.value = [];
-    loadData();
-  } catch (e) {
-    Message.error(e.message || "批量操作失败");
-  } finally {
-    batchLoading.value = false;
-  }
+    await http.post(`/reviews/${record.id}/approve`)
+    Message.success('商品已通过审核')
+    loadData()
+  } catch (e) { Message.error('操作失败') }
 }
 
-function handleApproveSuccess() {
-  drawerVisible.value = false;
-  loadData();
+async function rejectItem(record) {
+  try {
+    await http.post(`/reviews/${record.id}/reject`, { reason: '不符合规范' })
+    Message.success('商品已拒绝')
+    loadData()
+  } catch (e) { Message.error('操作失败') }
 }
 
-function handleRejectSuccess() {
-  drawerVisible.value = false;
-  loadData();
+async function deleteItem(record) {
+  try {
+    await http.delete(`/reviews/${record.id}`)
+    Message.success('商品已删除')
+    loadData()
+  } catch (e) { Message.error('删除失败') }
 }
 
-const drawerFooter = computed(() => ({
-  bottom: "0",
-  display: "flex",
-  justifyContent: "flex-end",
-  gap: "12px",
-  padding: "16px 24px",
-  borderTop: "1px solid #e5e6eb",
-}));
+function getFirstImage(record) {
+  const urls = record.imageUrls || record.images || ''
+  if (!urls) return ''
+  if (typeof urls === 'string') { try { return JSON.parse(urls)[0] || '' } catch { return urls || '' } }
+  return Array.isArray(urls) && urls.length > 0 ? urls[0] : ''
+}
 
-onMounted(loadData);
+function getImages(record) {
+  const urls = record.imageUrls || record.images || ''
+  if (!urls) return []
+  if (typeof urls === 'string') { try { return JSON.parse(urls) } catch { return [urls] } }
+  return Array.isArray(urls) ? urls : []
+}
+
+function formatPrice(price) { const n = Number(price); return isNaN(n) ? '0.00' : n.toFixed(2) }
+
+function formatDate(dateStr) {
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+}
+
+function getStatusColor(status) {
+  return { APPROVED: 'green', PENDING: 'orange', REJECTED: 'red' }[status] || 'gray'
+}
+
+function getStatusLabel(status) {
+  return { APPROVED: '已通过', PENDING: '待审核', REJECTED: '已拒绝' }[status] || status
+}
+
+function getCategoryLabel(category) {
+  return { ELECTRONICS: '电子产品', BOOKS: '书籍', CLOTHING: '服装', DAILY: '日用品', OTHER: '其他' }[category] || category
+}
+
+onMounted(() => { loadData() })
 </script>
 
 <style lang="scss" scoped>
-.reviews-page {
-  background: #f5f6f7;
-  min-height: calc(100vh - 64px);
-  padding: 20px;
-
-  .page-header {
-    margin-bottom: 20px;
-
-    .page-title {
-      margin: 0 0 8px 0;
-      font-size: 20px;
-      font-weight: 700;
-      color: #1d2129;
-    }
-
-    .breadcrumb {
-      font-size: 13px;
-    }
-  }
-}
-
-.table-card {
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-
-  :deep(.arco-card-head) {
-    border-bottom: 1px solid #e5e6eb;
-    padding: 16px 20px;
-  }
-
-  :deep(.arco-card-body) {
-    padding: 0;
-  }
-}
-
-.card-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 15px;
-  font-weight: 600;
-  color: #1d2129;
-}
-
-.batch-actions-bar {
-  margin-top: 16px;
-  padding: 12px 20px;
-  background: #e6f1ff;
-  border-radius: 6px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-
-  .batch-info {
-    font-size: 14px;
-    color: #165dff;
-    font-weight: 500;
-  }
-}
 </style>

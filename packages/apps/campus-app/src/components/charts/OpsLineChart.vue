@@ -17,6 +17,7 @@ import {
   LegendComponent,
 } from 'echarts/components';
 import { CanvasRenderer } from 'echarts/renderers';
+import * as echarts from 'echarts/core';
 
 use([
   BarChart,
@@ -101,7 +102,7 @@ const chartOptions = computed(() => {
         data: values,
         barWidth: '50%',
         itemStyle: {
-          color: new (require('echarts').graphic.LinearGradient)(0, 0, 0, 1, [
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
             { offset: 0, color: props.color },
             { offset: 1, color: `${props.color}40` },
           ]),
@@ -109,7 +110,7 @@ const chartOptions = computed(() => {
         },
         emphasis: {
           itemStyle: {
-            color: new (require('echarts').graphic.LinearGradient)(0, 0, 0, 1, [
+            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
               { offset: 0, color: props.color },
               { offset: 1, color: `${props.color}80` },
             ]),

@@ -156,8 +156,8 @@ import {
   IconStarFill,
   IconMessage,
 } from "@arco-design/web-vue/es/icon";
-import { http } from "../../../services/core/http";
-import { parseFirstImageUrl } from "../../../utils/image-utils";
+import { http } from "../../services/http";
+import { parseFirstImageUrl } from "../../utils/image-utils";
 
 const loading = ref(false);
 const reviews = ref([]);

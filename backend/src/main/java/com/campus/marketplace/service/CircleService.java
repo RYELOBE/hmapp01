@@ -3,6 +3,7 @@ package com.campus.marketplace.service;
 import com.campus.marketplace.repository.CirclePostRepository;
 import com.campus.marketplace.repository.CircleCommentRepository;
 import com.campus.marketplace.repository.CircleLikeRepository;
+import com.campus.marketplace.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -19,17 +20,22 @@ public class CircleService {
   private final CirclePostRepository postRepository;
   private final CircleCommentRepository commentRepository;
   private final CircleLikeRepository likeRepository;
+  private final UserRepository userRepository;
 
   public CircleService(CirclePostRepository postRepository, CircleCommentRepository commentRepository,
-      CircleLikeRepository likeRepository) {
+      CircleLikeRepository likeRepository, UserRepository userRepository) {
     this.postRepository = postRepository;
     this.commentRepository = commentRepository;
     this.likeRepository = likeRepository;
+    this.userRepository = userRepository;
   }
 
   public Map<String, Object> createPost(Long userId, String title, String content, String images, String tags) {
     logger.info("用户 {} 发布新帖子: {}", userId, title);
-    return postRepository.save(userId, title, content, images, tags);
+    String userName = userRepository.findById(userId)
+        .map(u -> (String) u.get("nickname"))
+        .orElse("");
+    return postRepository.save(userId, userName, title, content, images, tags);
   }
 
   public List<Map<String, Object>> getPostList(int page, int size, String tag) {
@@ -84,7 +90,10 @@ public class CircleService {
     if (post == null) {
       throw new RuntimeException("帖子不存在");
     }
-    Map<String, Object> comment = commentRepository.save(postId, userId, content);
+    String userName = userRepository.findById(userId)
+        .map(u -> (String) u.get("nickname"))
+        .orElse("");
+    Map<String, Object> comment = commentRepository.save(postId, userId, userName, content);
     postRepository.incrementCommentCount(postId);
     logger.info("用户 {} 在帖子 {} 发表评论: {}", userId, postId, content);
     return comment;
@@ -124,5 +133,39 @@ public class CircleService {
 
   public List<Map<String, Object>> getUserPosts(Long userId, int page, int size) {
     return postRepository.findByUserIdAndStatus(userId, "APPROVED", page, size);
+  }
+
+  public List<Map<String, Object>> getPendingComments(int page, int size) {
+    return commentRepository.findByStatusPaged("PENDING", page, size);
+  }
+
+  public long getPendingCommentCount() {
+    return commentRepository.countByStatus("PENDING");
+  }
+
+  public List<Map<String, Object>> getReviewedComments(int page, int size) {
+    return commentRepository.findByStatusNotPaged("PENDING", page, size);
+  }
+
+  public long getReviewedCommentCount() {
+    return commentRepository.countByStatusNot("PENDING");
+  }
+
+  public void approveComment(Long commentId) {
+    Map<String, Object> comment = commentRepository.findById(commentId);
+    if (comment == null) {
+      throw new RuntimeException("评论不存在");
+    }
+    commentRepository.updateStatus(commentId, "APPROVED");
+    logger.info("审核通过评论: {}", commentId);
+  }
+
+  public void rejectComment(Long commentId) {
+    Map<String, Object> comment = commentRepository.findById(commentId);
+    if (comment == null) {
+      throw new RuntimeException("评论不存在");
+    }
+    commentRepository.updateStatus(commentId, "REJECTED");
+    logger.info("审核拒绝评论: {}", commentId);
   }
 }

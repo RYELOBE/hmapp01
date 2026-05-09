@@ -122,7 +122,7 @@ import {
 } from "@arco-design/web-vue/es/icon";
 import StatusTag from "../../../components/common/StatusTag/StatusTag.vue";
 import ConditionTag from "../../../components/data/ConditionTag.vue";
-import { getMyItems, offShelfItem, deleteItem as apiDeleteItem, updateItem } from "../../../services/api";
+import { getMyItems, offShelfItem, deleteItem as apiDeleteItem, updateItem } from "../../../services/items";
 
 const router = useRouter();
 const loading = ref(false);

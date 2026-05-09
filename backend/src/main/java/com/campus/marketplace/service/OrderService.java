@@ -242,6 +242,7 @@ public class OrderService {
         String timeB = String.valueOf(b.getOrDefault("createdAt", ""));
         return timeB.compareTo(timeA);
       });
+      rows = rows.stream().limit(pageSize).toList();
       int buyerTotal = orderRepository.countByBuyerIdWithFilter(userId, status);
       int sellerTotal = orderRepository.countBySellerIdWithFilter(userId, status);
       total = buyerTotal + sellerTotal;
@@ -263,6 +264,24 @@ public class OrderService {
 
   public List<Map<String, Object>> listAllOrders() {
     return orderRepository.findAll();
+  }
+
+  /**
+   * 运营端：分页查询订单列表（支持状态筛选和关键词搜索）
+   */
+  public Map<String, Object> listForOps(String status, String keyword, int pageNo, int pageSize) {
+    List<Map<String, Object>> orders = orderRepository.findWithFilters(status, keyword, pageNo, pageSize);
+    int totalCount = orderRepository.countWithFilters(status, keyword);
+    
+    return Map.of(
+        "code", 200,
+        "data", Map.of(
+            "rows", orders,
+            "totalCount", totalCount,
+            "pageSize", pageSize,
+            "pageNo", pageNo
+        )
+    );
   }
 
   /**

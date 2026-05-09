@@ -75,7 +75,7 @@
                     <h3 class="item-title">{{ item.title }}</h3>
                     <div class="item-meta">
                       <span class="price">¥{{ formatPrice(item.price) }}</span>
-                      <a-tag size="small">{{ item.category || '未分类' }}</a-tag>
+                      <a-tag size="small" color="blue">{{ formatCategory(item.category) }}</a-tag>
                       <a-tag size="small" :color="getConditionColor(item.conditionLevel)">
                         {{ getConditionLabel(item.conditionLevel) }}
                       </a-tag>
@@ -114,7 +114,7 @@
           </div>
         </a-tab-pane>
 
-        <a-tab-pane key="reviews" :title="tabTitle('reviews', '待审核评价')">
+        <a-tab-pane key="reviews" :title="tabTitle('reviews', '商品评价')">
           <div class="tab-content">
             <a-spin :loading="loading">
               <div class="review-list" v-if="pendingReviews.length > 0">
@@ -139,6 +139,11 @@
                     </div>
                     <a-rate :model-value="review.rating || 0" disabled allow-half />
                     <p class="review-content">{{ truncateText(review.content, 100) }}</p>
+                    <div class="status-tag">
+                      <a-tag size="small" :color="getReviewStatusColor(review.status)">
+                        {{ formatReviewStatus(review.status) }}
+                      </a-tag>
+                    </div>
                   </div>
                   <div class="card-actions">
                     <a-button type="primary" status="success" size="small" @click="handleApprove(review, 'reviews')">
@@ -150,7 +155,7 @@
                   </div>
                 </div>
               </div>
-              <a-empty v-else description="暂无待审核评价" />
+              <a-empty v-else description="暂无待审核商品评价" />
 
               <div class="pagination-wrapper" v-if="pagination.total > pagination.pageSize">
                 <a-pagination
@@ -227,7 +232,7 @@
           </div>
         </a-tab-pane>
 
-        <a-tab-pane key="comments" :title="tabTitle('comments', '待审核评论')">
+        <a-tab-pane key="comments" :title="tabTitle('comments', '圈子评论')">
           <div class="tab-content">
             <a-spin :loading="loading">
               <div class="review-list" v-if="pendingComments.length > 0">
@@ -250,9 +255,17 @@
                       {{ formatTime(comment.createdAt) }}
                     </div>
                   </div>
+                  <div class="card-actions">
+                    <a-button type="primary" status="success" size="small" @click="handleApprove(comment, 'comments')">
+                      通过
+                    </a-button>
+                    <a-button type="primary" status="danger" size="small" @click="openRejectModal(comment, 'comments')">
+                      删除
+                    </a-button>
+                  </div>
                 </div>
               </div>
-              <a-empty v-else description="暂无需审核的评论" />
+              <a-empty v-else description="暂无待审核圈子评论" />
             </a-spin>
           </div>
         </a-tab-pane>
@@ -270,15 +283,30 @@
                     <icon-file size="32" color="#FF7D00" />
                   </div>
                   <div class="card-info">
-                    <h3 class="post-title">订单 #{{ order.id }}</h3>
+                    <h3 class="post-title">{{ order.orderNo || `订单 #${order.id}` }}</h3>
+                    <div class="order-detail">
+                      <span>商品: {{ order.itemTitle || '未知商品' }}</span>
+                    </div>
                     <div class="author-info">
                       <span>买家: {{ order.buyerName || '未知' }}</span>
                       <span class="meta-separator">·</span>
                       <span>金额: ¥{{ (order.totalAmount || 0).toFixed(2) }}</span>
+                      <span class="meta-separator">·</span>
+                      <a-tag size="small" :color="getOrderStatusColor(order.status)">
+                        {{ formatOrderStatus(order.status) }}
+                      </a-tag>
                     </div>
                     <div class="time-info">
                       {{ formatTime(order.createdAt) }}
                     </div>
+                  </div>
+                  <div class="card-actions">
+                    <a-button type="primary" status="success" size="small" @click="handleApproveOrder(order)">
+                      通过
+                    </a-button>
+                    <a-button type="primary" status="danger" size="small" @click="openRejectModal(order, 'orders')">
+                      拒绝
+                    </a-button>
                   </div>
                 </div>
               </div>
@@ -369,6 +397,9 @@ const pagination = reactive({
   current: 1,
   pageSize: 10,
   total: 0,
+  showTotal: true,
+  showPageSize: true,
+  pageSizeOptions: [10, 15, 20, 50],
 });
 
 const rejectForm = reactive({
@@ -451,6 +482,84 @@ function getConditionLabel(condition) {
     POOR: "较差",
   };
   return labels[condition] || condition;
+}
+
+// 商品审核状态中文映射
+function formatReviewStatus(status) {
+  const statusMap = {
+    'PENDING_REVIEW': '待审核',
+    'APPROVED': '已通过',
+    'REJECTED': '已拒绝',
+  };
+  return statusMap[status] || status;
+}
+
+// 商品分类中文映射
+function formatCategory(category) {
+  const categoryMap = {
+    'ELECTRONICS': '数码产品',
+    'BOOKS': '图书教材',
+    'CLOTHING': '服饰鞋包',
+    'DAILY': '生活用品',
+    'SPORTS': '运动户外',
+    'FOOD': '食品饮料',
+    'BEAUTY': '美妆个护',
+    'OTHER': '其他',
+  };
+  return categoryMap[category] || category || '未分类';
+}
+
+// 订单状态中文映射
+function formatOrderStatus(status) {
+  const statusMap = {
+    'PENDING_PAYMENT': '待付款',
+    'PAID': '已付款',
+    'SHIPPED': '已发货',
+    'COMPLETED': '已完成',
+    'CANCELLED': '已取消',
+    'REFUND_PENDING': '退款中',
+    'REFUNDED': '已退款',
+    'REFUNDING': '申请退款',
+  };
+  return statusMap[status] || status || '未知状态';
+}
+
+// 格式化时间显示
+function formatTime(dateStr) {
+  if (!dateStr) return '-';
+  const date = new Date(dateStr);
+  return date.toLocaleString("zh-CN", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+// 获取评价状态颜色
+function getReviewStatusColor(status) {
+  const colorMap = {
+    'PENDING_REVIEW': 'orange',
+    'APPROVED': 'green',
+    'REJECTED': 'red',
+  };
+  return colorMap[status] || 'gray';
+}
+
+// 获取订单状态颜色
+function getOrderStatusColor(status) {
+  const colorMap = {
+    'PENDING_PAYMENT': 'gray',
+    'PAID': 'blue',
+    'SHIPPED': 'cyan',
+    'COMPLETED': 'green',
+    'CANCELLED': 'red',
+    'REFUND_PENDING': 'orange',
+    'REFUNDED': 'red',
+    'REFUNDING': 'orangered',
+  };
+  return colorMap[status] || 'gray';
 }
 
 async function loadCounts() {
@@ -572,6 +681,12 @@ async function confirmApprove() {
       case "circle":
         url = `/ops/circle/${currentItem.value.id}/approve`;
         break;
+      case "comments":
+        url = `/circle/comments/${currentItem.value.id}/approve`;
+        break;
+      case "orders":
+        url = `/ops/orders/${currentItem.value.id}/approve`;
+        break;
     }
 
     await http.post(url);
@@ -586,34 +701,67 @@ async function confirmApprove() {
   }
 }
 
+// 处理订单通过
+async function handleApproveOrder(order) {
+  currentItem.value = order;
+  currentType.value = 'orders';
+  approveModalVisible.value = true;
+}
+
 async function confirmReject() {
-  if (!currentItem.value || !rejectForm.reason.trim()) {
-    Message.warning("请输入拒绝原因");
+  if (!rejectForm.reason.trim()) {
+    Message.warning('请输入拒绝原因');
     return;
   }
 
   submitLoading.value = true;
   try {
-    let url = "";
-    switch (currentType.value) {
-      case "items":
-        url = `/ops/reviews/${currentItem.value.id}/reject`;
-        break;
-      case "reviews":
-        url = `/reviews/${currentItem.value.id}/reject`;
-        break;
-      case "circle":
-        url = `/ops/circle/${currentItem.value.id}/reject`;
-        break;
+    if (batchRejectType.value) {
+      const selectedList = getCurrentList().filter(item => item._selected);
+      let successCount = 0;
+
+      for (const item of selectedList) {
+        try {
+          let url = '';
+          switch (batchRejectType.value) {
+            case 'items': url = `/ops/reviews/${item.id}/reject`; break;
+            case 'reviews': url = `/reviews/${item.id}/reject`; break;
+            case 'circle': url = `/ops/circle/${item.id}/reject`; break;
+          }
+
+          await http.post(url, { reason: rejectForm.reason });
+          successCount++;
+        } catch (e) {
+          console.error(`批量拒绝失败 (${item.id}):`, e);
+        }
+      }
+
+      if (successCount > 0) {
+        Message.success(`已拒绝 ${successCount} 项`);
+      }
+
+      batchRejectType.value = '';
+    } else {
+      if (!currentItem.value) return;
+
+      let url = '';
+      switch (currentType.value) {
+        case 'items': url = `/ops/reviews/${currentItem.value.id}/reject`; break;
+        case 'reviews': url = `/reviews/${currentItem.value.id}/reject`; break;
+        case 'circle': url = `/ops/circle/${currentItem.value.id}/reject`; break;
+        case 'comments': url = `/circle/comments/${currentItem.value.id}/reject`; break;
+        case 'orders': url = `/orders/${currentItem.value.id}/refund/reject`; break;
+      }
+
+      await http.post(url, { reason: rejectForm.reason });
+      Message.success(`已拒绝该${getTypeLabel(currentType.value)}`);
     }
 
-    await http.post(url, { reason: rejectForm.reason });
-    Message.success(`已拒绝该${getTypeLabel(currentType.value)}`);
     rejectModalVisible.value = false;
     await Promise.all([loadData(), loadCounts()]);
   } catch (e) {
-    console.error("[ApprovalWorkspace] reject error:", e);
-    Message.error("操作失败，请重试");
+    console.error('[ConfirmReject] error:', e);
+    Message.error('操作失败，请重试');
   } finally {
     submitLoading.value = false;
   }
@@ -703,70 +851,6 @@ function openBatchRejectModal(type) {
   rejectModalVisible.value = true;
 }
 
-// 覆盖原有的confirmReject以支持批量操作
-const originalConfirmReject = async function confirmReject() {
-  if (!rejectForm.reason.trim()) {
-    Message.warning('请输入拒绝原因');
-    return;
-  }
-
-  submitLoading.value = true;
-  try {
-    // 如果是批量拒绝模式
-    if (batchRejectType.value) {
-      const selectedList = getCurrentList().filter(item => item._selected);
-      let successCount = 0;
-      
-      for (const item of selectedList) {
-        try {
-          let url = '';
-          switch (batchRejectType.value) {
-            case 'items': url = `/ops/reviews/${item.id}/reject`; break;
-            case 'reviews': url = `/reviews/${item.id}/reject`; break;
-            case 'circle': url = `/ops/circle/${item.id}/reject`; break;
-          }
-          
-          await http.post(url, { reason: rejectForm.reason });
-          successCount++;
-        } catch (e) {
-          console.error(`批量拒绝失败 (${item.id}):`, e);
-        }
-      }
-      
-      if (successCount > 0) {
-        Message.success(`已拒绝 ${successCount} 项`);
-      }
-      
-      batchRejectType.value = '';
-    } else {
-      // 单个拒绝（原有逻辑）
-      if (!currentItem.value) return;
-      
-      let url = '';
-      switch (currentType.value) {
-        case 'items': url = `/ops/reviews/${currentItem.value.id}/reject`; break;
-        case 'reviews': url = `/reviews/${currentItem.value.id}/reject`; break;
-        case 'circle': url = `/ops/circle/${currentItem.value.id}/reject`; break;
-      }
-      
-      await http.post(url, { reason: rejectForm.reason });
-      Message.success(`已拒绝该${getTypeLabel(currentType.value)}`);
-    }
-    
-    rejectModalVisible.value = false;
-    await Promise.all([loadData(), loadCounts()]);
-  } catch (e) {
-    console.error('[ConfirmReject] error:', e);
-    Message.error('操作失败，请重试');
-  } finally {
-    submitLoading.value = false;
-  }
-};
-
-// 暴出给模板使用
-window.confirmReject = originalConfirmReject;
-
-// 初始化路由参数
 function initRouteParams() {
   const query = route.query;
   
@@ -996,6 +1080,16 @@ function clearAllFilters() {
   font-weight: 500;
   color: #1d2129;
   margin-bottom: 4px;
+}
+
+.order-detail {
+  font-size: 13px;
+  color: #4e5969;
+  margin-bottom: 4px;
+}
+
+.status-tag {
+  margin-top: 4px;
 }
 
 .review-content,

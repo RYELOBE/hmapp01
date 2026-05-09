@@ -235,4 +235,21 @@ public class UserRepository {
   public void updateStatus(Long userId, String status) {
     jdbc.update("UPDATE user_account SET status = ? WHERE id = ?", status, userId);
   }
+
+  /**
+   * 获取最近注册的用户
+   * @param limit 数量限制
+   * @return 最近用户列表
+   */
+  public List<Map<String, Object>> findRecentUsers(int limit) {
+    String sql = "SELECT id, username, nickname, created_at AS createdAt FROM user_account ORDER BY created_at DESC LIMIT ?";
+    return jdbc.query(sql, (rs, rowNum) -> {
+      Map<String, Object> row = new HashMap<>();
+      row.put("id", rs.getLong("id"));
+      row.put("username", rs.getString("username"));
+      row.put("nickname", rs.getString("nickname"));
+      row.put("createdAt", rs.getTimestamp("createdAt") != null ? rs.getTimestamp("createdAt").toString() : null);
+      return row;
+    }, limit);
+  }
 }

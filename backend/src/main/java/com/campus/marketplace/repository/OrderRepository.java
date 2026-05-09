@@ -27,9 +27,9 @@ public class OrderRepository {
     row.put("itemImage", rs.getString("item_image"));
     row.put("buyerId", rs.getLong("buyer_id"));
     row.put("sellerId", rs.getLong("seller_id"));
-    row.put("price", rs.getInt("price"));
+    row.put("price", rs.getDouble("price"));
     row.put("quantity", rs.getInt("quantity"));
-    row.put("totalAmount", rs.getInt("total_amount"));
+    row.put("totalAmount", rs.getDouble("total_amount"));
     row.put("status", rs.getString("status"));
     row.put("receiverName", rs.getString("receiver_name"));
     row.put("receiverPhone", rs.getString("receiver_phone"));
@@ -160,35 +160,88 @@ public class OrderRepository {
 
   // ── 需方统计 ──────────────────────────
   public List<Map<String, Object>> findBuyersWithStats(String keyword, int pageNo, int pageSize) {
-    StringBuilder sql = new StringBuilder(
-        "SELECT u.id, u.username, u.nickname, " +
-        "COUNT(o.id) AS totalOrders, " +
-        "SUM(CASE WHEN o.status IN ('PENDING_PAYMENT','PAID') THEN 1 ELSE 0 END) AS paidOrders, " +
-        "SUM(CASE WHEN o.status = 'COMPLETED' THEN 1 ELSE 0 END) AS completedOrders, " +
-        "COALESCE(SUM(o.total_amount), 0) AS totalSpent " +
-        "FROM user_account u LEFT JOIN orders o ON u.id = o.buyer_id " +
-        "WHERE u.roles LIKE ?");
+    String baseSql = "SELECT u.id, u.username, u.nickname, u.status, u.created_at AS createdAt " +
+                     "FROM user_account u WHERE (u.roles LIKE ? OR u.roles LIKE ?) ";
+    
     List<Object> params = new ArrayList<>();
     params.add("%BUYER%");
-
+    params.add("%USER%");
+    
     if (keyword != null && !keyword.isEmpty()) {
-      sql.append(" AND u.username LIKE ?");
+      baseSql += "AND u.username LIKE ? ";
       params.add("%" + keyword + "%");
     }
-    sql.append(" GROUP BY u.id, u.username, u.nickname ORDER BY u.id LIMIT ? OFFSET ?");
+    
+    // 先获取基本用户列表
+    String userSql = baseSql + "ORDER BY u.id LIMIT ? OFFSET ?";
     params.add(pageSize);
     params.add((pageNo - 1) * pageSize);
-    return jdbc.query(sql.toString(), (rs, rowNum) -> {
+    
+    List<Map<String, Object>> users = jdbc.query(userSql, (rs, rowNum) -> {
       Map<String, Object> row = new HashMap<>();
       row.put("id", rs.getLong("id"));
       row.put("username", rs.getString("username"));
       row.put("nickname", rs.getString("nickname"));
-      row.put("totalOrders", rs.getInt("totalOrders"));
-      row.put("paidOrders", rs.getInt("paidOrders"));
-      row.put("completedOrders", rs.getInt("completedOrders"));
-      row.put("totalSpent", rs.getInt("totalSpent"));
+      row.put("status", rs.getString("status"));
+      row.put("createdAt", rs.getTimestamp("createdAt") != null ? rs.getTimestamp("createdAt").toString() : null);
       return row;
-    });
+    }, params.toArray());
+    
+    // 对每个用户统计订单数据
+    for (Map<String, Object> user : users) {
+      Long userId = (Long) user.get("id");
+      
+      int totalOrders = countOrdersByBuyerId(userId);
+      int paidOrders = countOrdersByBuyerAndStatus(userId, "PENDING_PAYMENT", "PAID");
+      int completedOrders = countOrdersByBuyerAndStatus(userId, "COMPLETED");
+      double totalSpent = sumTotalAmountByBuyerId(userId);
+      
+      user.put("totalOrders", totalOrders);
+      user.put("paidOrders", paidOrders);
+      user.put("completedOrders", completedOrders);
+      user.put("totalSpent", totalSpent);
+    }
+    
+    return users;
+  }
+
+  /**
+   * 统计买家的订单总数
+   */
+  private int countOrdersByBuyerId(Long buyerId) {
+    Integer count = jdbc.queryForObject(
+        "SELECT COUNT(*) FROM orders WHERE buyer_id = ?", Integer.class, buyerId);
+    return count != null ? count : 0;
+  }
+
+  /**
+   * 统计买家特定状态的订单数
+   */
+  private int countOrdersByBuyerAndStatus(Long buyerId, String... statuses) {
+    if (statuses.length == 0) return 0;
+    
+    StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM orders WHERE buyer_id = ? AND status IN (");
+    List<Object> params = new ArrayList<>();
+    params.add(buyerId);
+    
+    for (int i = 0; i < statuses.length; i++) {
+      sql.append(i == 0 ? "?" : ", ?");
+      params.add(statuses[i]);
+    }
+    sql.append(")");
+    
+    Integer count = jdbc.queryForObject(sql.toString(), Integer.class, params.toArray());
+    return count != null ? count : 0;
+  }
+
+  /**
+   * 统计买家的总消费金额
+   */
+  private double sumTotalAmountByBuyerId(Long buyerId) {
+    Double sum = jdbc.queryForObject(
+        "SELECT COALESCE(SUM(total_amount), 0) FROM orders WHERE buyer_id = ?", 
+        Double.class, buyerId);
+    return sum != null ? sum : 0;
   }
 
   public int countBuyers(String keyword) {
@@ -411,5 +464,101 @@ public class OrderRepository {
     Integer sum = jdbc.queryForObject(sql, Integer.class, status,
         java.sql.Timestamp.valueOf(startTime), java.sql.Timestamp.valueOf(endTime));
     return sum != null ? sum : 0;
+  }
+
+  /**
+   * 按日期统计订单数量
+   * @param date 日期字符串 (yyyy-MM-dd)
+   * @return 订单数量
+   */
+  public int countByDate(String date) {
+    String sql = "SELECT COUNT(*) FROM orders WHERE DATE(created_at) = ?";
+    Integer count = jdbc.queryForObject(sql, Integer.class, date);
+    return count != null ? count : 0;
+  }
+
+  /**
+   * 按状态统计订单数量
+   * @param status 订单状态
+   * @return 订单数量
+   */
+  public int countByStatus(String status) {
+    String sql = "SELECT COUNT(*) FROM orders WHERE status = ?";
+    Integer count = jdbc.queryForObject(sql, Integer.class, status);
+    return count != null ? count : 0;
+  }
+
+  /**
+   * 获取最近订单列表
+   * @param limit 数量限制
+   * @param status 订单状态（可选）
+   * @return 最近订单列表
+   */
+  public List<Map<String, Object>> findRecentOrders(int limit, String status) {
+    StringBuilder sql = new StringBuilder("SELECT * FROM orders o");
+    List<Object> params = new ArrayList<>();
+
+    if (status != null && !status.isEmpty()) {
+      sql.append(" WHERE o.status = ?");
+      params.add(status);
+    }
+
+    sql.append(" ORDER BY o.created_at DESC LIMIT ?");
+    params.add(limit);
+
+    return jdbc.query(sql.toString(), ROW_MAPPER, params.toArray());
+  }
+
+  /**
+   * 运营端：分页查询订单（支持状态筛选和关键词搜索）
+   */
+  public List<Map<String, Object>> findWithFilters(String status, String keyword, int pageNo, int pageSize) {
+    StringBuilder sql = new StringBuilder("SELECT * FROM orders WHERE 1=1 ");
+    List<Object> params = new ArrayList<>();
+    
+    if (status != null && !status.isEmpty()) {
+      sql.append("AND status = ? ");
+      params.add(status);
+    }
+    
+    if (keyword != null && !keyword.isEmpty()) {
+      sql.append("AND (order_no LIKE ? OR item_title LIKE ? OR buyer_name LIKE ? OR seller_name LIKE ?) ");
+      String likeKeyword = "%" + keyword + "%";
+      params.add(likeKeyword);
+      params.add(likeKeyword);
+      params.add(likeKeyword);
+      params.add(likeKeyword);
+    }
+    
+    sql.append("ORDER BY created_at DESC LIMIT ? OFFSET ?");
+    params.add(pageSize);
+    params.add((pageNo - 1) * pageSize);
+    
+    return jdbc.query(sql.toString(), ROW_MAPPER, params.toArray());
+  }
+
+  /**
+   * 运营端：统计符合条件的订单总数
+   */
+  public int countWithFilters(String status, String keyword) {
+    StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM orders WHERE 1=1 ");
+    List<Object> params = new ArrayList<>();
+    
+    if (status != null && !status.isEmpty()) {
+      sql.append("AND status = ? ");
+      params.add(status);
+    }
+    
+    if (keyword != null && !keyword.isEmpty()) {
+      sql.append("AND (order_no LIKE ? OR item_title LIKE ? OR buyer_name LIKE ? OR seller_name LIKE ?) ");
+      String likeKeyword = "%" + keyword + "%";
+      params.add(likeKeyword);
+      params.add(likeKeyword);
+      params.add(likeKeyword);
+      params.add(likeKeyword);
+    }
+    
+    Integer count = jdbc.queryForObject(sql.toString(), Integer.class, params.toArray());
+    return count != null ? count : 0;
   }
 }

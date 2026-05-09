@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import java.util.Map;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,13 +25,16 @@ public class AuthController {
   private final OpsAuthService opsAuthService;
   private final CurrentUserService currentUserService;
   private final UserRepository userRepository;
+  private final PasswordEncoder passwordEncoder;
 
   public AuthController(AuthService authService, OpsAuthService opsAuthService, 
-      CurrentUserService currentUserService, UserRepository userRepository) {
+      CurrentUserService currentUserService, UserRepository userRepository,
+      PasswordEncoder passwordEncoder) {
     this.authService = authService;
     this.opsAuthService = opsAuthService;
     this.currentUserService = currentUserService;
     this.userRepository = userRepository;
+    this.passwordEncoder = passwordEncoder;
   }
 
   @PostMapping("/login")
@@ -107,8 +111,19 @@ public class AuthController {
   public Map<String, Object> changePassword(@RequestBody PasswordChangeRequest request) {
     Long userId = currentUserService.userId();
     
-    // TODO: 验证旧密码（需要根据实际 AuthService 实现）
-    userRepository.updatePassword(userId, request.newPassword());
+    var userOpt = userRepository.findById(userId);
+    if (userOpt.isEmpty()) {
+      return Map.of("code", 404, "message", "用户不存在");
+    }
+    
+    var user = userOpt.get();
+    String currentPasswordHash = (String) user.get("password");
+    if (currentPasswordHash != null && !passwordEncoder.matches(request.oldPassword(), currentPasswordHash)) {
+      return Map.of("code", 400, "message", "旧密码不正确");
+    }
+    
+    String encodedNewPassword = passwordEncoder.encode(request.newPassword());
+    userRepository.updatePassword(userId, encodedNewPassword);
     
     return Map.of("code", 200, "message", "密码修改成功");
   }

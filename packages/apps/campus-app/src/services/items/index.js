@@ -25,7 +25,7 @@ export async function deleteItem(id) {
 }
 
 export async function getMyItems(params = {}) {
-  return await http.post("/items/mine", params);
+  return await http.get("/items/mine", { params });
 }
 
 export async function uploadImage(file) {

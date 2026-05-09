@@ -167,6 +167,36 @@ public class ReviewRepository {
     return count != null ? count : 0;
   }
 
+  /** 按状态分页查询 */
+  public List<Map<String, Object>> findByStatusPaged(String status, int page, int pageSize) {
+    int offset = (page - 1) * pageSize;
+    return jdbc.query(
+        "SELECT * FROM review WHERE status = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        ROW_MAPPER, status, pageSize, offset);
+  }
+
+  /** 查询所有评价（分页） */
+  public List<Map<String, Object>> findAllPaged(int page, int pageSize) {
+    int offset = (page - 1) * pageSize;
+    return jdbc.query(
+        "SELECT * FROM review ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        ROW_MAPPER, pageSize, offset);
+  }
+
+  /** 按状态统计数量 */
+  public int countByStatus(String status) {
+    Integer count = jdbc.queryForObject(
+        "SELECT COUNT(*) FROM review WHERE status = ?", Integer.class, status);
+    return count != null ? count : 0;
+  }
+
+  /** 统计所有评价数量 */
+  public int countAll() {
+    Integer count = jdbc.queryForObject(
+        "SELECT COUNT(*) FROM review", Integer.class);
+    return count != null ? count : 0;
+  }
+
   public Double averageRatingByItemId(Long itemId) {
     Double avg = jdbc.queryForObject(
         "SELECT AVG(rating) FROM review WHERE item_id = ? AND status = 'APPROVED'", Double.class, itemId);
@@ -185,5 +215,9 @@ public class ReviewRepository {
       distribution.put(((Number) row.get("rating")).intValue(), ((Number) row.get("count")).intValue());
     }
     return distribution;
+  }
+
+  public void deleteById(Long id) {
+    jdbc.update("DELETE FROM review WHERE id = ?", id);
   }
 }

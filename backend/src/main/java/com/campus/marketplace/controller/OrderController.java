@@ -3,6 +3,7 @@ package com.campus.marketplace.controller;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.campus.marketplace.service.CurrentUserService;
 import com.campus.marketplace.service.OrderService;
+import com.campus.marketplace.service.NotificationService;
 import java.util.Map;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,10 +20,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController {
   private final OrderService orderService;
   private final CurrentUserService currentUserService;
+  private final NotificationService notificationService;
 
-  public OrderController(OrderService orderService, CurrentUserService currentUserService) {
+  public OrderController(OrderService orderService, CurrentUserService currentUserService, NotificationService notificationService) {
     this.orderService = orderService;
     this.currentUserService = currentUserService;
+    this.notificationService = notificationService;
   }
 
   /** 创建订单 */
@@ -48,6 +51,18 @@ public class OrderController {
       @RequestParam(defaultValue = "10") int pageSize
   ) {
     return orderService.getMinePaged(currentUserService.userId(), currentUserService.roles(), status, pageNo, pageSize);
+  }
+
+  /** 运营端：获取所有订单列表 */
+  @GetMapping
+  @PreAuthorize("hasRole('OPS')")
+  public Map<String, Object> list(
+      @RequestParam(required = false) String status,
+      @RequestParam(required = false) String keyword,
+      @RequestParam(defaultValue = "1") int pageNo,
+      @RequestParam(defaultValue = "15") int pageSize
+  ) {
+    return orderService.listForOps(status, keyword, pageNo, pageSize);
   }
 
   /** 获取订单详情 */
@@ -89,11 +104,27 @@ public class OrderController {
   @PostMapping("/{id}/refund")
   public Map<String, Object> requestRefund(@PathVariable Long id) {
     orderService.requestRefund(id, currentUserService.userId());
+    
+    // 发送退款申请通知给运营人员
+    try {
+      notificationService.createBusinessNotification(
+        "ORDER", 
+        id.toString(), 
+        "订单退款申请", 
+        "用户申请退款，订单ID: " + id + "，请及时处理", 
+        null
+      );
+    } catch (Exception e) {
+      // 记录日志但不影响主流程
+      System.err.println("Failed to send refund notification: " + e.getMessage());
+    }
+    
     return Map.of("code", 200, "message", "退款申请已提交");
   }
 
   /** 同意退款 */
   @PostMapping("/{id}/refund/approve")
+  @PreAuthorize("hasRole('OPS') or hasRole('SELLER')")
   public Map<String, Object> approveRefund(@PathVariable Long id) {
     orderService.approveRefund(id, currentUserService.userId());
     return Map.of("code", 200, "message", "退款成功");
@@ -101,6 +132,7 @@ public class OrderController {
 
   /** 拒绝退款 */
   @PostMapping("/{id}/refund/reject")
+  @PreAuthorize("hasRole('OPS') or hasRole('SELLER')")
   public Map<String, Object> rejectRefund(@PathVariable Long id) {
     orderService.rejectRefund(id, currentUserService.userId());
     return Map.of("code", 200, "message", "已拒绝退款申请");

@@ -42,6 +42,11 @@ public class ReviewController {
     return reviewService.getReviewByOrder(userId, orderId);
   }
 
+  @GetMapping("/{id}")
+  public Map<String, Object> getById(@PathVariable Long id) {
+    return reviewService.getReviewById(id);
+  }
+
   @PostMapping
   public Map<String, Object> create(@RequestBody @Validated ReviewRequest request) {
     Long userId = currentUserService.userId();
@@ -66,6 +71,31 @@ public class ReviewController {
     return reviewService.getPendingReviews(page, pageSize);
   }
 
+  /** POST版本：获取待审核评价列表（兼容前端调用） */
+  @PostMapping("/pending")
+  @PreAuthorize("hasRole('OPS')")
+  public Map<String, Object> getPendingReviewsPost(
+      @RequestBody(required = false) Map<String, Object> params) {
+    int page = params != null && params.get("pageNo") != null ? 
+        ((Number) params.get("pageNo")).intValue() : 1;
+    int pageSize = params != null && params.get("pageSize") != null ? 
+        ((Number) params.get("pageSize")).intValue() : 10;
+    return reviewService.getPendingReviews(page, pageSize);
+  }
+
+  /** POST版本：获取所有评价列表（支持状态筛选） */
+  @PostMapping("/list")
+  @PreAuthorize("hasRole('OPS')")
+  public Map<String, Object> getAllReviewsPost(
+      @RequestBody(required = false) Map<String, Object> params) {
+    int page = params != null && params.get("pageNo") != null ? 
+        ((Number) params.get("pageNo")).intValue() : 1;
+    int pageSize = params != null && params.get("pageSize") != null ? 
+        ((Number) params.get("pageSize")).intValue() : 10;
+    String status = params != null ? (String) params.get("status") : null;
+    return reviewService.getAllReviews(page, pageSize, status);
+  }
+
   @PostMapping("/{id}/approve")
   @PreAuthorize("hasRole('OPS')")
   public Map<String, Object> approve(@PathVariable Long id) {
@@ -79,6 +109,13 @@ public class ReviewController {
       throw new IllegalArgumentException("拒绝原因不能为空");
     }
     return reviewService.rejectReview(id, request.reason());
+  }
+
+  @DeleteMapping("/{id}")
+  @PreAuthorize("hasRole('OPS')")
+  public Map<String, Object> delete(@PathVariable Long id) {
+    reviewService.deleteReview(id);
+    return Map.of("code", 200, "message", "评价已删除");
   }
 
   @PostMapping("/{id}/reply")

@@ -1,4 +1,5 @@
-import { createRouter, createWebHistory } from "vue-router";
+import { createRouter, createWebHistory, RouterView } from "vue-router";
+import { h } from "vue";
 import { useAuthStore } from "../stores/auth";
 import { hasAnyRole } from "@campus/common/roles";
 
@@ -58,10 +59,6 @@ const OpsReview = () =>
   import(
     /* webpackChunkName: "ops-reviews" */ "../views/ops/reviews/index.vue"
   );
-const OpsReviewDetail = () =>
-  import(
-    /* webpackChunkName: "ops-review-detail" */ "../views/ops/ReviewDetail.vue"
-  );
 const OpsApprovalWorkspace = () =>
   import(
     /* webpackChunkName: "ops-approval-workspace" */ "../views/ops/review/ApprovalWorkspace.vue"
@@ -69,9 +66,16 @@ const OpsApprovalWorkspace = () =>
 const OpsOrders = () =>
   import(/* webpackChunkName: "ops-orders" */ "../views/ops/orders/index.vue");
 const OpsVendor = () =>
-  import(/* webpackChunkName: "ops-vendor" */ "../views/ops/vendor/index.vue");
+  import(/* webpackChunkName: "ops-vendor" */ "../views/ops/VendorManage.vue");
 const OpsBuyer = () =>
-  import(/* webpackChunkName: "ops-buyers" */ "../views/ops/buyer/index.vue");
+  import(/* webpackChunkName: "ops-buyers" */ "../views/ops/BuyerManage.vue");
+
+const RouteView = {
+  name: "RouteView",
+  render() {
+    return h(RouterView);
+  },
+};
 
 const routes = [
   {
@@ -242,38 +246,134 @@ const routes = [
       {
         path: "dashboard",
         component: OpsDashboard,
-        meta: { roles: ["OPS"] },
+        meta: { roles: ["OPS"], title: "工作台" },
       },
-      { path: "reviews", component: OpsReview, meta: { roles: ["OPS"] } },
+      // 用户管理
       {
-        path: "reviews/:id",
-        component: OpsReviewDetail,
-        meta: { roles: ["OPS"] },
+        path: "users",
+        component: RouteView,
+        meta: { roles: ["OPS"], title: "用户管理" },
+        redirect: "/ops/users/vendor-manage",
+        children: [
+          {
+            path: "vendor-manage",
+            component: () => import("../views/ops/VendorManage.vue"),
+            meta: { roles: ["OPS"], title: "卖家管理" },
+          },
+          {
+            path: "buyer-manage",
+            component: () => import("../views/ops/BuyerManage.vue"),
+            meta: { roles: ["OPS"], title: "买家管理" },
+          },
+          {
+            path: "user-manage",
+            component: () => import("../views/ops/UserManage.vue"),
+            meta: { roles: ["OPS"], title: "用户管理" },
+          },
+        ],
       },
-      { path: "review", component: OpsApprovalWorkspace, meta: { roles: ["OPS"] } },
-      { path: "orders", component: OpsOrders, meta: { roles: ["OPS"] } },
-      { path: "vendor", component: OpsVendor, meta: { roles: ["OPS"] } },
-      { path: "buyer", component: OpsBuyer, meta: { roles: ["OPS"] } },
+      // 订单管理
       {
-        path: "user-manage",
-        component: () => import("../views/ops/UserManage.vue"),
-        meta: { roles: ["OPS"] },
+        path: "orders",
+        component: RouteView,
+        meta: { roles: ["OPS"], title: "订单管理" },
+        redirect: "/ops/orders/list",
+        children: [
+          {
+            path: "list",
+            component: OpsOrders,
+            meta: { roles: ["OPS"], title: "订单管理" },
+          },
+          {
+            path: "review",
+            component: () => import("../views/ops/orders/OrderReview.vue"),
+            meta: { roles: ["OPS"], title: "订单审核" },
+          },
+        ],
       },
+      // 商品管理
       {
-        path: "vendor-manage",
-        component: () => import("../views/ops/VendorManage.vue"),
-        meta: { roles: ["OPS"] },
+        path: "items",
+        component: RouteView,
+        meta: { roles: ["OPS"], title: "商品管理" },
+        redirect: "/ops/items/manage",
+        children: [
+          {
+            path: "manage",
+            component: () => import("../views/ops/items/ItemManage.vue"),
+            meta: { roles: ["OPS"], title: "商品管理" },
+          },
+          {
+            path: "review",
+            component: OpsReview,
+            meta: { roles: ["OPS"], title: "商品审核" },
+          },
+        ],
       },
+      // 圈子管理
       {
-        path: "buyer-manage",
-        component: () => import("../views/ops/BuyerManage.vue"),
-        meta: { roles: ["OPS"] },
+        path: "circles",
+        component: RouteView,
+        meta: { roles: ["OPS"], title: "圈子管理" },
+        redirect: "/ops/circles/manage",
+        children: [
+          {
+            path: "manage",
+            component: () => import("../views/ops/circle/CircleManage.vue"),
+            meta: { roles: ["OPS"], title: "圈子管理" },
+          },
+          {
+            path: "review",
+            component: () => import("../views/ops/circle/CircleReview.vue"),
+            meta: { roles: ["OPS"], title: "圈子审核" },
+          },
+        ],
       },
+      // 评价管理
       {
-        path: "role-manage",
-        component: () => import("../views/ops/RoleManage.vue"),
-        meta: { roles: ["OPS"] },
+        path: "reviews",
+        component: RouteView,
+        meta: { roles: ["OPS"], title: "评价管理" },
+        redirect: "/ops/reviews/manage",
+        children: [
+          {
+            path: "manage",
+            component: () => import("../views/ops/review-manage/ReviewManage.vue"),
+            meta: { roles: ["OPS"], title: "评价管理" },
+          },
+          {
+            path: "audit",
+            component: () => import("../views/ops/review-manage/ReviewAudit.vue"),
+            meta: { roles: ["OPS"], title: "评价审核" },
+          },
+        ],
       },
+      // 消息
+      {
+        path: "messages",
+        component: RouteView,
+        meta: { roles: ["OPS"], title: "消息" },
+        redirect: "/ops/messages/center",
+        children: [
+          {
+            path: "center",
+            component: () => import("../views/ops/messages/MessageCenter.vue"),
+            meta: { roles: ["OPS"], title: "消息中心" },
+          },
+        ],
+      },
+      // 兼容旧路由
+      { path: "review", redirect: "/ops/items/review" },
+      { path: "item-review", redirect: "/ops/items/review" },
+      { path: "vendor", redirect: "/ops/users/vendor-manage" },
+      { path: "vendor-manage", redirect: "/ops/users/vendor-manage" },
+      { path: "buyer-manage", redirect: "/ops/users/buyer-manage" },
+      { path: "user-manage", redirect: "/ops/users/user-manage" },
+      { path: "order-review", redirect: "/ops/orders/review" },
+      { path: "circle-manage", redirect: "/ops/circles/manage" },
+      { path: "circle-review", redirect: "/ops/circles/review" },
+      { path: "review-manage", redirect: "/ops/reviews/manage" },
+      { path: "review-audit", redirect: "/ops/reviews/audit" },
     ],
   },
 

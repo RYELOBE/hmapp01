@@ -1,7 +1,5 @@
 package com.campus.marketplace.repository;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,20 +39,28 @@ public class CirclePostRepository {
     this.jdbc = jdbc;
   }
 
-  public Map<String, Object> save(Long userId, String title, String content, String images, String tags) {
+  public Map<String, Object> save(Long userId, String userName, String title, String content, String images, String tags) {
     KeyHolder kh = new GeneratedKeyHolder();
     jdbc.update(con -> {
       var ps = con.prepareStatement(
-          "INSERT INTO circle_post (user_id, title, content, images, tags, status, like_count, comment_count, view_count) VALUES (?, ?, ?, ?, ?, 'PENDING', 0, 0, 0)",
+          "INSERT INTO circle_post (user_id, user_name, title, content, images, tags, status, like_count, comment_count, view_count) VALUES (?, ?, ?, ?, ?, ?, 'PENDING', 0, 0, 0)",
           Statement.RETURN_GENERATED_KEYS);
       ps.setLong(1, userId);
-      ps.setString(2, title);
-      ps.setString(3, content);
-      ps.setString(4, images);
-      ps.setString(5, tags);
+      ps.setString(2, userName);
+      ps.setString(3, title);
+      ps.setString(4, content);
+      ps.setString(5, images);
+      ps.setString(6, tags);
       return ps;
     }, kh);
-    Long id = kh.getKey().longValue();
+    
+    // 修复：添加空指针检查
+    Number generatedKey = kh.getKey();
+    if (generatedKey == null) {
+      throw new RuntimeException("Failed to generate ID for new circle post");
+    }
+    
+    Long id = generatedKey.longValue();
     return findById(id);
   }
 
@@ -78,7 +84,21 @@ public class CirclePostRepository {
   public List<Map<String, Object>> findByTagAndStatus(String tag, String status, int pageNo, int pageSize) {
     String sql = "SELECT * FROM circle_post WHERE status = ? AND tags LIKE ? ORDER BY create_time DESC LIMIT ? OFFSET ?";
     int offset = (pageNo - 1) * pageSize;
-    return jdbc.query(sql, ROW_MAPPER, status, "%" + tag + "%", pageSize, offset);
+    // 修复：转义特殊字符防止LIKE注入
+    String escapedTag = escapeLikeSpecialChars(tag);
+    return jdbc.query(sql, ROW_MAPPER, status, "%" + escapedTag + "%", pageSize, offset);
+  }
+
+  /**
+   * 转义LIKE查询中的特殊字符
+   */
+  private String escapeLikeSpecialChars(String input) {
+    if (input == null) {
+      return "";
+    }
+    return input.replace("\\", "\\\\")
+               .replace("%", "\\%")
+               .replace("_", "\\_");
   }
 
   public int countByStatus(String status) {
@@ -113,6 +133,12 @@ public class CirclePostRepository {
 
   public void incrementCommentCount(Long id) {
     jdbc.update("UPDATE circle_post SET comment_count = comment_count + 1 WHERE id = ?", id);
+  }
+
+  public List<Map<String, Object>> findAllPaged(int pageNo, int pageSize) {
+    String sql = "SELECT * FROM circle_post ORDER BY create_time DESC LIMIT ? OFFSET ?";
+    int offset = (pageNo - 1) * pageSize;
+    return jdbc.query(sql, ROW_MAPPER, pageSize, offset);
   }
 
   public int countByUserIdAndStatus(Long userId, String status) {

@@ -20,11 +20,12 @@ export const ORDER_STATUS_MAP = {
 };
 
 export const ORDER_COLUMNS = [
-  { title: "订单号", dataIndex: "id", width: 100 },
-  { title: "商品", dataIndex: "itemTitle", width: 200 },
-  { title: "买家", dataIndex: "buyerName", width: 100 },
-  { title: "卖家", dataIndex: "sellerName", width: 100 },
-  { title: "金额", dataIndex: "amount", width: 100 },
-  { title: "状态", dataIndex: "status", width: 100 },
-  { title: "下单时间", dataIndex: "createdAt", width: 160 },
+  { title: "订单号", dataIndex: "orderNo", width: 140, slotName: "orderNo" },
+  { title: "商品", dataIndex: "itemTitle", width: 200, slotName: "itemInfo" },
+  { title: "买家", dataIndex: "buyerName", width: 100, slotName: "buyerName" },
+  { title: "卖家", dataIndex: "sellerName", width: 100, slotName: "sellerName" },
+  { title: "金额", dataIndex: "totalAmount", width: 120, slotName: "amount" },
+  { title: "状态", dataIndex: "status", width: 110, slotName: "status" },
+  { title: "下单时间", dataIndex: "createdAt", width: 160, slotName: "createdAt" },
+  { title: "操作", dataIndex: "actions", width: 100, slotName: "actions" },
 ];

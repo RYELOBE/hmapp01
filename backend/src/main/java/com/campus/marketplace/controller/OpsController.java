@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashMap;
@@ -68,6 +69,44 @@ public class OpsController {
   @GetMapping("/stats/brief")
   public Map<String, Object> getBriefStats() {
     return buildSuccessResponse(statsService.getBriefStats());
+  }
+
+  /**
+   * 获取近7天订单趋势
+   * @return 订单趋势数据
+   */
+  @GetMapping("/stats/order-trend")
+  public Map<String, Object> getOrderTrend() {
+    return buildSuccessResponse(Map.of("trend", statsService.getOrderTrend()));
+  }
+
+  /**
+   * 获取商品分类统计
+   * @return 分类占比数据
+   */
+  @GetMapping("/stats/categories")
+  public Map<String, Object> getCategoryStats() {
+    return buildSuccessResponse(Map.of("categories", statsService.getCategoryStats()));
+  }
+
+  /**
+   * 获取订单状态分布
+   * @return 状态分布数据
+   */
+  @GetMapping("/stats/order-distribution")
+  public Map<String, Object> getOrderStatusDistribution() {
+    return buildSuccessResponse(statsService.getOrderStatusDistribution());
+  }
+
+  /**
+   * 获取最近活动记录
+   * @param limit 返回数量（默认10，最大50）
+   * @return 最近活动列表
+   */
+  @GetMapping("/stats/activities")
+  public Map<String, Object> getRecentActivities(@RequestParam(defaultValue = "10") Integer limit) {
+    int safeLimit = Math.min(Math.max(limit, 1), 50);
+    return buildSuccessResponse(Map.of("activities", statsService.getRecentActivities(safeLimit)));
   }
 
   /**

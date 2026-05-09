@@ -19,20 +19,20 @@ public class MessageService {
     this.messageRepository = messageRepository;
   }
 
-  public Map<String, Object> sendMessage(Long userId, String type, String title, String content, String link) {
-    logger.info("发送消息给用户 {}: [{}] {}", userId, type, title);
-    return messageRepository.save(userId, type, title, content, link);
+  public Map<String, Object> sendMessage(Long senderId, String senderName, Long receiverId, String content, String type) {
+    logger.info("发送消息从 {} 给用户 {}: [{}] {}", senderId, receiverId, type, content);
+    return messageRepository.save(senderId, senderName, receiverId, content, type);
   }
 
-  public List<Map<String, Object>> getMessageList(Long userId, String type, int page, int size) {
+  public List<Map<String, Object>> getMessageList(Long receiverId, String type, int page, int size) {
     if (type != null && !type.isEmpty()) {
-      return messageRepository.findByUserIdAndTypeAndIsDeletedFalse(userId, type, page, size);
+      return messageRepository.findByReceiverIdAndType(receiverId, type, page, size);
     }
-    return messageRepository.findByUserIdAndIsDeletedFalseOrderByCreateTimeDesc(userId, page, size);
+    return messageRepository.findByReceiverId(receiverId, page, size);
   }
 
-  public long getUnreadCount(Long userId) {
-    return messageRepository.countByUserIdAndStatusAndIsDeletedFalse(userId, "UNREAD");
+  public long getUnreadCount(Long receiverId) {
+    return messageRepository.countByReceiverIdAndStatus(receiverId, "UNREAD");
   }
 
   public void markAsRead(Long messageId, Long userId) {
@@ -40,33 +40,33 @@ public class MessageService {
     if (msg == null) {
       throw new RuntimeException("消息不存在");
     }
-    Long msgUserId = ((Number) msg.get("userId")).longValue();
-    if (!msgUserId.equals(userId)) {
+    Long msgReceiverId = ((Number) msg.get("receiverId")).longValue();
+    if (!msgReceiverId.equals(userId)) {
       throw new RuntimeException("无权操作");
     }
-    messageRepository.updateStatus(messageId, "READ");
+    messageRepository.markAsRead(messageId);
     logger.info("标记消息 {} 为已读", messageId);
   }
 
-  public void markAllAsRead(Long userId) {
-    messageRepository.markAllAsReadByUserId(userId);
-    logger.info("标记用户 {} 的所有消息为已读", userId);
+  public void markAllAsRead(Long receiverId) {
+    messageRepository.markAllAsReadByReceiverId(receiverId);
+    logger.info("标记用户 {} 的所有消息为已读", receiverId);
   }
 
-  public void sendSystemNotification(Long userId, String title, String content, String link) {
-    sendMessage(userId, "SYSTEM", title, content, link);
+  public void sendSystemNotification(Long receiverId, String content) {
+    sendMessage(0L, "系统", receiverId, content, "SYSTEM");
   }
 
-  public void sendTransactionMessage(Long userId, String title, String content, String link) {
-    sendMessage(userId, "TRANSACTION", title, content, link);
+  public void sendTransactionMessage(Long receiverId, String content) {
+    sendMessage(0L, "系统", receiverId, content, "TRANSACTION");
   }
 
-  public void sendReviewResultMessage(Long userId, String title, String content, String link) {
-    sendMessage(userId, "REVIEW", title, content, link);
+  public void sendReviewResultMessage(Long receiverId, String content) {
+    sendMessage(0L, "系统", receiverId, content, "REVIEW");
   }
 
-  public void sendInteractionMessage(Long userId, String title, String content, String link) {
-    sendMessage(userId, "INTERACTION", title, content, link);
+  public void sendInteractionMessage(Long receiverId, String content) {
+    sendMessage(0L, "系统", receiverId, content, "INTERACTION");
   }
 
   public void deleteMessage(Long messageId, Long userId) {
@@ -74,11 +74,11 @@ public class MessageService {
     if (msg == null) {
       throw new RuntimeException("消息不存在");
     }
-    Long msgUserId = ((Number) msg.get("userId")).longValue();
-    if (!msgUserId.equals(userId)) {
+    Long msgReceiverId = ((Number) msg.get("receiverId")).longValue();
+    if (!msgReceiverId.equals(userId)) {
       throw new RuntimeException("无权操作");
     }
-    messageRepository.softDelete(messageId);
+    messageRepository.deleteById(messageId);
     logger.info("删除消息: {}", messageId);
   }
 }

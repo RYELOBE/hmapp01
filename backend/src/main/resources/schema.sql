@@ -316,3 +316,5 @@ CREATE TABLE message (
   INDEX idx_status (status),
   INDEX idx_create_time (create_time)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Note: notification table is created dynamically by DatabaseUpdater.java

@@ -1,114 +1,143 @@
 <template>
   <div class="ops-enhanced-dashboard">
     <!-- 统计卡片区域 -->
-    <a-row :gutter="[16, 16]" class="stats-section">
-      <a-col :xs="24" :sm="12" :md="6" v-for="(stat, index) in statsCards" :key="index">
-        <div class="enhanced-stat-card" :style="{ '--accent-color': stat.color }">
-          <div class="stat-icon">
-            <component :is="stat.icon" />
-          </div>
-          <div class="stat-content">
-            <div class="stat-value">
-              {{ formatNumber(stats[stat.key] || 0) }}
-              <span v-if="stat.suffix" class="stat-suffix">{{ stat.suffix }}</span>
+    <div class="stats-section" v-slide>
+      <a-row :gutter="[16, 16]">
+        <a-col :xs="24" :sm="12" :md="6" v-for="(stat, index) in statsCards" :key="index">
+          <div class="enhanced-stat-card" :style="{ '--accent-color': stat.color }">
+            <div class="stat-icon">
+              <component :is="stat.icon" />
             </div>
-            <div class="stat-label">{{ stat.label }}</div>
-            <div v-if="stats[stat.trendKey] !== undefined" class="stat-trend" :class="{ 'trend-up': stats[stat.trendKey] > 0, 'trend-down': stats[stat.trendKey] < 0 }">
-              {{ stats[stat.trendKey] > 0 ? '↑' : '↓' }} 
-              {{ Math.abs(stats[stat.trendKey] || 0) }}
-              <span class="trend-label">今日</span>
+            <div class="stat-content">
+              <div class="stat-value">
+                {{ formatNumber(stats[stat.key] || 0) }}
+                <span v-if="stat.suffix" class="stat-suffix">{{ stat.suffix }}</span>
+              </div>
+              <div class="stat-label">{{ stat.label }}</div>
+              <div v-if="stats[stat.trendKey] !== undefined" class="stat-trend" :class="{ 'trend-up': stats[stat.trendKey] > 0, 'trend-down': stats[stat.trendKey] < 0 }">
+                {{ stats[stat.trendKey] > 0 ? '↑' : '↓' }} 
+                {{ Math.abs(stats[stat.trendKey] || 0) }}
+                <span class="trend-label">今日</span>
+              </div>
+            </div>
+            <!-- 迷你趋势图 -->
+            <div class="mini-chart">
+              <svg viewBox="0 0 60 24" class="sparkline">
+                <polyline 
+                  :points="generateSparkline(stat.key)" 
+                  fill="none" 
+                  stroke="currentColor"
+                  stroke-width="2"
+                />
+              </svg>
             </div>
           </div>
-          <!-- 迷你趋势图 -->
-          <div class="mini-chart">
-            <svg viewBox="0 0 60 24" class="sparkline">
-              <polyline 
-                :points="generateSparkline(stat.key)" 
-                fill="none" 
-                stroke="currentColor"
-                stroke-width="2"
-              />
-            </svg>
-          </div>
-        </div>
-      </a-col>
-    </a-row>
+        </a-col>
+      </a-row>
+    </div>
+
+    <!-- 功能入口网格 -->
+    <div class="features-grid-section" v-slide>
+      <h3 class="section-title">功能入口</h3>
+      <a-row :gutter="[16, 16]">
+        <a-col :xs="24" :sm="12" :md="8" :lg="6" v-for="(feature, index) in featuresGrid" :key="index">
+          <GridCard
+            :title="feature.title"
+            :text="feature.description"
+            :tag="feature.tag"
+            :index-num="index"
+            @click="handleFeatureClick(feature)"
+          />
+        </a-col>
+      </a-row>
+    </div>
 
     <!-- 快捷操作 + 待审核 -->
-    <a-row :gutter="[16, 16]" class="middle-section">
-      <a-col :xs="24" :lg="16">
-        <a-card title="快捷操作" :bordered="false" class="quick-actions-card">
-          <a-row :gutter="[12, 12]">
-            <a-col :xs="8" :sm="6" v-for="action in quickActions" :key="action.label">
-              <div class="action-item" @click="handleAction(action)">
-                <div class="action-icon" :style="{ background: action.bgColor }">
-                  <component :is="action.icon" :style="{ color: action.color }" />
+    <div class="middle-section" v-slide>
+      <a-row :gutter="[16, 16]">
+        <a-col :xs="24" :lg="16">
+          <a-card title="快捷操作" :bordered="false" class="quick-actions-card">
+            <a-row :gutter="[12, 12]">
+              <a-col :xs="8" :sm="6" v-for="action in quickActions" :key="action.label">
+                <div class="action-item" @click="handleAction(action)">
+                  <div class="action-icon" :style="{ background: action.bgColor }">
+                    <component :is="action.icon" :style="{ color: action.color }" />
+                  </div>
+                  <span class="action-label">{{ action.label }}</span>
                 </div>
-                <span class="action-label">{{ action.label }}</span>
-              </div>
-            </a-col>
-          </a-row>
-        </a-card>
+              </a-col>
+            </a-row>
+          </a-card>
 
-        <a-card title="实时动态" :bordered="false" class="activity-card">
-          <template #extra>
-            <a-button type="text" size="small" @click="refreshActivities">
-              <template #icon><icon-refresh /></template>
-              刷新
-            </a-button>
-          </template>
-          <a-timeline v-if="activities.length > 0" pending>
-            <a-timeline-item
-              v-for="activity in activities.slice(0, 5)"
-              :key="activity.id"
-              :dot-color="activity.color || '#165DFF'"
-            >
-              <div class="activity-item">
-                <div class="activity-title">{{ activity.title }}</div>
-                <div class="activity-time">{{ formatTime(activity.time) }}</div>
-              </div>
-            </a-timeline-item>
-          </a-timeline>
-          <a-empty v-else description="暂无动态" />
-        </a-card>
-      </a-col>
+          <a-card title="实时动态" :bordered="false" class="activity-card" style="margin-top: 16px">
+            <template #extra>
+              <a-button type="text" size="small" @click="refreshActivities">
+                <template #icon><icon-refresh /></template>
+                刷新
+              </a-button>
+            </template>
+            <a-timeline v-if="activities.length > 0" pending>
+              <a-timeline-item
+                v-for="activity in activities.slice(0, 5)"
+                :key="activity.id"
+                :dot-color="activity.color || '#165DFF'"
+              >
+                <div class="activity-item">
+                  <div class="activity-title">{{ activity.title }}</div>
+                  <div class="activity-time">{{ formatTime(activity.time) }}</div>
+                </div>
+              </a-timeline-item>
+            </a-timeline>
+            <a-empty v-else description="暂无动态" />
+          </a-card>
+        </a-col>
 
-      <a-col :xs="24" :lg="8">
-        <a-card title="待审核概览" :bordered="false" class="pending-card">
-          <template #extra>
-            <a-badge :count="totalPending" :max-count="99">
-              <a-button type="text" size="small">查看全部</a-button>
-            </a-badge>
-          </template>
-          
-          <div class="pending-list">
-            <div 
-              v-for="item in pendingItems.slice(0, 4)" 
-              :key="item.id"
-              class="pending-item"
-              @click="$router.push('/ops/review')"
-            >
-              <div class="pending-type" :class="'type-' + item.type">
-                {{ getTypeIcon(item.type) }}
+        <a-col :xs="24" :lg="8">
+          <a-card title="待审核概览" :bordered="false" class="pending-card">
+            <template #extra>
+              <a-badge :count="totalPending" :max-count="99">
+                <a-button type="text" size="small">查看全部</a-button>
+              </a-badge>
+            </template>
+            <div class="pending-list">
+              <div 
+                v-for="item in pendingItems.slice(0, 4)" 
+                :key="item.id"
+                class="pending-item"
+                @click="$router.push('/ops/items/review')"
+              >
+                <div class="pending-type" :class="'type-' + item.type">
+                  {{ getTypeIcon(item.type) }}
+                </div>
+                <div class="pending-info">
+                  <div class="pending-title">{{ truncate(item.title, 20) }}</div>
+                  <div class="pending-meta">{{ item.author }} · {{ formatTime(item.time) }}</div>
+                </div>
+                <div class="pending-action">
+                  <a-button type="primary" size="small" status="success">通过</a-button>
+                </div>
               </div>
-              <div class="pending-info">
-                <div class="pending-title">{{ truncate(item.title, 20) }}</div>
-                <div class="pending-meta">{{ item.author }} · {{ formatTime(item.time) }}</div>
-              </div>
-              <div class="pending-action">
-                <a-button type="primary" size="small" status="success">通过</a-button>
-              </div>
+              <a-empty v-if="pendingItems.length === 0" description="暂无待审核项" />
             </div>
-            
-            <a-empty v-if="pendingItems.length === 0" description="暂无待审核项" />
-          </div>
-        </a-card>
+          </a-card>
+        </a-col>
+      </a-row>
+    </div>
 
-        <a-card title="分类占比" :bordered="false" class="category-card">
-          <OpsBarChart :data="categoryData" height="240" />
-        </a-card>
-      </a-col>
-    </a-row>
+    <!-- 最近活动 -->
+    <div class="recent-activity-section" v-slide>
+      <a-card title="最近活动" :bordered="false" class="activity-card">
+        <a-timeline class="activity-timeline">
+          <a-timeline-item v-for="activity in recentActivities" :key="activity.id" :dot="getActivityDot(activity.type)">
+            <div class="activity-content">
+              <div class="activity-title">{{ activity.title }}</div>
+              <div class="activity-description">{{ activity.description }}</div>
+              <div class="activity-time">{{ formatTime(activity.createdAt) }}</div>
+            </div>
+          </a-timeline-item>
+        </a-timeline>
+      </a-card>
+    </div>
 
     <!-- 图表区域 -->
     <a-row :gutter="[16, 16]" class="charts-section">
@@ -145,8 +174,10 @@ import {
   IconEye,
   IconRefresh,
 } from "@arco-design/web-vue/es/icon";
-import { http } from "../../../services/core/http";
+import { http } from "../../../services/http";
 import { OpsBarChart, OpsLineChart, OpsDonutChart } from "../../../components/charts";
+import GridCard from '../../../components/ops/GridCard.vue'
+import { vSlide, injectSlideStyles } from '../../../directives/slide.directive'
 
 const router = useRouter();
 const loading = ref(false);
@@ -155,6 +186,7 @@ const activities = ref([]);
 const pendingItems = ref([]);
 const chartData = ref([]);
 const categoryData = ref([]);
+const recentActivities = ref([]);
 
 let refreshTimer = null;
 
@@ -192,11 +224,53 @@ const statsCards = [
 ];
 
 const quickActions = [
-  { label: "审批工作台", icon: IconCheckCircle, path: "/ops/review", bgColor: "#E6F1FF", color: "#165DFF" },
-  { label: "最新订单", icon: IconEye, path: "/ops/orders", bgColor: "#E8FFEA", color: "#00B42A" },
-  { label: "用户管理", icon: IconUserGroup, path: "/ops/user-manage", bgColor: "#F5E8FF", color: "#722ED1" },
-  { label: "商品审核", icon: IconStorage, path: "/ops/reviews", bgColor: "#FFF7E8", color: "#FF7D00" },
+  { label: "审批工作台", icon: IconCheckCircle, path: "/ops/items/review", bgColor: "#E6F1FF", color: "#165DFF" },
+  { label: "最新订单", icon: IconEye, path: "/ops/orders/list", bgColor: "#E8FFEA", color: "#00B42A" },
+  { label: "用户管理", icon: IconUserGroup, path: "/ops/users/user-manage", bgColor: "#F5E8FF", color: "#722ED1" },
+  { label: "商品审核", icon: IconStorage, path: "/ops/items/review", bgColor: "#FFF7E8", color: "#FF7D00" },
 ];
+
+const featuresGrid = computed(() => {
+  const opsRoot = router.options.routes.find((r) => r.path === "/ops");
+  const children = opsRoot?.children || [];
+
+  const features = [];
+
+  for (const r of children) {
+    if (!r?.meta?.title || r?.meta?.hidden) continue;
+    if (String(r.path || "").includes(":")) continue;
+
+    const hasComponent = !!r.component && r.component.name !== 'RouteView';
+    const isRedirectOnly = r.redirect && !hasComponent;
+    const isRouteView = r.children && r.children.length > 0 && !hasComponent;
+
+    if (isRedirectOnly) continue;
+
+    if (isRouteView && r.children) {
+      for (const child of r.children) {
+        if (!child?.meta?.title || child?.meta?.hidden) continue;
+        if (String(child.path || "").includes(":")) continue;
+        if (child.redirect && !child.component) continue;
+
+        features.push({
+          title: child.meta.title,
+          description: child.meta.desc || child.meta.title,
+          tag: child.meta.tag || "",
+          path: `/ops/${r.path}/${child.path}`.replace(/\/+/g, "/"),
+        });
+      }
+    } else if (hasComponent) {
+      features.push({
+        title: r.meta.title,
+        description: r.meta.desc || r.meta.title,
+        tag: r.meta.tag || "",
+        path: `/ops/${r.path}`.replace(/\/+/g, "/"),
+      });
+    }
+  }
+
+  return features.slice(0, 12);
+});
 
 function formatNumber(num) {
   if (num >= 10000) return (num / 10000).toFixed(1) + '万';
@@ -225,6 +299,11 @@ function truncate(text, len) {
 function getTypeIcon(type) {
   const icons = { item: '📦', review: '⭐', circle: '💬' };
   return icons[type] || '📋';
+}
+
+function getActivityDot(type) {
+  const colors = { review: '#165DFF', item: '#00B42A', order: '#FF7D00' };
+  return colors[type] || '#86909C';
 }
 
 // 简单的 sparkline 数据生成
@@ -288,16 +367,22 @@ async function loadDashboardData() {
   loading.value = true;
   
   try {
-    // 加载统计数据
-    const [statsRes, pendingRes] = await Promise.allSettled([
+    // 加载所有统计数据
+    const [statsRes, pendingRes, trendRes, categoryRes, distributionRes, activitiesRes] = await Promise.allSettled([
       http.get('/ops/stats/brief'),
       http.get('/ops/pending-counts'),
+      http.get('/ops/stats/order-trend'),
+      http.get('/ops/stats/categories'),
+      http.get('/ops/stats/order-distribution'),
+      http.get('/ops/stats/activities?limit=10'),
     ]);
     
+    // 基础统计
     if (statsRes.status === 'fulfilled') {
       stats.value = statsRes.value?.data || statsRes.value || {};
     }
     
+    // 待审核数量
     if (pendingRes.status === 'fulfilled') {
       Object.assign(stats.value, pendingRes.value?.data || {});
       
@@ -310,63 +395,109 @@ async function loadDashboardData() {
       ];
     }
     
-    // 模拟图表数据（实际应从API获取）
-    generateChartData();
-    generateCategoryData();
+    // 订单趋势数据（真实数据）
+    if (trendRes.status === 'fulfilled') {
+      const trendData = trendRes.value?.data?.trend || trendRes.value?.trend || [];
+      chartData.value = trendData.map(item => ({
+        label: item.label,
+        value: item.value || 0,
+      }));
+      
+      // 如果没有数据，显示空数组
+      if (chartData.value.length === 0) {
+        chartData.value = generateEmptyTrendData();
+      }
+    } else {
+      chartData.value = generateEmptyTrendData();
+    }
     
-    // 模拟活动数据
-    generateActivities();
+    // 分类数据（真实数据）
+    if (categoryRes.status === 'fulfilled') {
+      const categories = categoryRes.value?.data?.categories || categoryRes.value?.categories || [];
+      const totalCount = categories.reduce((sum, cat) => sum + (cat.count || 0), 0) || 1;
+      
+      categoryData.value = categories.map(cat => ({
+        name: cat.name || '未分类',
+        count: cat.count || 0,
+        color: getCategoryColor(categories.indexOf(cat)),
+        percentage: Math.round(((cat.count || 0) / totalCount) * 100),
+      }));
+      
+      if (categoryData.value.length === 0) {
+        categoryData.value = generateEmptyCategoryData();
+      }
+    } else {
+      categoryData.value = generateEmptyCategoryData();
+    }
+    
+    // 订单状态分布（真实数据）
+    if (distributionRes.status === 'fulfilled') {
+      const dist = distributionRes.value?.data || distributionRes.value || {};
+      Object.assign(stats.value, dist);
+    }
+    
+    // 活动数据（真实数据）
+    if (activitiesRes.status === 'fulfilled') {
+      const activityList = activitiesRes.value?.data?.activities || activitiesRes.value?.activities || [];
+      activities.value = activityList.map(item => ({
+        id: item.id,
+        type: item.type || 'system',
+        title: item.title || '系统活动',
+        color: item.color || '#86909C',
+        time: item.time || new Date().toISOString(),
+      }));
+      
+      if (activities.value.length === 0) {
+        activities.value = generateEmptyActivities();
+      }
+    } else {
+      activities.value = generateEmptyActivities();
+    }
+    
+    // 最近活动数据
+    recentActivities.value = [
+      { id: 1, type: 'system', title: '系统更新', description: '系统更新成功', createdAt: new Date().toISOString() },
+      { id: 2, type: 'user', title: '用户登录', description: '用户登录成功', createdAt: new Date().toISOString() },
+      { id: 3, type: 'order', title: '订单创建', description: '订单创建成功', createdAt: new Date().toISOString() },
+    ]
     
   } catch (e) {
     console.error('[Dashboard] 加载失败:', e);
     Message.error('加载数据失败');
+    
+    // 失败时使用空数据
+    chartData.value = generateEmptyTrendData();
+    categoryData.value = generateEmptyCategoryData();
+    activities.value = generateEmptyActivities();
   } finally {
     loading.value = false;
   }
 }
 
-function generateChartData() {
+// 生成空趋势数据
+function generateEmptyTrendData() {
   const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
-  chartData.value = days.map((label, i) => ({
-    label,
-    value: Math.floor(Math.random() * 50) + 10 + (i === new Date().getDay() - 1 ? 30 : 0),
-  }));
+  return days.map(label => ({ label, value: 0 }));
 }
 
-function generateCategoryData() {
-  const categories = [
-    { name: '数码产品', color: '#165DFF' },
-    { name: '图书教材', color: '#00B42A' },
-    { name: '服饰鞋包', color: '#FF7D00' },
-    { name: '生活用品', color: '#722ED1' },
-    { name: '运动户外', color: '#F53F3F' },
+// 生成空分类数据
+function generateEmptyCategoryData() {
+  return [
+    { name: '暂无数据', count: 0, color: '#86909C', percentage: 100 },
   ];
-  
-  const totalCount = categories.length * 20 + Math.floor(Math.random() * 50);
-  
-  categoryData.value = categories.map(cat => ({
-    ...cat,
-    count: Math.floor(totalCount / categories.length) + Math.floor(Math.random() * 15),
-  })).map(cat => ({
-    ...cat,
-    percentage: Math.round((cat.count / totalCount) * 100),
-  }));
 }
 
-function generateActivities() {
-  const templates = [
-    { title: '新用户注册：小明同学', color: '#165DFF' },
-    { title: '发布新商品：MacBook Pro', color: '#00B42A' },
-    { title: '完成订单：#10086 ¥299', color: '#FF7D00' },
-    { title: '提交评价：雅诗兰黛眼霜 ⭐5分', color: '#722ED1' },
-    { title: '发布圈子帖子：校园生活分享', color: '#14C9C9' },
+// 生成空活动数据
+function generateEmptyActivities() {
+  return [
+    { id: 'empty_1', type: 'system', title: '暂无最近活动', color: '#86909C', time: new Date().toISOString() },
   ];
-  
-  activities.value = templates.map((tpl, i) => ({
-    id: i + 1,
-    ...tpl,
-    time: new Date(Date.now() - i * 1800000),
-  }));
+}
+
+// 获取分类颜色
+function getCategoryColor(index) {
+  const colors = ['#165DFF', '#00B42A', '#FF7D00', '#722ED1', '#F53F3F', '#14C9C9'];
+  return colors[index % colors.length];
 }
 
 function handleAction(action) {
@@ -377,14 +508,35 @@ function handleAction(action) {
   }
 }
 
+function handleFeatureClick(feature) {
+  if (feature?.path) {
+    router.push(feature.path);
+  }
+}
+
 async function refreshActivities() {
   Message.loading('刷新中...');
-  await new Promise(resolve => setTimeout(resolve, 500));
-  generateActivities();
-  Message.success('已刷新');
+  try {
+    const activitiesRes = await http.get('/ops/stats/activities?limit=10');
+    if (activitiesRes?.data?.activities) {
+      const activityList = activitiesRes.data.activities;
+      activities.value = activityList.map(item => ({
+        id: item.id,
+        type: item.type || 'system',
+        title: item.title || '系统活动',
+        color: item.color || '#86909C',
+        time: item.time || new Date().toISOString(),
+      }));
+      Message.success('已刷新');
+    }
+  } catch (e) {
+    console.error('[Dashboard] 刷新活动失败:', e);
+    Message.error('刷新失败');
+  }
 }
 
 onMounted(() => {
+  injectSlideStyles()
   loadDashboardData();
   
   // 每5分钟自动刷新

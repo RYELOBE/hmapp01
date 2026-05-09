@@ -1,6 +1,8 @@
 package com.campus.marketplace.controller;
 
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
@@ -10,6 +12,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+  private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
   @ExceptionHandler(IllegalArgumentException.class)
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   public Map<String, Object> badRequest(IllegalArgumentException ex) {
@@ -31,14 +35,14 @@ public class GlobalExceptionHandler {
   @ExceptionHandler(RuntimeException.class)
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   public Map<String, Object> serverError(RuntimeException ex) {
-    ex.printStackTrace();
-    return Map.of("code", 500, "message", ex.getMessage());
+    logger.error("RuntimeException occurred", ex);
+    return Map.of("code", 500, "message", "服务器内部错误");
   }
 
   @ExceptionHandler(Exception.class)
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   public Map<String, Object> genericError(Exception ex) {
-    ex.printStackTrace();
-    return Map.of("code", 500, "message", "服务器内部错误: " + ex.getMessage());
+    logger.error("Exception occurred", ex);
+    return Map.of("code", 500, "message", "服务器内部错误");
   }
 }
