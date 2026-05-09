@@ -116,10 +116,16 @@ async function loadData() {
       pageNo: pagination.current,
       pageSize: pagination.pageSize,
     }
-    const res = await http.post('/reviews/list', params)
+    console.log('[ReviewManage] 请求参数:', params)
+    const res = await http.post('/ops/reviews', params)
+    console.log('[ReviewManage] API返回:', res)
     const data = res?.data?.data ?? res?.data ?? res
-    tableData.value = data?.reviews || data?.rows || []
+    tableData.value = data?.reviews || data?.rows || data?.items || []
     pagination.total = data?.totalCount ?? data?.total ?? 0
+    console.log('[ReviewManage] 数据加载完成:', { 
+      数据量: tableData.value.length, 
+      总数: pagination.total 
+    })
   } catch (e) {
     console.error('[ReviewManage] load error:', e)
     Message.error('加载评价列表失败')
@@ -147,21 +153,27 @@ function handlePageChange(page) {
 
 async function approveReview(record) {
   try {
-    await http.post(`/reviews/${record.id}/approve`)
+    console.log('[ReviewManage] 通过评价:', record.id)
+    const res = await http.post(`/ops/reviews/${record.id}/approve`)
+    console.log('[ReviewManage] 通过成功:', res)
     Message.success('评价已通过')
     loadData()
   } catch (e) {
-    Message.error('操作失败')
+    console.error('[ReviewManage] 通过失败:', e)
+    Message.error('操作失败: ' + (e.message || '未知错误'))
   }
 }
 
 async function deleteReview(record) {
   try {
-    await http.delete(`/reviews/${record.id}`)
+    console.log('[ReviewManage] 删除评价:', record.id)
+    const res = await http.post(`/ops/reviews/${record.id}/reject`, { reason: '运营删除' })
+    console.log('[ReviewManage] 删除成功:', res)
     Message.success('评价已删除')
     loadData()
   } catch (e) {
-    Message.error('删除失败')
+    console.error('[ReviewManage] 删除失败:', e)
+    Message.error('删除失败: ' + (e.message || '未知错误'))
   }
 }
 

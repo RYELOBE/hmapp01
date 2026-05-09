@@ -107,6 +107,30 @@ public class CircleService {
     return postRepository.findByStatus("PENDING", page, size);
   }
 
+  /** 获取所有帖子（支持状态筛选） */
+  public Map<String, Object> getAllPosts(int page, int size, String status) {
+    List<Map<String, Object>> posts;
+    long total;
+    
+    if (status != null && !status.isEmpty()) {
+      posts = postRepository.findByStatus(status, page, size);
+      total = postRepository.countByStatus(status);
+    } else {
+      posts = postRepository.findAllPaged(page, size);
+      total = postRepository.countAll();
+    }
+    
+    return Map.of(
+        "posts", posts,
+        "list", posts,
+        "records", posts,
+        "total", total,
+        "totalCount", total,
+        "pageNo", page,
+        "pageSize", size
+    );
+  }
+
   public Map<String, Object> approvePost(Long postId) {
     Map<String, Object> post = postRepository.findById(postId);
     if (post == null) {

@@ -51,10 +51,7 @@ public class AuthService {
     safeUser.put("nickname", user.get("nickname"));
     safeUser.put("roles", roles);
     safeUser.put("avatar", user.get("avatar"));
-    safeUser.put(
-      "phone",
-      user.get("phone") != null ? user.get("phone").toString().replaceAll("(\\d{3})\\d{4}(\\d{4})", "$1****$2") : null
-    );
+    safeUser.put("phone", user.get("phone"));
     response.put("user", safeUser);
 
     return response;
@@ -75,6 +72,12 @@ public class AuthService {
     safeUser.put("username", user.get("username"));
     safeUser.put("nickname", user.get("nickname"));
     safeUser.put("roles", user.get("roles"));
+    safeUser.put("avatar", user.get("avatar"));
+    safeUser.put("phone", user.get("phone"));
+    safeUser.put("email", user.get("email"));
+    safeUser.put("bio", user.get("bio"));
+    safeUser.put("campus", user.get("campus"));
+    safeUser.put("createdAt", user.get("createdAt") != null ? user.get("createdAt").toString() : null);
     return Map.of("code", 200, "data", safeUser);
   }
 

@@ -195,9 +195,19 @@ const routes = [
         name: "circleHome",
         component: () =>
           import(
-            /* webpackChunkName: "circle-home" */ "../views/portal/circle/CircleHome.vue"
+            /* webpackChunkName: "circle-public" */ "../views/portal/circle/CirclePublic.vue"
           ),
         meta: { title: "校园圈子" },
+      },
+      {
+        path: "circles",
+        name: "myCircle",
+        alias: ["my-circle"],  // 支持多个别名
+        component: () =>
+          import(
+            /* webpackChunkName: "circle-home" */ "../views/portal/circle/CircleHome.vue"
+          ),
+        meta: { title: "我的圈子" },
       },
       {
         path: "circle/publish",

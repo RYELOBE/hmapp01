@@ -1,6 +1,29 @@
 <template>
   <div class="message-list-page">
-    <PageContainer title="消息中心" subtitle="查看所有通知消息">
+    <!-- 统一页面头部 -->
+    <div class="page-header">
+      <div class="header-left">
+        <a-button type="text" class="back-btn" @click="$router.back()">
+          <template #icon><icon-arrow-left /></template>
+          返回
+        </a-button>
+        <h2 class="page-title">消息中心</h2>
+      </div>
+      <div class="header-right">
+        <span class="item-count">
+          {{ unreadCount > 0 ? `${unreadCount} 条未读` : `共 ${total} 条消息` }}
+        </span>
+        <a-button
+          v-if="unreadCount > 0"
+          type="outline"
+          size="small"
+          class="mark-all-btn"
+          @click="handleMarkAllRead"
+        >
+          全部标记已读
+        </a-button>
+      </div>
+    </div>
       <!-- 分类Tab -->
       <div class="tab-bar">
         <span
@@ -115,7 +138,6 @@
           @page-size-change="handleSizeChange"
         />
       </div>
-    </PageContainer>
   </div>
 </template>
 
@@ -129,6 +151,7 @@ import {
   IconCheckCircle,
   IconHeartFill,
   IconMore,
+  IconArrowLeft,
 } from '@arco-design/web-vue/es/icon';
 import PageContainer from '../../components/layout/PageContainer/PageContainer.vue';
 
@@ -162,6 +185,10 @@ const isIndeterminate = computed(() => {
     selectedIds.value.length > 0 &&
     selectedIds.value.length < messages.value.length
   );
+});
+
+const unreadCount = computed(() => {
+  return messages.value.filter(msg => !msg.isRead).length;
 });
 
 function getMessageType(type) {
@@ -375,6 +402,32 @@ async function handleDelete(msg) {
   });
 }
 
+async function handleMarkAllRead() {
+  try {
+    const unreadIds = messages.value.filter(msg => !msg.isRead).map(msg => msg.id);
+    
+    if (unreadIds.length === 0) {
+      Message.info('没有未读消息');
+      return;
+    }
+
+    await fetch('/api/messages/read-all', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: unreadIds }),
+    });
+
+    messages.value.forEach(msg => {
+      msg.isRead = true;
+    });
+
+    Message.success(`已将 ${unreadIds.length} 条消息标记为已读`);
+  } catch (e) {
+    console.error('全部标记已读失败:', e);
+    Message.error('操作失败，请稍后重试');
+  }
+}
+
 async function handleBatchRead() {
   try {
     await fetch('/api/messages/read-all', {
@@ -426,9 +479,65 @@ onMounted(loadMessages);
 
 <style lang="scss" scoped>
 .message-list-page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+  background: #f7f8fa;
   min-height: 100vh;
-  background: var(--color-bg-2, #F5F6F7);
-  padding: 20px;
+}
+
+/* ========== 统一页面头部 ========== */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #4080FF 0%, #165DFF 50%, #0E42D2 100%);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  color: white;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .back-btn {
+    color: rgba(255, 255, 255, 0.9);
+    &:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
+
+  .page-title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+
+    .item-count {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .mark-all-btn {
+      background: white;
+      color: #165DFF;
+      border: none;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      }
+    }
+  }
 }
 
 .tab-bar {

@@ -51,8 +51,8 @@
       <a-space wrap>
         <a-tag v-if="hasRole(record.roles, 'BUYER')" color="blue" size="small">买家</a-tag>
         <a-tag v-if="hasRole(record.roles, 'SELLER')" color="green" size="small">卖家</a-tag>
-        <a-tag v-if="hasRole(record.roles, 'OPS_ADMIN')" color="purple" size="small">运营</a-tag>
-        <a-tag v-if="!record.roles || record.roles.length === 0" color="gray" size="small">未知</a-tag>
+        <a-tag v-if="hasRole(record.roles, 'OPS') || hasRole(record.roles, 'OPS_ADMIN')" color="purple" size="small">运营</a-tag>
+        <a-tag v-if="!record.roles || (Array.isArray(record.roles) && record.roles.length === 0)" color="gray" size="small">未知</a-tag>
       </a-space>
     </template>
 
@@ -98,7 +98,7 @@
         <a-space wrap>
           <a-tag v-if="hasRole(currentUser.roles, 'BUYER')" color="blue" size="small">买家</a-tag>
           <a-tag v-if="hasRole(currentUser.roles, 'SELLER')" color="green" size="small">卖家</a-tag>
-          <a-tag v-if="hasRole(currentUser.roles, 'OPS_ADMIN')" color="purple" size="small">运营</a-tag>
+          <a-tag v-if="hasRole(currentUser.roles, 'OPS') || hasRole(currentUser.roles, 'OPS_ADMIN')" color="purple" size="small">运营</a-tag>
         </a-space>
       </a-descriptions-item>
       <a-descriptions-item label="账号状态" :span="2">

@@ -143,7 +143,7 @@ function handleLogout() {
 }
 
 function goToHome() {
-  router.push('/ops/dashboard')
+  window.open('/', '_blank')  // ✅ 跳转到门户首页（新窗口打开）
 }
 
 function handleMessageSelect(value) {

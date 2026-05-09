@@ -32,11 +32,15 @@
     </template>
 
     <template #target="{ record }">
-      <span>{{ record.itemTitle || record.postTitle || `#ID${record.itemId || record.postId}` }}</span>
+      <a-tooltip :content="record.itemTitle || record.postTitle || `#ID${record.itemId || record.postId}`" position="top">
+        <span class="ellipsis-text">{{ record.itemTitle || record.postTitle || `#ID${record.itemId || record.postId}` }}</span>
+      </a-tooltip>
     </template>
 
     <template #content="{ record }">
-      <span class="content-text">{{ truncate(record.content, 80) }}</span>
+      <a-tooltip :content="record.content" position="top">
+        <span class="ellipsis-text content-text">{{ truncate(record.content, 50) }}</span>
+      </a-tooltip>
     </template>
 
     <template #rating="{ record }">
@@ -206,11 +210,22 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
-.content-text {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+.ellipsis-text {
+  display: inline-block;
+  max-width: 100%;
   overflow: hidden;
-  line-height: 1.6;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  
+  &:hover {
+    color: #165DFF;
+  }
+}
+
+.content-text {
+  max-width: 200px;
+  color: #4e5969;
+  font-size: 13px;
 }
 </style>

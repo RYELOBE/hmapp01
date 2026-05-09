@@ -2,6 +2,7 @@ package com.campus.marketplace.controller;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.campus.marketplace.service.CircleService;
+import com.campus.marketplace.service.ItemService;
 import com.campus.marketplace.service.OpsService;
 import com.campus.marketplace.service.ReviewService;
 import com.campus.marketplace.service.StatsService;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import java.util.HashMap;
 import java.util.List;
@@ -27,12 +29,14 @@ public class OpsController {
   private final StatsService statsService;
   private final CircleService circleService;
   private final ReviewService reviewService;
+  private final ItemService itemService;
 
-  public OpsController(OpsService opsService, StatsService statsService, CircleService circleService, ReviewService reviewService) {
+  public OpsController(OpsService opsService, StatsService statsService, CircleService circleService, ReviewService reviewService, ItemService itemService) {
     this.opsService = opsService;
     this.statsService = statsService;
     this.circleService = circleService;
     this.reviewService = reviewService;
+    this.itemService = itemService;
   }
 
   /**
@@ -232,6 +236,38 @@ public class OpsController {
     counts.put("reviews", reviewService.getPendingCount());
     counts.put("circle", circleService.getPendingCount());
     return buildSuccessResponse(counts);
+  }
+
+  // ========== 商品管理接口（OPS专用，不需要SELLER角色）==========
+
+  /**
+   * 商品下架（运营管理员操作）
+   * @param id 商品ID
+   * @return 操作结果
+   */
+  @PostMapping("/items/{id}/off-shelf")
+  public Map<String, Object> offShelfItem(@PathVariable Long id) {
+    try {
+      itemService.offShelfItem(id, null); // OPS用户可以下架任何商品
+      return buildSuccessResponse(Map.of("message", "商品已下架"));
+    } catch (Exception e) {
+      return buildErrorResponse("下架失败: " + e.getMessage());
+    }
+  }
+
+  /**
+   * 删除商品（运营管理员操作）
+   * @param id 商品ID
+   * @return 操作结果
+   */
+  @DeleteMapping("/items/{id}")
+  public Map<String, Object> deleteItem(@PathVariable Long id) {
+    try {
+      itemService.deleteItem(id, null); // OPS用户可以删除任何商品
+      return buildSuccessResponse(Map.of("message", "商品已删除"));
+    } catch (Exception e) {
+      return buildErrorResponse("删除失败: " + e.getMessage());
+    }
   }
 
   @PostMapping("/circle/pending")

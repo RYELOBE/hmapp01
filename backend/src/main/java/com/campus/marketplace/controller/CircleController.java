@@ -45,6 +45,7 @@ public class CircleController {
   }
 
   @PostMapping("/posts")
+  @PreAuthorize("isAuthenticated()")
   public Map<String, Object> createPost(@RequestBody Map<String, String> body) {
     Long userId = currentUserService.userId();
     Map<String, Object> post = circleService.createPost(userId,
@@ -56,6 +57,7 @@ public class CircleController {
   }
 
   @DeleteMapping("/posts/{id}")
+  @PreAuthorize("isAuthenticated()")
   public Map<String, Object> deletePost(@PathVariable Long id) {
     Long userId = currentUserService.userId();
     circleService.deletePost(id, userId);
@@ -63,6 +65,7 @@ public class CircleController {
   }
 
   @PostMapping("/posts/{id}/like")
+  @PreAuthorize("isAuthenticated()")
   public Map<String, Object> toggleLike(@PathVariable Long id) {
     Long userId = currentUserService.userId();
     boolean liked = circleService.toggleLike(id, userId);
@@ -72,6 +75,7 @@ public class CircleController {
   }
 
   @PostMapping("/posts/{id}/comments")
+  @PreAuthorize("isAuthenticated()")
   public Map<String, Object> addComment(@PathVariable Long id,
       @RequestBody Map<String, String> body) {
     Long userId = currentUserService.userId();
@@ -80,6 +84,7 @@ public class CircleController {
   }
 
   @GetMapping("/my-posts")
+  @PreAuthorize("isAuthenticated()")
   public Map<String, Object> getMyPosts(
       @RequestParam(defaultValue = "1") int page,
       @RequestParam(defaultValue = "10") int size) {

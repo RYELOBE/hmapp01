@@ -48,26 +48,15 @@
               </div>
             </a-card>
 
-            <a-card title="收货地址" :bordered="false" class="section-card address-card">
-              <template #extra>
-                <a-button type="text" size="small" @click="showAddressModal = true">
-                  <template #icon><icon-edit /></template>
-                  {{ defaultAddress ? '更换地址' : '使用新地址' }}
-                </a-button>
-              </template>
-
-              <div v-if="defaultAddress" class="default-address">
-                <AddressCard
-                  :address="defaultAddress"
-                  :editable="false"
-                />
-              </div>
-              <div v-else class="no-address">
-                <icon-location />
-                <p>暂无收货地址</p>
-                <a-button type="primary" size="small" @click="showAddressModal = true">
-                  添加收货地址
-                </a-button>
+            <!-- 线下交易提示 -->
+            <a-card :bordered="false" class="section-card trade-notice">
+              <div class="notice-content">
+                <icon-info-circle style="color: #165DFF; font-size: 20px;" />
+                <div class="notice-text">
+                  <h4>校园线下交易</h4>
+                  <p>本平台为校园二手交易平台，下单后请与卖家联系，约定时间地点进行线下面对面交易。</p>
+                  <p class="notice-tip">💡 建议选择人多的公共场所进行交易，注意安全！</p>
+                </div>
               </div>
             </a-card>
           </a-col>
@@ -294,18 +283,31 @@ async function submitOrders() {
     // 批量创建订单（每个商品创建一个独立订单）
     for (const orderItem of orderItems.value) {
       try {
+        // 验证必要字段
+        if (!orderItem?.item?.id) {
+          console.error('[OrderConfirm] 商品ID缺失:', orderItem);
+          throw new Error('商品信息不完整');
+        }
+
+        // 校园线下交易：不需要收货地址，只需商品信息
         const orderData = {
           itemId: orderItem.item.id,
-          quantity: orderItem.quantity,
-          receiverName: address.receiverName,
-          receiverPhone: address.receiverPhone,
-          receiverAddress: `${address.province}${address.city}${address.district || ''}${address.detailAddress}`
+          quantity: orderItem.quantity || 1,
+          note: '校园线下交易，请与卖家联系',
         };
+
+        console.log('[OrderConfirm] 创建订单参数:', orderData);
+
+        const result = await createOrder(orderData);
+        console.log('[OrderConfirm] 订单创建成功:', result);
         
-        await createOrder(orderData);
         successCount++;
       } catch (e) {
-        console.error(`创建订单失败 (${orderItem.item.title}):`, e);
+        console.error(`[OrderConfirm] 创建订单失败 (${orderItem?.item?.title || '未知商品'}):`, e);
+        errors.push({
+          item: orderItem?.item?.title || '未知商品',
+          error: e.message || '创建失败'
+        });
       }
     }
     
@@ -325,6 +327,48 @@ async function submitOrders() {
 
 onMounted(() => {
   loadOrderItems();
-  loadDefaultAddress();
+  // 校园线下交易模式：无需加载收货地址
 });
 </script>
+
+<style lang="scss" scoped>
+.trade-notice {
+  background: linear-gradient(135deg, #E8F3FF 0%, #F0F5FF 100%);
+  border: 1px solid #D6E9FF;
+
+  .notice-content {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .notice-text {
+    flex: 1;
+
+    h4 {
+      margin: 0 0 8px 0;
+      color: #165DFF;
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    p {
+      margin: 0 0 6px 0;
+      color: #4E5969;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .notice-tip {
+      color: #86909C;
+      font-size: 13px;
+      padding-left: 12px;
+      border-left: 3px solid #165DFF;
+      background: white;
+      padding: 8px 12px;
+      border-radius: 4px;
+      margin-top: 12px;
+    }
+  }
+}
+</style>

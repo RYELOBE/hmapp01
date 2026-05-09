@@ -37,6 +37,12 @@
       <a-image :src="getFirstImage(record)" width="60" height="60" fit="cover" style="border-radius:6px" />
     </template>
 
+    <template #title="{ record }">
+      <a-tooltip :content="record.title" position="top">
+        <span class="ellipsis-text">{{ record.title }}</span>
+      </a-tooltip>
+    </template>
+
     <template #price="{ record }">
       <span style="color:#f53f3f;font-weight:600">¥{{ formatPrice(record.price) }}</span>
     </template>
@@ -113,7 +119,7 @@ const currentItem = ref(null)
 // 表格列定义 (对齐 operation-portal 格式)
 const tableColumns = computed(() => [
   { title: '商品图片', dataIndex: 'image', width: 100, slotName: 'image' },
-  { title: '商品名称', dataIndex: 'title', width: 200, ellipsis: true },
+  { title: '商品名称', dataIndex: 'title', width: 200, slotName: 'title', ellipsis: true },
   { title: '卖家', dataIndex: 'sellerName', width: 120 },
   { title: '价格', dataIndex: 'price', width: 100, slotName: 'price' },
   { title: '分类', dataIndex: 'category', width: 120, slotName: 'category' },
@@ -149,9 +155,15 @@ async function loadData() {
       pageNo: pagination.current,
       pageSize: pagination.pageSize,
     }
+    console.log('[ItemManage] 请求参数:', params)
     const res = await getOpsItems(params)
+    console.log('[ItemManage] API返回:', res)
     tableData.value = res?.items || res?.rows || []
     pagination.total = res?.totalCount ?? res?.total ?? 0
+    console.log('[ItemManage] 数据加载完成:', { 
+      数据量: tableData.value.length, 
+      总数: pagination.total 
+    })
   } catch (e) {
     console.error('[ItemManage] load error:', e)
     Message.error('加载商品列表失败')
@@ -168,18 +180,28 @@ function viewDetail(record) { currentItem.value = record; detailVisible.value = 
 
 async function doOffline(record) {
   try {
-    await offlineItem(record.id)
+    console.log('[ItemManage] 下架商品:', record.id)
+    const res = await offlineItem(record.id)
+    console.log('[ItemManage] 下架成功:', res)
     Message.success('商品已下架')
     loadData()
-  } catch (e) { Message.error('下架失败') }
+  } catch (e) {
+    console.error('[ItemManage] 下架失败:', e)
+    Message.error('下架失败: ' + (e.message || '请检查权限或网络连接'))
+  }
 }
 
 async function doDelete(record) {
   try {
-    await deleteItem(record.id)
+    console.log('[ItemManage] 删除商品:', record.id)
+    const res = await deleteItem(record.id)
+    console.log('[ItemManage] 删除成功:', res)
     Message.success('商品已删除')
     loadData()
-  } catch (e) { Message.error('删除失败') }
+  } catch (e) {
+    console.error('[ItemManage] 删除失败:', e)
+    Message.error('删除失败: ' + (e.message || '请检查权限或网络连接'))
+  }
 }
 
 function getFirstImage(record) {
@@ -221,4 +243,16 @@ onMounted(async () => { await loadEnums(); await loadDict(); loadData() })
 </script>
 
 <style lang="scss" scoped>
+.ellipsis-text {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  
+  &:hover {
+    color: #165DFF;
+  }
+}
 </style>

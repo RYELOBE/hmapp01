@@ -65,7 +65,11 @@
             </svg>
           </button>
 
-          <button class="icon-btn notification-btn" aria-label="通知">
+          <button
+            class="icon-btn notification-btn"
+            aria-label="通知"
+            @click="router.push('/portal/messages')"
+          >
             <svg
               width="20"
               height="20"
@@ -127,6 +131,27 @@
                   </template>
                   个人中心
                 </a-doption>
+                <a-doption
+                  v-if="authStore.roles.includes('OPS')"
+                  @click="router.push('/ops/dashboard')"
+                >
+                  <template #icon>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <rect x="3" y="3" width="7" height="7" />
+                      <rect x="14" y="3" width="7" height="7" />
+                      <rect x="3" y="14" width="7" height="7" />
+                      <rect x="14" y="14" width="7" height="7" />
+                    </svg>
+                  </template>
+                  运营中心
+                </a-doption>
                 <a-doption @click="router.push('/portal/orders')">
                   <template #icon>
                     <svg
@@ -157,10 +182,28 @@
                       stroke-width="2"
                     >
                       <path d="M12 20h9" />
-                      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                      <path
+                        d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
+                      />
                     </svg>
                   </template>
                   我的评价
+                </a-doption>
+                <a-doption @click="router.push('/portal/circles')">
+                  <template #icon>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 6v6l4 2" />
+                    </svg>
+                  </template>
+                  我的圈子
                 </a-doption>
                 <a-doption @click="router.push('/portal/cart')">
                   <template #icon>
@@ -174,11 +217,15 @@
                     >
                       <circle cx="9" cy="21" r="1" />
                       <circle cx="20" cy="21" r="1" />
-                      <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+                      <path
+                        d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"
+                      />
                     </svg>
                   </template>
                   购物车
-                  <span v-if="cartCount > 0" class="cart-badge">{{ cartCount }}</span>
+                  <span v-if="cartCount > 0" class="cart-badge">{{
+                    cartCount
+                  }}</span>
                 </a-doption>
                 <a-doption
                   v-if="authStore.roles.includes('SELLER')"
@@ -237,8 +284,8 @@
       </router-view>
     </main>
 
-    <!-- AI助手悬浮窗 -->
-    <AiAssistant />
+    <!-- AI助手悬浮窗（始终显示，内部处理登录状态） -->
+    <AiAssistant :is-logged-in="authStore.isLoggedIn" />
   </div>
 </template>
 
@@ -248,7 +295,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/auth";
 import { Message } from "@arco-design/web-vue";
 import AiAssistant from "../../components/common/AiAssistant.vue";
-import { getCartList } from "../../services/api";
+import { getCartList } from "../../services/users";
 
 const route = useRoute();
 const router = useRouter();
@@ -334,12 +381,20 @@ async function loadCartCount() {
     cartCount.value = 0;
     return;
   }
-  
+
   try {
-    const cartItems = await getCartList();
-    // 计算购物车中商品的总数量（不是商品种类数）
-    const totalCount = cartItems.reduce((sum, item) => sum + (item.quantity || 1), 0);
-    cartCount.value = totalCount;
+    const res = await getCartList();
+    const cartItems =
+      res?.data?.data ?? res?.data ?? res?.cartItems ?? res ?? [];
+    if (Array.isArray(cartItems)) {
+      const totalCount = cartItems.reduce(
+        (sum, item) => sum + (item.quantity || 1),
+        0,
+      );
+      cartCount.value = totalCount;
+    } else {
+      cartCount.value = 0;
+    }
   } catch (e) {
     console.warn("[Layout] 加载购物车数量失败:", e);
     cartCount.value = 0;
@@ -348,7 +403,7 @@ async function loadCartCount() {
 
 onMounted(() => {
   loadCartCount();
-  
+
   // 监听路由变化，更新购物车数量
   router.afterEach(() => {
     loadCartCount();
@@ -750,7 +805,7 @@ onMounted(() => {
   font-size: 11px;
   font-weight: 600;
   color: #fff;
-  background-color: #165DFF;
+  background-color: #165dff;
   border-radius: 9px;
   line-height: 1;
 }

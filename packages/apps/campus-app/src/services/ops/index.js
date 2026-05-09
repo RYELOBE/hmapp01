@@ -36,13 +36,17 @@ export async function rejectItem(id, data) {
   return unwrap(await http.post(`/ops/reviews/${id}/reject`, data));
 }
 
-// ── 商品管理（走 /items/list，不需要 OPS 角色） ──────────────────────────
+// ── 商品管理（走 OPS 接口，不需要 SELLER 角色） ──────────────────────────
 export async function getOpsItems(params = {}) {
   return unwrap(await http.post("/items/list", params));
 }
 
 export async function offlineItem(id) {
-  return unwrap(await http.post(`/items/${id}/off-shelf`));
+  return unwrap(await http.post(`/ops/items/${id}/off-shelf`));
+}
+
+export async function deleteItem(id) {
+  return unwrap(await http.delete(`/ops/items/${id}`));
 }
 
 // ── 订单管理 ──────────────────────────

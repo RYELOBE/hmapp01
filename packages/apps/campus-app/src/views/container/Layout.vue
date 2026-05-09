@@ -19,20 +19,20 @@
           @menu-item-click="handleMenuClick"
         >
           <template v-for="menu in menuItems" :key="menu.key">
-            <a-menu-item 
-              v-if="!menu.children" 
+            <a-menu-item
+              v-if="!menu.children"
               :key="menu.key"
             >
               <component :is="menu.icon" />
               <span>{{ menu.label }}</span>
             </a-menu-item>
-            <a-sub-menu v-else :key="menu.key">
+            <a-sub-menu v-if="menu.children" :key="'sub-' + menu.key">
               <template #title>
                 <component :is="menu.icon" />
                 <span>{{ menu.label }}</span>
               </template>
-              <a-menu-item 
-                v-for="child in menu.children" 
+              <a-menu-item
+                v-for="child in menu.children"
                 :key="child.key"
               >
                 <span>{{ child.label }}</span>
@@ -52,18 +52,41 @@
             >
               <component :is="collapsed ? IconMenu : IconMenuFold" />
             </a-button>
-            <span class="title">{{ pageTitle }}</span>
+            <span v-if="!isOpsPage" class="title" style="cursor:pointer" @click="$router.push('/portal/home')">{{ pageTitle }}</span>
+            <span v-else class="title" style="cursor:pointer" @click="$router.push('/portal/home')">{{ pageTitle }}</span>
           </div>
           <div class="header-right">
-            <a-dropdown>
-              <a-button type="text" class="user-btn">
-                <IconUser />
-                <span>{{ authStore.user?.username || '用户' }}</span>
+            <a-dropdown 
+              position="bottom" 
+              trigger="click"
+              :popup-container="triggerNode => triggerNode.parentNode"
+              v-model:popupVisible="dropdownVisible"
+            >
+              <div class="user-avatar-wrapper" @click.stop>
+                <a-avatar 
+                  :size="32" 
+                  :image-url="authStore.user?.avatar"
+                  class="user-avatar"
+                >
+                  {{ (authStore.user?.username || '用户').charAt(0).toUpperCase() }}
+                </a-avatar>
+                <span class="username">{{ authStore.user?.username || '用户' }}</span>
                 <IconCaretDown />
-              </a-button>
+              </div>
               <template #content>
                 <a-dropdown-menu>
-                  <a-dropdown-item @click="handleLogout">退出登录</a-dropdown-item>
+                  <a-dropdown-item v-if="authStore.roles.includes('OPS')" @click="handleNavToOps">
+                    <template #icon>
+                      <icon-dashboard />
+                    </template>
+                    运营中心
+                  </a-dropdown-item>
+                  <a-dropdown-item @click="handleLogout">
+                    <template #icon>
+                      <icon-export />
+                    </template>
+                    退出登录
+                  </a-dropdown-item>
                 </a-dropdown-menu>
               </template>
             </a-dropdown>
@@ -92,17 +115,24 @@ import {
   IconHome,
   IconList,
   IconBarChart,
+  IconDashboard,
+  IconExport,
 } from "@arco-design/web-vue/es/icon";
 import { useAuthStore } from "../../stores/auth";
 
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
-const collapsed = ref(false);
-const openKeys = ref(['ops-users', 'ops-orders', 'ops-items', 'ops-circles', 'ops-review-manage', 'portal', 'seller']);
+const collapsed = ref(false)
+const openKeys = ref(['ops-users', 'ops-orders', 'ops-items', 'ops-circles', 'ops-review-manage', 'portal', 'seller'])
+const dropdownVisible = ref(false);
 
 const showSidebar = computed(() => {
   return !["login", "forbidden"].includes(route.name);
+});
+
+const isOpsPage = computed(() => {
+  return route.path.startsWith('/ops');
 });
 
 const pageTitle = computed(() => {
@@ -276,6 +306,11 @@ const menuItems = computed(() => {
   return items;
 });
 
+function handleNavToOps() {
+  dropdownVisible.value = false
+  router.push('/ops/dashboard')
+}
+
 function handleLogout() {
   authStore.logout();
   router.push("/login");
@@ -352,10 +387,38 @@ function handleLogout() {
   gap: 12px;
 }
 
-.user-btn {
+.user-avatar-wrapper {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+  }
+  
+  &:active {
+    background-color: rgba(0, 0, 0, 0.08);
+  }
+}
+
+.user-avatar {
+  flex-shrink: 0;
+  border: 2px solid #e5e6eb;
+}
+
+.username {
+  font-size: 14px;
+  color: var(--color-text-1, #1d2129);
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 500;
 }
 
 .content {

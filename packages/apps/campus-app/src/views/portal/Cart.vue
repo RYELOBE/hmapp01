@@ -1,16 +1,17 @@
 <template>
   <div class="cart-page">
+    <!-- 统一页面头部 -->
     <div class="page-header">
-      <a-space>
-        <a-button type="text" @click="$router.back()">
-          <template #icon><icon-left /></template>
+      <div class="header-left">
+        <a-button type="text" class="back-btn" @click="$router.back()">
+          <template #icon><icon-arrow-left /></template>
           返回
         </a-button>
-      </a-space>
-      <h2 class="page-title">购物车</h2>
-      <a-typography-text type="secondary">
-        共 {{ cartItems.length }} 件商品
-      </a-typography-text>
+        <h2 class="page-title">购物车</h2>
+      </div>
+      <div class="header-right">
+        <span class="item-count">共 {{ cartItems.length }} 件商品</span>
+      </div>
     </div>
 
     <a-spin :loading="loading" style="width: 100%">
@@ -150,7 +151,7 @@
 import { ref, computed, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Message } from "@arco-design/web-vue";
-import { IconLeft, IconDelete, IconList, IconImage, IconApps } from "@arco-design/web-vue/es/icon";
+import { IconArrowLeft, IconDelete, IconList, IconImage, IconApps } from "@arco-design/web-vue/es/icon";
 import { parseFirstImageUrl } from "../../utils/image-utils";
 import {
   getCartList,
@@ -316,20 +317,40 @@ onMounted(loadCart);
 
 .page-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
-  padding: 16px 20px;
-  background: #fff;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #4080FF 0%, #165DFF 50%, #0E42D2 100%);
   border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  margin-bottom: 20px;
+  color: white;
+
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .back-btn {
+    color: rgba(255, 255, 255, 0.9);
+    &:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
 
   .page-title {
     flex: 1;
     margin: 0;
-    font-size: 20px;
-    font-weight: 600;
-    color: #1d2129;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .header-right {
+    .item-count {
+      font-size: 14px;
+      opacity: 0.9;
+    }
   }
 }
 

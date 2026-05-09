@@ -78,8 +78,8 @@
             <!-- 欢迎消息 -->
             <div v-if="messages.length === 0" class="welcome-message">
               <div class="welcome-icon">👋</div>
-              <h3>你好！我是校园AI助手</h3>
-              <p>我可以帮你：</p>
+              <h3>{{ isLoggedIn ? '你好！我是校园AI助手' : '欢迎使用校园AI助手' }}</h3>
+              <p>{{ isLoggedIn ? '我可以帮你：' : '登录后解锁更多功能：' }}</p>
               <ul class="feature-list">
                 <li>🔍 搜索商品和分类信息</li>
                 <li>💰 了解平台交易规则</li>
@@ -100,6 +100,17 @@
                     {{ preset }}
                   </span>
                 </div>
+
+                <a-button
+                  v-if="!isLoggedIn"
+                  type="primary"
+                  shape="round"
+                  size="small"
+                  style="margin-top: 16px;"
+                  @click="$router.push('/login')"
+                >
+                  立即登录
+                </a-button>
               </div>
             </div>
 
@@ -177,6 +188,14 @@ import {
   fetchAiPresets,
 } from "@/services/ai";
 
+// Props
+const props = defineProps({
+  isLoggedIn: {
+    type: Boolean,
+    default: false
+  }
+});
+
 // 状态管理
 const isOpen = ref(false);
 const showHistory = ref(false);
@@ -208,6 +227,20 @@ const toggleChat = () => {
 const sendMessage = async () => {
   const text = inputMessage.value.trim();
   if (!text || isTyping.value) return;
+
+  // 检查登录状态
+  if (!props.isLoggedIn) {
+    Message.warning('请先登录后再使用AI助手');
+    messages.value.push({
+      role: "assistant",
+      content: "⚠️ 您尚未登录\n\n请先登录账号，即可使用AI助手获得完整功能。\n\n登录后我可以帮你：\n• 🔍 搜索商品和分类信息\n• 💰 了解平台交易规则\n• 📦 发布商品指导\n• ❓ 解答常见问题",
+      timestamp: new Date().toISOString(),
+    });
+    inputMessage.value = "";
+    autoResize();
+    scrollToBottom();
+    return;
+  }
 
   // 添加用户消息
   messages.value.push({

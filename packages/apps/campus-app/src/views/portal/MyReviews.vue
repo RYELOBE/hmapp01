@@ -1,12 +1,17 @@
 <template>
   <div class="my-reviews-page">
+    <!-- 统一页面头部 -->
     <div class="page-header">
-      <a-button @click="$router.back()" type="text">
-        <template #icon><icon-arrow-left /></template>
-        返回
-      </a-button>
-      <h2 class="page-title">我的评价</h2>
-      <span class="review-count">共 {{ total }} 条评价</span>
+      <div class="header-left">
+        <a-button type="text" class="back-btn" @click="$router.back()">
+          <template #icon><icon-arrow-left /></template>
+          返回
+        </a-button>
+        <h2 class="page-title">我的评价</h2>
+      </div>
+      <div class="header-right">
+        <span class="item-count">共 {{ total }} 条评价</span>
+      </div>
     </div>
 
     <a-spin :loading="loading" style="width: 100%">
@@ -334,21 +339,39 @@ onMounted(() => {
 
 .page-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 24px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #4080FF 0%, #165DFF 50%, #0E42D2 100%);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  color: white;
 
-  .page-title {
-    font-size: 22px;
-    font-weight: 700;
-    color: var(--color-text-1, #1d2129);
-    margin: 0;
-    flex: 1;
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
   }
 
-  .review-count {
-    color: var(--color-text-3, #86909C);
-    font-size: 14px;
+  .back-btn {
+    color: rgba(255, 255, 255, 0.9);
+    &:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
+
+  .page-title {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+  }
+
+  .header-right {
+    .item-count {
+      font-size: 14px;
+      opacity: 0.9;
+    }
   }
 }
 
