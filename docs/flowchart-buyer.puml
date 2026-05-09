@@ -1,29 +1,40 @@
 @startuml
+scale 0.7
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 8
+skinparam roundcorner 4
 skinparam ArrowColor #333
+skinparam ArrowThickness 1
+skinparam Padding 1
+skinparam BoxPadding 2
+skinparam ActivityBorderThickness 1
+skinparam ArrowFontSize 8
+skinparam ActivityFontColor #333
 skinparam Activity {
   BackgroundColor #E8F3FF
   BorderColor #165DFF
+  FontSize 8
 }
 skinparam Diamond {
   BackgroundColor #FF7D00
   BorderColor #FF7D00
+  FontSize 8
 }
 skinparam Start {
   BackgroundColor #00B42A
   BorderColor #00B42A
+  FontSize 9
 }
 skinparam End {
   BackgroundColor #F53F3F
   BorderColor #F53F3F
+  FontSize 9
 }
+skinparam TitleFontSize 11
 
 title 校园二手交易平台 - 买家系统流程图
 
 start
-
 :进入首页;
 :浏览商品列表;
 fork
@@ -31,18 +42,15 @@ fork
 fork again
   :查看热门推荐;
 end fork
-
 :点击商品详情;
 fork
   :收藏商品;
 fork again
   :加入购物车;
 end fork
-
 :提交订单;
 :选择收货地址;
 :确认下单;
-
 if (支付是否成功?) then (是)
   :支付订单;
   :等待卖家发货;
@@ -62,9 +70,6 @@ else (否)
   :支付失败;
   :取消订单;
 endif
-
 :返回首页;
-
 stop
-
 @enduml

@@ -1,29 +1,40 @@
 @startuml
+scale 0.7
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 8
+skinparam roundcorner 4
 skinparam ArrowColor #333
+skinparam ArrowThickness 1
+skinparam Padding 1
+skinparam BoxPadding 2
+skinparam ActivityBorderThickness 1
+skinparam ArrowFontSize 8
+skinparam ActivityFontColor #333
 skinparam Activity {
   BackgroundColor #F3E8FF
   BorderColor #7C3AED
+  FontSize 8
 }
 skinparam Diamond {
   BackgroundColor #FF7D00
   BorderColor #FF7D00
+  FontSize 8
 }
 skinparam Start {
   BackgroundColor #00B42A
   BorderColor #00B42A
+  FontSize 9
 }
 skinparam End {
   BackgroundColor #F53F3F
   BorderColor #F53F3F
+  FontSize 9
 }
+skinparam TitleFontSize 11
 
 title 校园二手交易平台 - 运营系统流程图
 
 start
-
 :登录运营后台;
 if (账号验证?) then (通过)
   :进入数据仪表盘;
@@ -36,7 +47,6 @@ if (账号验证?) then (通过)
   fork again
     :用户管理;
   end fork
-  
   :处理待审核商品;
   if (是否通过审核?) then (通过)
     :商品上架;
@@ -45,39 +55,30 @@ if (账号验证?) then (通过)
     :填写驳回原因;
     :发送通知给卖家;
   endif
-  
   :处理待审核评价;
   if (评价内容是否合规?) then (是)
     :评价审核通过;
   else (否)
     :评价审核驳回;
   endif
-  
   :处理待审核圈子帖子;
   if (帖子内容是否合规?) then (是)
     :帖子审核通过;
   else (否)
     :帖子审核驳回;
   endif
-  
   :用户管理;
   :查看用户列表;
   :调整用户角色;
   :更新用户状态;
-  
   :订单管理;
   :查看所有订单;
   :处理争议订单;
-  
   :发送系统通知;
-  
 else (不通过)
   :账号或密码错误;
   :重新登录;
 endif
-
 :返回仪表盘;
-
 stop
-
 @enduml

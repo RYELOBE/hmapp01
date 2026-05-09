@@ -1,29 +1,40 @@
 @startuml
+scale 0.7
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 8
+skinparam roundcorner 4
 skinparam ArrowColor #333
+skinparam ArrowThickness 1
+skinparam Padding 1
+skinparam BoxPadding 2
+skinparam ActivityBorderThickness 1
+skinparam ArrowFontSize 8
+skinparam ActivityFontColor #333
 skinparam Activity {
   BackgroundColor #E8FFF3
   BorderColor #00B42A
+  FontSize 8
 }
 skinparam Diamond {
   BackgroundColor #FF7D00
   BorderColor #FF7D00
+  FontSize 8
 }
 skinparam Start {
   BackgroundColor #00B42A
   BorderColor #00B42A
+  FontSize 9
 }
 skinparam End {
   BackgroundColor #F53F3F
   BorderColor #F53F3F
+  FontSize 9
 }
+skinparam TitleFontSize 11
 
 title 校园二手交易平台 - 卖家系统流程图
 
 start
-
 :登录账号;
 if (账号验证?) then (通过)
   :进入卖家中心;
@@ -37,7 +48,6 @@ if (账号验证?) then (通过)
   fork again
     :查看数据统计;
   end fork
-  
   :等待运营审核;
   if (审核是否通过?) then (通过)
     :商品上架展示;
@@ -57,7 +67,6 @@ if (账号验证?) then (通过)
           :退款完成;
         else (否)
           :拒绝退款;
-          :申请平台介入;
         endif
       endif
     endif
@@ -69,9 +78,6 @@ else (不通过)
   :账号或密码错误;
   :重新登录;
 endif
-
 :返回卖家中心;
-
 stop
-
 @enduml
