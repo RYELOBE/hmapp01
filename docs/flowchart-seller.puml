@@ -1,0 +1,77 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam ArrowColor #333
+skinparam Activity {
+  BackgroundColor #E8FFF3
+  BorderColor #00B42A
+}
+skinparam Diamond {
+  BackgroundColor #FF7D00
+  BorderColor #FF7D00
+}
+skinparam Start {
+  BackgroundColor #00B42A
+  BorderColor #00B42A
+}
+skinparam End {
+  BackgroundColor #F53F3F
+  BorderColor #F53F3F
+}
+
+title 校园二手交易平台 - 卖家系统流程图
+
+start
+
+:登录账号;
+if (账号验证?) then (通过)
+  :进入卖家中心;
+  fork
+    :发布商品;
+    :填写商品信息;
+    :上传图片;
+    :提交审核;
+  fork again
+    :查看订单列表;
+  fork again
+    :查看数据统计;
+  end fork
+  
+  :等待运营审核;
+  if (审核是否通过?) then (通过)
+    :商品上架展示;
+    :买家下单;
+    :查看订单详情;
+    :填写快递信息;
+    :确认发货;
+    if (买家确认收货?) then (是)
+      :订单完成;
+      :等待买家评价;
+      if (收到评价?) then (是)
+        :回复评价;
+      endif
+    else (否)
+      if (买家申请退款?) then (是)
+        if (同意退款?) then (是)
+          :退款完成;
+        else (否)
+          :拒绝退款;
+          :申请平台介入;
+        endif
+      endif
+    endif
+  else (驳回)
+    :修改商品信息;
+    :重新提交审核;
+  endif
+else (不通过)
+  :账号或密码错误;
+  :重新登录;
+endif
+
+:返回卖家中心;
+
+stop
+
+@enduml

@@ -1,0 +1,70 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam roundcorner 8
+skinparam ArrowColor #333
+skinparam Activity {
+  BackgroundColor #E8F3FF
+  BorderColor #165DFF
+}
+skinparam Diamond {
+  BackgroundColor #FF7D00
+  BorderColor #FF7D00
+}
+skinparam Start {
+  BackgroundColor #00B42A
+  BorderColor #00B42A
+}
+skinparam End {
+  BackgroundColor #F53F3F
+  BorderColor #F53F3F
+}
+
+title 校园二手交易平台 - 买家系统流程图
+
+start
+
+:进入首页;
+:浏览商品列表;
+fork
+  :搜索筛选商品;
+fork again
+  :查看热门推荐;
+end fork
+
+:点击商品详情;
+fork
+  :收藏商品;
+fork again
+  :加入购物车;
+end fork
+
+:提交订单;
+:选择收货地址;
+:确认下单;
+
+if (支付是否成功?) then (是)
+  :支付订单;
+  :等待卖家发货;
+  :卖家发货;
+  :确认收货;
+  if (是否满意?) then (是)
+    :提交评价;
+  else (否)
+    :申请退款;
+    if (卖家同意退款?) then (是)
+      :退款完成;
+    else (否)
+      :申请平台介入;
+    endif
+  endif
+else (否)
+  :支付失败;
+  :取消订单;
+endif
+
+:返回首页;
+
+stop
+
+@enduml
