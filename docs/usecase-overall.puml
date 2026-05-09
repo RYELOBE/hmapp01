@@ -1,0 +1,80 @@
+@startuml
+left to right direction
+
+' 系统总体用例图
+title 校园二手交易平台 - 系统总体用例图
+
+actor "买家" as buyer
+actor "卖家" as seller
+actor "运营" as operator
+
+rectangle "校园二手交易平台" {
+  
+  usecase "登录注册" as UC1
+  usecase "浏览商品" as UC2
+  usecase "搜索筛选" as UC3
+  usecase "商品详情" as UC4
+  usecase "购物车管理" as UC5
+  usecase "创建订单" as UC6
+  usecase "模拟支付" as UC7
+  usecase "确认收货" as UC8
+  usecase "申请退款" as UC9
+  usecase "收藏商品" as UC10
+  usecase "提交评价" as UC11
+  usecase "发布商品" as UC12
+  usecase "管理商品" as UC13
+  usecase "发货" as UC14
+  usecase "处理退款" as UC15
+  usecase "回复评价" as UC16
+  usecase "查看订单" as UC17
+  usecase "收货地址管理" as UC18
+  usecase "校园圈子" as UC19
+  usecase "消息通知" as UC20
+  usecase "AI助手" as UC21
+  usecase "商品审核" as UC22
+  usecase "评价审核" as UC23
+  usecase "圈子审核" as UC24
+  usecase "用户管理" as UC25
+  usecase "订单管理" as UC26
+  usecase "数据统计" as UC27
+  usecase "个人资料管理" as UC28
+  
+}
+
+' 买家关系
+buyer --> UC1
+buyer --> UC2
+buyer --> UC3
+buyer --> UC4
+buyer --> UC5
+buyer --> UC6
+buyer --> UC7
+buyer --> UC8
+buyer --> UC9
+buyer --> UC10
+buyer --> UC11
+buyer --> UC18
+buyer --> UC19
+buyer --> UC20
+buyer --> UC21
+buyer --> UC28
+
+' 卖家关系
+seller --> UC1
+seller --> UC12
+seller --> UC13
+seller --> UC14
+seller --> UC15
+seller --> UC16
+seller --> UC17
+seller --> UC28
+
+' 运营关系
+operator --> UC22
+operator --> UC23
+operator --> UC24
+operator --> UC25
+operator --> UC26
+operator --> UC27
+
+@enduml
