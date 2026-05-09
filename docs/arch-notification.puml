@@ -1,0 +1,97 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 60
+
+title 消息通知模块设计图
+
+package "前端组件层" {
+    [消息中心组件\nMessageCenter] as msgCenter
+    [消息列表页面\nMessageList] as msgList
+    [导航栏头部\nHeader] as header
+}
+
+package "消息展示" {
+    [未读消息角标] as badge
+    [下拉消息面板] as dropdown
+    [消息筛选器] as filter
+    [消息排序器] as sort
+}
+
+package "消息操作" {
+    [单条标记已读] as markSingle
+    [批量标记已读] as markBatch
+    [全部标记已读] as markAll
+    [删除消息] as delete
+}
+
+package "API 服务层" {
+    [通知列表接口] as listApi
+    [未读计数接口] as countApi
+    [最近通知接口] as recentApi
+    [标记已读接口] as markApi
+    [删除通知接口] as deleteApi
+    [发送通知接口] as sendApi
+}
+
+package "后端控制器层" {
+    [通知控制器\nNotificationController] as controller
+}
+
+package "后端服务层" {
+    [通知服务实现\nNotificationServiceImpl] as service
+}
+
+package "数据库层" {
+    [通知消息表\nnotification] as notifTable
+}
+
+package "消息类型" {
+    [系统通知\nSYSTEM] as sysMsg
+    [交易消息\nTRANSACTION] as tradeMsg
+    [审核消息\nREVIEW] as reviewMsg
+    [互动消息\nINTERACTION] as interactMsg
+}
+
+' 前端展示流程
+header --> badge : 显示未读数量
+header --> msgCenter : 点击展开
+msgCenter --> dropdown : 最近 5 条消息
+msgList --> filter : 按类型筛选
+msgList --> sort : 按时间排序
+
+' 消息操作流程
+msgList --> markSingle : 单条标记已读
+msgList --> markBatch : 批量标记已读
+msgList --> markAll : 全部已读
+msgList --> delete : 删除消息
+
+' API 调用流程
+msgCenter --> countApi : 获取未读计数
+msgCenter --> recentApi : 获取最近通知
+msgList --> listApi : 获取通知列表
+markSingle --> markApi : 标记已读
+markBatch --> markApi : 批量标记
+markAll --> markApi : 全部标记
+delete --> deleteApi : 删除通知
+
+' 后端处理流程
+controller --> service : 调用服务
+service --> notifTable : 读写数据
+notifTable --> "通知字段" : id, userId, type\ntitle, content, isRead\npriority, createdAt
+
+' 消息类型定义
+service --> sysMsg : 系统公告\n审核结果通知
+service --> tradeMsg : 订单状态变更
+service --> reviewMsg : 评价审核通知
+service --> interactMsg : 帖子点赞评论
+
+' 业务触发流程
+"商品审核通过" --> sysMsg : 向卖家发送通知
+"订单状态变更" --> tradeMsg : 向买卖双方发送通知
+"评价审核完成" --> reviewMsg : 向评价者发送通知
+"帖子点赞评论" --> interactMsg : 向帖主发送通知
+
+@enduml

@@ -1,0 +1,76 @@
+@startuml
+skinparam backgroundColor #FFFFFF
+skinparam shadowing false
+skinparam linetype ortho
+skinparam nodesep 80
+skinparam ranksep 60
+
+title 前端认证状态管理图
+
+package "Pinia 状态管理" {
+    [认证状态仓库\nauth store] as authStore
+    [Token 状态] as tokenState
+    [用户信息状态] as userState
+    [角色信息状态] as rolesState
+}
+
+package "本地存储" {
+    [LocalStorage] as storage
+    [Token 缓存] as tokenCache
+    [用户信息缓存] as userCache
+}
+
+package "工具函数" {
+    [JWT 格式验证\nisJWTToken] as validate
+    [Token 过期检查\nisTokenExpired] as expireCheck
+    [JWT 工具类\njwt.js] as jwtUtil
+}
+
+package "路由控制" {
+    [路由守卫\nbeforeEach] as guard
+    [路由白名单] as whitelist
+    [权限校验\nmeta.roles] as permission
+}
+
+package "网络请求" {
+    [Axios 请求拦截器] as reqInterceptor
+    [Axios 响应拦截器] as resInterceptor
+    [401 错误处理] as error401
+}
+
+package "页面跳转" {
+    [登录页面] as loginPage
+    [首页] as homePage
+    [403 无权限页面] as forbiddenPage
+}
+
+' 状态初始化
+authStore --> tokenState : token 状态
+authStore --> userState : user 状态
+authStore --> rolesState : roles 状态
+storage --> tokenCache : 读取缓存
+tokenCache --> authStore : hydrate 方法
+
+' Token 验证流程
+validate --> jwtUtil : 调用验证
+expireCheck --> jwtUtil : 调用检查
+jwtUtil --> tokenCache : 检查 Token
+
+' 路由拦截流程
+guard --> whitelist : 白名单放行
+guard --> validate : 检查 Token 存在性
+guard --> expireCheck : 检查 Token 有效性
+guard --> permission : 校验用户角色
+permission --> homePage : 有权限访问
+permission --> forbiddenPage : 无权限跳转
+
+' 请求拦截
+reqInterceptor --> tokenCache : 获取 Token
+reqInterceptor --> "请求头注入\nAuthorization" : 添加认证信息
+
+' 响应处理
+resInterceptor --> error401 : 捕获 401 状态码
+error401 --> tokenCache : 清除 Token
+error401 --> loginPage : 跳转登录页
+
+@enduml
