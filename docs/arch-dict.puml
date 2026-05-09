@@ -10,11 +10,8 @@ title 数据字典模块设计图
 
 package "前端常量定义" {
     [静态常量文件\nconstants.js] as constants
-    [商品状态常量] as itemStatus
-    [订单状态常量] as orderStatus
     [商品分类常量] as itemCategory
     [成色选项常量] as condition
-    [支付方式常量] as payment
 }
 
 package "前端枚举管理" {
@@ -40,25 +37,21 @@ package "数据库层" {
 }
 
 package "字典数据类型" {
+    [商品分类] as category
+    [成色选项] as cond
     [用户状态] as userType
     [用户角色] as userRole
     [审核状态] as auditStatus
     [商品状态] as prodStatus
-    [订单状态] as orderStatus2
-    [评价状态] as reviewStatus
-    [支付方式] as payMethod
-    [交易方式] as tradeMethod
-    [消息类型] as msgType
-    [优先级] as priority
+    [订单状态] as orderStatus
+    [评价审核状态] as reviewAuditStatus
+    [评价类型] as reviewType
     [权限列表] as permList
 }
 
 ' 前端调用流程
-constants --> itemStatus : 商品状态
-constants --> orderStatus : 订单状态
 constants --> itemCategory : 商品分类
 constants --> condition : 成色选项
-constants --> payment : 支付方式
 
 ' 枚举加载流程
 enums --> cache : 懒加载缓存
@@ -74,16 +67,15 @@ queryService --> dictTable : 查询字典表
 dictTable --> dictRecord : 读取记录
 
 ' 字典数据类型
+dictRecord --> category : 商品分类
+dictRecord --> cond : 成色选项
 dictRecord --> userType : 用户状态
 dictRecord --> userRole : 用户角色
 dictRecord --> auditStatus : 审核状态
 dictRecord --> prodStatus : 商品状态
-dictRecord --> orderStatus2 : 订单状态
-dictRecord --> reviewStatus : 评价状态
-dictRecord --> payMethod : 支付方式
-dictRecord --> tradeMethod : 交易方式
-dictRecord --> msgType : 消息类型
-dictRecord --> priority : 优先级
+dictRecord --> orderStatus : 订单状态
+dictRecord --> reviewAuditStatus : 评价审核状态
+dictRecord --> reviewType : 评价类型
 dictRecord --> permList : 权限列表
 
 ' 数据返回格式
