@@ -1,17 +1,8 @@
 @startuml
-skinparam backgroundColor #FEFEFE
+skinparam backgroundColor #FFFFFF
 skinparam shadowing false
-skinparam roundcorner 10
+skinparam roundcorner 8
 skinparam linetype ortho
-skinparam usecase {
-  BackgroundColor #E8F3FF
-  BorderColor #165DFF
-  ArrowColor #165DFF
-}
-skinparam actor {
-  BackgroundColor #FFE0B2
-  BorderColor #FF9800
-}
 
 title 校园二手交易平台 - 买家用例图
 
