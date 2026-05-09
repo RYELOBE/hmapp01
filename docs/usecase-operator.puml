@@ -3,22 +3,33 @@ skinparam backgroundColor #FEFEFE
 skinparam shadowing false
 skinparam roundcorner 10
 skinparam linetype ortho
+skinparam usecase {
+  BackgroundColor #F3E8FF
+  BorderColor #7C3AED
+  ArrowColor #7C3AED
+}
+skinparam actor {
+  BackgroundColor #E1BEE7
+  BorderColor #9C27B0
+}
 
 title 校园二手交易平台 - 运营用例图
 
-actor "运营" as operator #E1BEE7
+actor "运营" as operator
 
-rectangle "运营功能" {
-    usecase "后台登录" as UC1
-    usecase "数据仪表盘" as UC2
-    usecase "商品审核" as UC3
-    usecase "评价审核" as UC4
-    usecase "圈子审核" as UC5
-    usecase "用户管理" as UC6
-    usecase "订单管理" as UC7
-    usecase "消息管理" as UC8
-    usecase "审批工作台" as UC9
-}
+usecase "后台登录" as UC1
+usecase "查看数据仪表盘" as UC2
+usecase "审批工作台" as UC3
+usecase "商品审核" as UC4
+usecase "评价审核" as UC5
+usecase "圈子帖子审核" as UC6
+usecase "圈子评论审核" as UC7
+usecase "用户管理" as UC8
+usecase "调整用户角色" as UC9
+usecase "订单管理" as UC10
+usecase "数据统计分析" as UC11
+usecase "发送系统通知" as UC12
+usecase "消息中心管理" as UC13
 
 operator --> UC1
 operator --> UC2
@@ -29,5 +40,9 @@ operator --> UC6
 operator --> UC7
 operator --> UC8
 operator --> UC9
+operator --> UC10
+operator --> UC11
+operator --> UC12
+operator --> UC13
 
 @enduml

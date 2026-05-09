@@ -3,22 +3,31 @@ skinparam backgroundColor #FEFEFE
 skinparam shadowing false
 skinparam roundcorner 10
 skinparam linetype ortho
+skinparam usecase {
+  BackgroundColor #E8FFF3
+  BorderColor #00B42A
+  ArrowColor #00B42A
+}
+skinparam actor {
+  BackgroundColor #B2EBF2
+  BorderColor #00ACC1
+}
 
 title 校园二手交易平台 - 卖家用例图
 
-actor "卖家" as seller #B2EBF2
+actor "卖家" as seller
 
-rectangle "卖家功能" {
-    usecase "登录注册" as UC1
-    usecase "发布商品" as UC2
-    usecase "管理商品" as UC3
-    usecase "查看订单" as UC4
-    usecase "发货" as UC5
-    usecase "处理退款" as UC6
-    usecase "回复评价" as UC7
-    usecase "数据统计" as UC8
-    usecase "个人资料" as UC9
-}
+usecase "登录注册" as UC1
+usecase "发布商品" as UC2
+usecase "管理我的商品" as UC3
+usecase "编辑商品信息" as UC4
+usecase "上下架商品" as UC5
+usecase "查看订单" as UC6
+usecase "发货" as UC7
+usecase "处理退款申请" as UC8
+usecase "回复买家评价" as UC9
+usecase "卖家数据统计" as UC10
+usecase "个人资料管理" as UC11
 
 seller --> UC1
 seller --> UC2
@@ -29,5 +38,7 @@ seller --> UC6
 seller --> UC7
 seller --> UC8
 seller --> UC9
+seller --> UC10
+seller --> UC11
 
 @enduml

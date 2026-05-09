@@ -3,25 +3,32 @@ skinparam backgroundColor #FEFEFE
 skinparam shadowing false
 skinparam roundcorner 10
 skinparam linetype ortho
+skinparam usecase {
+  BackgroundColor #E8F3FF
+  BorderColor #165DFF
+  ArrowColor #165DFF
+}
+skinparam actor {
+  BackgroundColor #FFE0B2
+  BorderColor #FF9800
+}
 
 title 校园二手交易平台 - 买家用例图
 
-actor "买家" as buyer #FFE0B2
+actor "买家" as buyer
 
-rectangle "买家功能" {
-    usecase "登录注册" as UC1
-    usecase "浏览搜索商品" as UC2
-    usecase "购物车与下单" as UC3
-    usecase "支付与确认收货" as UC4
-    usecase "申请退款" as UC5
-    usecase "收藏商品" as UC6
-    usecase "提交评价" as UC7
-    usecase "地址管理" as UC8
-    usecase "校园圈子" as UC9
-    usecase "消息通知" as UC10
-    usecase "AI助手问答" as UC11
-    usecase "个人资料" as UC12
-}
+usecase "登录注册" as UC1
+usecase "浏览搜索商品" as UC2
+usecase "购物车与下单" as UC3
+usecase "支付与确认收货" as UC4
+usecase "申请退款" as UC5
+usecase "收藏商品" as UC6
+usecase "提交评价" as UC7
+usecase "收货地址管理" as UC8
+usecase "校园圈子互动" as UC9
+usecase "消息通知查看" as UC10
+usecase "AI助手问答" as UC11
+usecase "个人资料管理" as UC12
 
 buyer --> UC1
 buyer --> UC2
