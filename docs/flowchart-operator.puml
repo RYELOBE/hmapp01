@@ -1,6 +1,5 @@
 @startuml
-left to right direction
-scale 0.8
+scale 0.7
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam roundcorner 4
