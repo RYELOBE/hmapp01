@@ -2,41 +2,33 @@
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam linetype ortho
-skinparam nodesep 120
-skinparam ranksep 80
+skinparam nodesep 140
+skinparam ranksep 100
 skinparam defaultFontSize 16
 left to right direction
 
 title 消息通知模块设计图
 
-package "前端组件层" {
-    [消息中心组件] as msgCenter
-    [消息列表页面] as msgList
-}
+[消息中心组件] as msgCenter
+[消息列表页面] as msgList
 
 package "消息操作" {
-    [单条标记已读] as markSingle
-    [批量标记已读] as markBatch
-    [全部标记已读] as markAll
-    [删除消息] as delete
+    [标记已读] as markRead
+    [删除消息] as deleteMsg
 }
 
-package "API 服务层" {
-    [通知列表接口] as listApi
-    [未读计数接口] as countApi
-    [标记已读接口] as markApi
-    [删除通知接口] as deleteApi
-    [发送通知接口] as sendApi
+package "API 接口" {
+    [列表/计数/最近通知] as api1
+    [标记已读/删除通知] as api2
+    [发送通知] as api3
 }
 
 package "后端服务层" {
     [通知控制器] as controller
-    [通知服务实现] as service
+    [通知服务] as service
 }
 
-package "数据库层" {
-    [(通知消息表)] as notifTable
-}
+[(通知消息表)] as notifTable
 
 package "消息类型" {
     [系统通知] as sysMsg
@@ -45,25 +37,21 @@ package "消息类型" {
     [互动消息] as interactMsg
 }
 
-msgCenter --> countApi : 获取未读计数
-msgCenter --> "最近5条消息" : 下拉面板
-msgList --> listApi : 获取通知列表
+msgCenter --> api1 : 获取未读计数\n最近5条消息
+msgList --> api1 : 获取通知列表
+msgList --> markRead : 标记已读
+msgList --> deleteMsg : 删除消息
+markRead --> api2
+deleteMsg --> api2
 
-msgList --> markSingle : 单条标记已读
-msgList --> markBatch : 批量标记已读
-msgList --> markAll : 全部已读
-msgList --> delete : 删除消息
+api1 --> controller
+api2 --> controller
+api3 --> controller
+controller --> service
+service --> notifTable
 
-markSingle --> markApi
-markBatch --> markApi
-markAll --> markApi
-delete --> deleteApi
-
-controller --> service : 调用服务
-service --> notifTable : 读写数据
-
-service --> sysMsg : 系统公告\n审核结果
-service --> tradeMsg : 订单状态变更
+service --> sysMsg : 审核结果
+service --> tradeMsg : 订单变更
 service --> reviewMsg : 评价审核
 service --> interactMsg : 点赞评论
 
