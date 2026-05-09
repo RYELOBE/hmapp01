@@ -2,6 +2,7 @@
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam linetype ortho
+left to right direction
 
 title 文件上传模块设计图
 

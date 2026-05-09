@@ -4,6 +4,7 @@ skinparam shadowing false
 skinparam linetype ortho
 skinparam nodesep 80
 skinparam ranksep 60
+left to right direction
 
 title 数据字典模块设计图
 
