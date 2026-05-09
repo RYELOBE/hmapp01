@@ -2,37 +2,32 @@
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam linetype ortho
-skinparam nodesep 80
-skinparam ranksep 60
+skinparam nodesep 120
+skinparam ranksep 80
+skinparam defaultFontSize 16
 left to right direction
 
 title 数据字典模块设计图
 
 package "前端常量定义" {
-    [静态常量文件\nconstants.js] as constants
+    [静态常量文件] as constants
     [商品分类常量] as itemCategory
     [成色选项常量] as condition
 }
 
 package "前端枚举管理" {
-    [枚举配置文件\nenums.js] as enums
-    [懒加载缓存机制] as cache
-    [首次调用加载] as firstLoad
+    [枚举配置文件] as enums
+    [懒加载缓存] as cache
     [内存缓存] as memory
 }
 
-package "API 服务层" {
-    [字典接口调用\nGET /api/dict/options] as dictApi
-    [分组数据返回] as groupReturn
-}
-
 package "后端控制器层" {
-    [字典控制器\nDictController] as controller
+    [字典控制器] as controller
     [数据查询服务] as queryService
 }
 
 package "数据库层" {
-    [字典数据表\nsys_dict] as dictTable
+    [字典数据表] as dictTable
     [(字典项记录)] as dictRecord
 }
 
@@ -41,45 +36,28 @@ package "字典数据类型" {
     [成色选项] as cond
     [用户状态] as userType
     [用户角色] as userRole
-    [审核状态] as auditStatus
     [商品状态] as prodStatus
     [订单状态] as orderStatus
-    [评价审核状态] as reviewAuditStatus
-    [评价类型] as reviewType
     [权限列表] as permList
 }
 
-' 前端调用流程
 constants --> itemCategory : 商品分类
 constants --> condition : 成色选项
 
-' 枚举加载流程
 enums --> cache : 懒加载缓存
-cache --> firstLoad : 首次调用
-firstLoad --> dictApi : 从接口获取
-dictApi --> memory : 缓存到内存
+cache --> memory : 缓存到内存
 memory --> enums : 后续直接返回
 
-' 后端查询流程
-dictApi --> controller : 调用接口
 controller --> queryService : 数据查询
 queryService --> dictTable : 查询字典表
 dictTable --> dictRecord : 读取记录
 
-' 字典数据类型
 dictRecord --> category : 商品分类
 dictRecord --> cond : 成色选项
 dictRecord --> userType : 用户状态
 dictRecord --> userRole : 用户角色
-dictRecord --> auditStatus : 审核状态
 dictRecord --> prodStatus : 商品状态
 dictRecord --> orderStatus : 订单状态
-dictRecord --> reviewAuditStatus : 评价审核状态
-dictRecord --> reviewType : 评价类型
 dictRecord --> permList : 权限列表
-
-' 数据返回格式
-queryService --> groupReturn : 分组返回
-groupReturn --> dictApi : "返回格式\n{ code, name, value }"
 
 @enduml

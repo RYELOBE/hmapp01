@@ -2,14 +2,15 @@
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam linetype ortho
+skinparam nodesep 120
+skinparam ranksep 80
+skinparam defaultFontSize 16
 left to right direction
 
 title 文件上传模块设计图
 
 package "前端组件层" {
     [图片上传组件] as uploader
-    [商品发布页面] as itemPage
-    [圈子发布页面] as circlePage
 }
 
 package "后端服务层" {
@@ -23,21 +24,12 @@ package "数据存储层" {
     [(上传文件表)] as fileTable
 }
 
-' 前端调用
-itemPage --> uploader
-circlePage --> uploader
 uploader --> controller
-
-' 后端处理
 controller --> uploadService
-uploadService --> typeCheck
-uploadService --> rename
-
-' 数据存储
-typeCheck --> "文件类型: jpeg/png/gif/webp"
-uploadService --> "文件大小: 不超过5MB"
+uploadService --> typeCheck : 校验文件类型
+uploadService --> rename : UUID重命名
+typeCheck --> "文件类型: jpeg/png/gif/webp\n文件大小: 不超过5MB"
 rename --> fileTable
-fileTable --> "Base64编码存储"
-fileTable --> "文件元数据"
+fileTable --> "Base64编码存储\n文件元数据"
 
 @enduml

@@ -2,57 +2,51 @@
 skinparam backgroundColor #FFFFFF
 skinparam shadowing false
 skinparam linetype ortho
-skinparam nodesep 80
-skinparam ranksep 60
+skinparam nodesep 120
+skinparam ranksep 80
+skinparam defaultFontSize 16
 left to right direction
 
 title 后端认证授权架构图
 
 package "Spring Security 安全框架" {
-    [安全配置类\nSecurityConfig] as config
-    [请求过滤器\nJwtAuthenticationFilter] as filter
-    [安全上下文\nSecurityContext] as context
-}
-
-package "认证服务层" {
-    [用户认证服务\nAuthService] as authService
-    [运营认证服务\nOpsAuthService] as opsService
-    [密码编码器\nBCryptPasswordEncoder] as encoder
-}
-
-package "数据访问层" {
-    [用户数据仓库\nUserRepository] as userRepo
-    [运营数据仓库\nOpsRepository] as opsRepo
+    [请求过滤器] as filter
+    [安全配置类] as config
+    [安全上下文] as context
 }
 
 package "JWT 令牌管理" {
-    [JWT 工具类\nJwtUtil] as jwtUtil
-    [JWT 令牌生成] as tokenGen
+    [JWT 工具类] as jwtUtil
+}
+
+package "认证服务层" {
+    [用户认证服务] as authService
+    [运营认证服务] as opsService
+    [密码编码器] as encoder
+}
+
+package "数据访问层" {
+    [用户数据仓库] as userRepo
+    [运营数据仓库] as opsRepo
 }
 
 package "数据库" {
-    [(用户账号表\nuser_account)] as userTable
-    [(运营账号表\nops_account)] as opsTable
+    [(用户账号表)] as userTable
+    [(运营账号表)] as opsTable
 }
 
-' 请求流程
-filter --> config : 请求拦截
-filter --> jwtUtil : 解析验证 Token
+filter --> jwtUtil : 解析验证令牌
 jwtUtil --> context : 设置认证信息
 
-' 认证流程
 authService --> userRepo : 查询用户
-userRepo --> userTable : 读取数据
+userRepo --> userTable
 authService --> encoder : 验证密码
 authService --> jwtUtil : 生成令牌
-jwtUtil --> tokenGen : 创建 JWT
 
-' 运营认证
 opsService --> opsRepo : 查询运营账号
-opsRepo --> opsTable : 读取数据
+opsRepo --> opsTable
 opsService --> jwtUtil : 生成运营令牌
 
-' 配置公开接口
 config --> "登录/注册/商品列表\n圈子列表/字典接口" : 公开访问
 config --> "其他所有接口" : 需认证访问
 
