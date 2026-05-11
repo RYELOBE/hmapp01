@@ -62,8 +62,12 @@
     <template #operations="{ record }">
       <a-space>
         <a-button type="text" size="small" @click="viewDetail(record)">查看</a-button>
+        <a-button v-if="record.reviewStatus === 'PENDING'" type="text" size="small" status="success" @click="doApprove(record)">通过</a-button>
+        <a-popconfirm v-if="record.reviewStatus === 'PENDING'" content="确定拒绝该商品吗？" @ok="doReject(record)">
+          <a-button type="text" size="small" status="danger">拒绝</a-button>
+        </a-popconfirm>
         <a-button v-if="record.reviewStatus === 'APPROVED'" type="text" size="small" status="warning" @click="doOffline(record)">下架</a-button>
-        <a-popconfirm content="确定删除该商品吗？" @ok="doDelete(record)">
+        <a-popconfirm v-if="record.reviewStatus !== 'PENDING'" content="确定删除该商品吗？" @ok="doDelete(record)">
           <a-button type="text" size="small" status="danger">删除</a-button>
         </a-popconfirm>
       </a-space>
@@ -102,7 +106,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import OpsUnifiedTable from '../../../components/ops/OpsUnifiedTable.vue'
-import { getOpsItems, offlineItem, deleteItem } from '../../../services/ops/index'
+import { getOpsItems, offlineItem, deleteItem, approveItem, rejectItem } from '../../../services/ops/index'
 import { getItemStatuses, getStatusLabel as getEnumStatusLabel, getStatusColor as getEnumStatusColor, loadEnums as loadDictEnums } from '../../../services/enums'
 
 const loading = ref(false)
@@ -188,6 +192,32 @@ async function doOffline(record) {
   } catch (e) {
     console.error('[ItemManage] 下架失败:', e)
     Message.error('下架失败: ' + (e.message || '请检查权限或网络连接'))
+  }
+}
+
+async function doApprove(record) {
+  try {
+    console.log('[ItemManage] 审核通过商品:', record.id)
+    const res = await approveItem(record.id)
+    console.log('[ItemManage] 审核成功:', res)
+    Message.success('商品审核通过')
+    loadData()
+  } catch (e) {
+    console.error('[ItemManage] 审核失败:', e)
+    Message.error('审核失败: ' + (e.message || '请检查权限或网络连接'))
+  }
+}
+
+async function doReject(record) {
+  try {
+    console.log('[ItemManage] 拒绝商品:', record.id)
+    const res = await rejectItem(record.id, '审核未通过')
+    console.log('[ItemManage] 拒绝成功:', res)
+    Message.success('商品已拒绝')
+    loadData()
+  } catch (e) {
+    console.error('[ItemManage] 拒绝失败:', e)
+    Message.error('拒绝失败: ' + (e.message || '请检查权限或网络连接'))
   }
 }
 

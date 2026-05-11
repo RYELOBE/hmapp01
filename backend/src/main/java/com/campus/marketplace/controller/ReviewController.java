@@ -126,7 +126,7 @@ public class ReviewController {
   }
 
   public record ReviewRequest(
-      @NotNull(message = "订单ID不能为空") Long orderId,
+      Long orderId,  // 可选，订单评价时传入
       @NotNull(message = "商品ID不能为空") Long itemId,
       @Min(value = 1, message = "评分最少为1") @Max(value = 5, message = "评分最多为5") int rating,
       String content,

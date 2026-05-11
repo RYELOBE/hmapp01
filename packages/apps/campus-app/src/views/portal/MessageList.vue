@@ -154,6 +154,13 @@ import {
   IconArrowLeft,
 } from '@arco-design/web-vue/es/icon';
 import PageContainer from '../../components/layout/PageContainer/PageContainer.vue';
+import {
+  getNotifications,
+  getUnreadCount as fetchUnreadCount,
+  markAsRead,
+  markAllAsRead,
+  deleteNotification
+} from '../../services/notifications';
 
 const router = useRouter();
 
@@ -187,9 +194,7 @@ const isIndeterminate = computed(() => {
   );
 });
 
-const unreadCount = computed(() => {
-  return messages.value.filter(msg => !msg.isRead).length;
-});
+const unreadCount = ref(0);
 
 function getMessageType(type) {
   const typeMap = {
@@ -234,91 +239,54 @@ async function loadMessages() {
       params.type = activeTab.value;
     }
 
-    const response = await fetch(`/api/messages?${new URLSearchParams(params)}`);
-    const data = await response.json();
+    console.log('[MessageList] 开始加载消息, 参数:', params);
+    const response = await getNotifications(params);
+    console.log('[MessageList] API响应:', response);
 
-    messages.value = data.list || data.records || [];
-    total.value = data.total || 0;
+    if (response?.data) {
+      const data = Array.isArray(response.data) ? response.data : (response.data.records || response.data.list || []);
+      console.log('[MessageList] 解析到消息数量:', data.length);
+
+      messages.value = data.map(msg => ({
+        id: msg.id,
+        type: msg.type || 'SYSTEM',
+        title: msg.title || '系统通知',
+        content: msg.content || '',
+        isRead: msg.isRead !== false,
+        createdAt: msg.createdAt || msg.created_at || new Date().toISOString(),
+        link: msg.link || '',
+      }));
+      total.value = response.data.total || messages.value.length;
+
+      console.log('[MessageList] 消息列表已更新, 总数:', total.value);
+
+      // 获取未读数量
+      await loadUnreadCount();
+    } else {
+      console.error('[MessageList] 数据格式错误, response:', response);
+      throw new Error('数据格式错误');
+    }
   } catch (e) {
-    console.error('加载消息失败:', e);
-    // 使用模拟数据
-    messages.value = getMockMessages();
-    total.value = 25;
+    console.error('[MessageList] 加载消息失败:', e);
+    Message.error('加载消息失败，请稍后重试');
   } finally {
     loading.value = false;
   }
 }
 
-function getMockMessages() {
-  const baseMessages = [
-    {
-      id: 1,
-      type: 'SYSTEM',
-      title: '系统维护公告',
-      content: '平台将于今晚22:00-23:00进行系统维护升级，届时部分功能可能无法使用，请提前做好准备。',
-      isRead: false,
-      createdAt: new Date().toISOString(),
-      link: '/portal/home',
-    },
-    {
-      id: 2,
-      type: 'TRANSACTION',
-      title: '订单发货通知',
-      content: '您的订单 #20240115001 已发货，快递单号：SF1234567890，请注意查收。',
-      isRead: false,
-      createdAt: new Date(Date.now() - 1000 * 60 * 30).toISOString(),
-      link: '/portal/orders',
-    },
-    {
-      id: 3,
-      type: 'REVIEW',
-      title: '商品审核通过',
-      content: '您发布的《二手MacBook Pro 2020款》已通过审核，已上架展示。',
-      isRead: true,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 2).toISOString(),
-      link: '/portal/seller/items',
-    },
-    {
-      id: 4,
-      type: 'INTERACTION',
-      title: '收到新评论',
-      content: '用户 小明 评论了您的帖子：《大学学习资料分享合集》',
-      isRead: true,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 5).toISOString(),
-      link: '/portal/circle/1',
-    },
-    {
-      id: 5,
-      type: 'INTERACTION',
-      title: '获得新点赞',
-      content: '用户 红红 点赞了您的帖子：《校园生活好物推荐》',
-      isRead: true,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
-      link: '/portal/circle/2',
-    },
-    {
-      id: 6,
-      type: 'SYSTEM',
-      title: '新功能上线',
-      content: '校园圈子功能正式上线啦！快来发布你的第一条动态吧~',
-      isRead: true,
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
-      link: '/portal/circle',
-    },
-  ];
+async function loadUnreadCount() {
+  try {
+    console.log('[MessageList] 开始获取未读数量...');
+    const res = await fetchUnreadCount();
+    console.log('[MessageList] 未读数量API响应:', res);
 
-  // 根据当前页返回不同的数据
-  if (page.value > 1) {
-    return baseMessages.map((m, i) => ({
-      ...m,
-      id: m.id + (page.value - 1) * size.value + i * 10,
-      createdAt: new Date(
-        Date.now() - 1000 * 60 * 60 * (24 + i)
-      ).toISOString(),
-    }));
+    const count = res?.data?.count ?? res?.data ?? 0;
+    unreadCount.value = count > 99 ? '99+' : count;
+    console.log('[MessageList] 未读数量更新为:', unreadCount.value);
+  } catch (e) {
+    console.warn('[MessageList] 加载未读数量失败:', e);
+    unreadCount.value = 0;
   }
-
-  return baseMessages;
 }
 
 function handleTabChange(tab) {
@@ -361,10 +329,15 @@ async function handleMessageClick(message) {
   // 标记为已读
   if (!message.isRead) {
     try {
-      await fetch(`/api/messages/${message.id}/read`, { method: 'POST' });
+      await markAsRead(message.id);
       message.isRead = true;
+      // 更新未读数量
+      if (unreadCount.value > 0 && unreadCount.value !== '99+') {
+        unreadCount.value = unreadCount.value - 1;
+      }
     } catch (e) {
       console.error('标记已读失败:', e);
+      Message.error('标记已读失败');
     }
   }
 
@@ -376,10 +349,14 @@ async function handleMessageClick(message) {
 
 async function handleMarkRead(msg) {
   try {
-    await fetch(`/api/messages/${msg.id}/read`, { method: 'POST' });
+    await markAsRead(msg.id);
     msg.isRead = !msg.isRead;
     Message.success(msg.isRead ? '已标记为已读' : '已标记为未读');
+
+    // 更新未读数量
+    await loadUnreadCount();
   } catch (e) {
+    console.error('操作失败:', e);
     Message.error('操作失败');
   }
 }
@@ -391,11 +368,13 @@ async function handleDelete(msg) {
     hideCancel: false,
     onOk: async () => {
       try {
-        await fetch(`/api/messages/${msg.id}`, { method: 'DELETE' });
+        await deleteNotification(msg.id);
         messages.value = messages.value.filter((m) => m.id !== msg.id);
         selectedIds.value = selectedIds.value.filter((id) => id !== msg.id);
+        total.value = Math.max(0, total.value - 1);
         Message.success('删除成功');
       } catch (e) {
+        console.error('删除失败:', e);
         Message.error('删除失败');
       }
     },
@@ -404,24 +383,22 @@ async function handleDelete(msg) {
 
 async function handleMarkAllRead() {
   try {
-    const unreadIds = messages.value.filter(msg => !msg.isRead).map(msg => msg.id);
-    
-    if (unreadIds.length === 0) {
+    const unreadMessages = messages.value.filter(msg => !msg.isRead);
+
+    if (unreadMessages.length === 0) {
       Message.info('没有未读消息');
       return;
     }
 
-    await fetch('/api/messages/read-all', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: unreadIds }),
-    });
+    await markAllAsRead();
 
+    // 更新所有消息为已读
     messages.value.forEach(msg => {
       msg.isRead = true;
     });
 
-    Message.success(`已将 ${unreadIds.length} 条消息标记为已读`);
+    unreadCount.value = 0;
+    Message.success(`已将 ${unreadMessages.length} 条消息标记为已读`);
   } catch (e) {
     console.error('全部标记已读失败:', e);
     Message.error('操作失败，请稍后重试');
@@ -429,12 +406,15 @@ async function handleMarkAllRead() {
 }
 
 async function handleBatchRead() {
+  if (selectedIds.value.length === 0) {
+    Message.warning('请先选择消息');
+    return;
+  }
+
   try {
-    await fetch('/api/messages/read-all', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ids: selectedIds.value }),
-    });
+    for (const id of selectedIds.value) {
+      await markAsRead(id);
+    }
 
     messages.value.forEach((msg) => {
       if (selectedIds.value.includes(msg.id)) {
@@ -443,8 +423,10 @@ async function handleBatchRead() {
     });
 
     selectedIds.value = [];
+    await loadUnreadCount();
     Message.success('批量标记已读成功');
   } catch (e) {
+    console.error('批量标记已读失败:', e);
     Message.error('操作失败');
   }
 }
@@ -456,25 +438,28 @@ async function handleBatchDelete() {
     hideCancel: false,
     onOk: async () => {
       try {
-        await fetch('/api/messages/batch-delete', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ids: selectedIds.value }),
-        });
+        for (const id of selectedIds.value) {
+          await deleteNotification(id);
+        }
 
         messages.value = messages.value.filter(
           (m) => !selectedIds.value.includes(m.id)
         );
+        total.value = Math.max(0, total.value - selectedIds.value.length);
         selectedIds.value = [];
         Message.success('批量删除成功');
       } catch (e) {
+        console.error('批量删除失败:', e);
         Message.error('删除失败');
       }
     },
   });
 }
 
-onMounted(loadMessages);
+onMounted(async () => {
+  await loadMessages();
+  await loadUnreadCount();
+});
 </script>
 
 <style lang="scss" scoped>

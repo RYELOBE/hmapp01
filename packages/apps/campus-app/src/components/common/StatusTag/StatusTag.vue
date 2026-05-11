@@ -25,6 +25,18 @@ const statusConfig = {
     textColor: '#FF7D00',
     borderColor: '#FFE0A3'
   },
+  pending_payment: {
+    label: '待付款',
+    bgColor: '#FFF7E8',
+    textColor: '#FF7D00',
+    borderColor: '#FFE0A3'
+  },
+  paid: {
+    label: '已付款',
+    bgColor: '#E8F3FF',
+    textColor: '#165DFF',
+    borderColor: '#91D5FF'
+  },
   approved: {
     label: '已通过',
     bgColor: '#E8FFEA',
@@ -67,6 +79,18 @@ const statusConfig = {
     textColor: '#86909C',
     borderColor: '#D9D9D9'
   },
+  refunding: {
+    label: '退款中',
+    bgColor: '#FFF7E8',
+    textColor: '#FF7D00',
+    borderColor: '#FFE0A3'
+  },
+  refunded: {
+    label: '已退款',
+    bgColor: '#F2F3F5',
+    textColor: '#86909C',
+    borderColor: '#D9D9D9'
+  },
   off_shelf: {
     label: '已下架',
     bgColor: '#F2F3F5',
@@ -78,6 +102,8 @@ const statusConfig = {
 const statusAliasMap = {
   PENDING_REVIEW: 'pending',
   PENDING: 'pending',
+  PENDING_PAYMENT: 'pending_payment',
+  PAID: 'paid',
   APPROVED: 'approved',
   REJECTED: 'rejected',
   OFF_SHELF: 'off_shelf',
@@ -85,7 +111,9 @@ const statusAliasMap = {
   INACTIVE: 'inactive',
   PROCESSING: 'processing',
   COMPLETED: 'completed',
-  CANCELLED: 'cancelled'
+  CANCELLED: 'cancelled',
+  REFUNDING: 'refunding',
+  REFUNDED: 'refunded'
 }
 
 const statusKey = computed(() => {
@@ -173,10 +201,29 @@ const tagStyle = computed(() => ({
   }
 
   &--cancelled,
-  &--off_shelf {
+  &--off_shelf,
+  &--refunded {
     background-color: #F2F3F5;
     color: #86909C;
     border-color: #D9D9D9;
+  }
+
+  &--pending_payment {
+    background-color: #FFF7E8;
+    color: #FF7D00;
+    border-color: #FFE0A3;
+  }
+
+  &--paid {
+    background-color: #E8F3FF;
+    color: #165DFF;
+    border-color: #91D5FF;
+  }
+
+  &--refunding {
+    background-color: #FFF7E8;
+    color: #FF7D00;
+    border-color: #FFE0A3;
   }
 }
 </style>

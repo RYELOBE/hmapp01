@@ -9,21 +9,19 @@ export const ITEM_STATUS = {
 
 /** 订单状态映射 */
 export const ORDER_STATUS = {
-  PENDING_PAYMENT: { label: "待支付", color: "blue" },
-  PAID: { label: "已支付", color: "cyan" },
-  SHIPPED: { label: "已发货", color: "purple" },
+  PENDING_PAYMENT: { label: "待支付", color: "orange" },
+  PAID: { label: "待交易", color: "arcoblue" },
   COMPLETED: { label: "已完成", color: "green" },
   CANCELLED: { label: "已取消", color: "gray" },
-  REFUNDING: { label: "退款中", color: "orange" },
-  REFUNDED: { label: "已退款", color: "red" },
+  REFUNDING: { label: "退款中", color: "orangered" },
+  REFUNDED: { label: "已退款", color: "gray" },
 };
 
 /** 订单状态选项卡（用于前端显示） */
 export const ORDER_STATUS_TABS = [
   { value: "", label: "全部" },
   { value: "PENDING_PAYMENT", label: "待支付" },
-  { value: "PAID", label: "已支付" },
-  { value: "SHIPPED", label: "已发货" },
+  { value: "PAID", label: "待交易" },
   { value: "COMPLETED", label: "已完成" },
   { value: "CANCELLED", label: "已取消" },
   { value: "REFUNDING", label: "退款中" },

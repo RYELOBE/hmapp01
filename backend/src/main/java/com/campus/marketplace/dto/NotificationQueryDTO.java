@@ -18,6 +18,8 @@ public class NotificationQueryDTO {
     
     private String keyword;
 
+    private Long receiverId;
+
     public Integer getPage() {
         return page;
     }
@@ -80,5 +82,13 @@ public class NotificationQueryDTO {
 
     public void setKeyword(String keyword) {
         this.keyword = keyword;
+    }
+
+    public Long getReceiverId() {
+        return receiverId;
+    }
+
+    public void setReceiverId(Long receiverId) {
+        this.receiverId = receiverId;
     }
 }

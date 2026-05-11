@@ -10,25 +10,16 @@
     </template>
 
     <template v-else-if="orderStatus === 'PAID'">
-      <a-button size="small" disabled>
-        待发货
-      </a-button>
+      <a-popconfirm content="确认交易完成吗？" @ok="handleAction('confirm')">
+        <a-button type="primary" size="small" @click.stop>
+          确认完成
+        </a-button>
+      </a-popconfirm>
       <a-popconfirm content="确定要退款吗？" @ok="handleAction('refund')">
         <a-button type="text" size="small" status="warning" @click.stop>
           退款
         </a-button>
       </a-popconfirm>
-    </template>
-
-    <template v-else-if="orderStatus === 'SHIPPED'">
-      <a-popconfirm content="确认收货吗？" @ok="handleAction('confirm')">
-        <a-button type="primary" size="small" @click.stop>
-          确认收货
-        </a-button>
-      </a-popconfirm>
-      <a-button size="small" @click="handleAction('view-logistics')">
-        查看物流
-      </a-button>
     </template>
 
     <template v-else-if="orderStatus === 'COMPLETED'">
@@ -46,7 +37,15 @@
     </template>
 
     <template v-else-if="orderStatus === 'REFUNDING'">
-      <a-button size="small" disabled>
+      <template v-if="isSeller">
+        <a-popconfirm content="确定同意退款吗？" @ok="handleAction('approve-refund')">
+          <a-button type="primary" size="small" @click.stop>同意退款</a-button>
+        </a-popconfirm>
+        <a-popconfirm content="确定拒绝退款吗？" @ok="handleAction('reject-refund')">
+          <a-button type="text" size="small" status="danger" @click.stop>拒绝退款</a-button>
+        </a-popconfirm>
+      </template>
+      <a-button v-else size="small" disabled>
         退款处理中
       </a-button>
     </template>
@@ -82,6 +81,10 @@ const props = defineProps({
   showReview: {
     type: Boolean,
     default: true
+  },
+  isSeller: {
+    type: Boolean,
+    default: false
   }
 });
 

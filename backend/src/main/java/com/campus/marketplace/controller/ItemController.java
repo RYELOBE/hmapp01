@@ -5,7 +5,6 @@ import com.campus.marketplace.service.CurrentUserService;
 import com.campus.marketplace.service.ItemService;
 import com.campus.marketplace.service.ItemStatsService;
 import com.campus.marketplace.service.ReviewService;
-import com.campus.marketplace.service.NotificationService;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -30,14 +29,12 @@ public class ItemController {
   private final CurrentUserService currentUserService;
   private final ItemStatsService itemStatsService;
   private final ReviewService reviewService;
-  private final NotificationService notificationService;
 
-  public ItemController(ItemService itemService, CurrentUserService currentUserService, ItemStatsService itemStatsService, ReviewService reviewService, NotificationService notificationService) {
+  public ItemController(ItemService itemService, CurrentUserService currentUserService, ItemStatsService itemStatsService, ReviewService reviewService) {
     this.itemService = itemService;
     this.currentUserService = currentUserService;
     this.itemStatsService = itemStatsService;
     this.reviewService = reviewService;
-    this.notificationService = notificationService;
   }
 
   @PostMapping
@@ -125,24 +122,9 @@ public class ItemController {
   }
 
   @PostMapping("/{id}/off-shelf")
-  @PreAuthorize("hasRole('SELLER')")
+  @PreAuthorize("hasRole('OPS')")
   public Map<String, Object> offShelf(@PathVariable("id") Long id) {
-    itemService.offShelfItem(id, currentUserService.userId());
-    
-    // 发送商品下架通知给运营人员
-    try {
-      notificationService.createBusinessNotification(
-        "ITEM", 
-        id.toString(), 
-        "商品已下架", 
-        "卖家已下架商品，ID: " + id, 
-        null
-      );
-    } catch (Exception e) {
-      // 记录日志但不影响主流程
-      System.err.println("Failed to send off-shelf notification: " + e.getMessage());
-    }
-    
+    itemService.offShelfItem(id, null);
     return Map.of("code", 200, "message", "已下架");
   }
 

@@ -4,6 +4,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import com.campus.marketplace.service.CircleService;
 import com.campus.marketplace.service.ItemService;
 import com.campus.marketplace.service.OpsService;
+import com.campus.marketplace.service.OrderService;
 import com.campus.marketplace.service.ReviewService;
 import com.campus.marketplace.service.StatsService;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -30,13 +31,15 @@ public class OpsController {
   private final CircleService circleService;
   private final ReviewService reviewService;
   private final ItemService itemService;
+  private final OrderService orderService;
 
-  public OpsController(OpsService opsService, StatsService statsService, CircleService circleService, ReviewService reviewService, ItemService itemService) {
+  public OpsController(OpsService opsService, StatsService statsService, CircleService circleService, ReviewService reviewService, ItemService itemService, OrderService orderService) {
     this.opsService = opsService;
     this.statsService = statsService;
     this.circleService = circleService;
     this.reviewService = reviewService;
     this.itemService = itemService;
+    this.orderService = orderService;
   }
 
   /**
@@ -241,6 +244,38 @@ public class OpsController {
   // ========== 商品管理接口（OPS专用，不需要SELLER角色）==========
 
   /**
+   * 商品审核通过
+   * @param id 商品ID
+   * @return 操作结果
+   */
+  @PostMapping("/items/{id}/approve")
+  public Map<String, Object> approveItem(@PathVariable Long id) {
+    try {
+      itemService.updateReviewResult(id, "APPROVED", null);
+      return buildSuccessResponse(Map.of("message", "商品审核通过"));
+    } catch (Exception e) {
+      return buildErrorResponse("审核失败: " + e.getMessage());
+    }
+  }
+
+  /**
+   * 商品审核拒绝
+   * @param id 商品ID
+   * @param request 拒绝原因
+   * @return 操作结果
+   */
+  @PostMapping("/items/{id}/reject")
+  public Map<String, Object> rejectItem(@PathVariable Long id, @RequestBody(required = false) Map<String, Object> request) {
+    try {
+      String reason = request != null && request.get("reason") != null ? String.valueOf(request.get("reason")) : "审核未通过";
+      itemService.updateReviewResult(id, "REJECTED", reason);
+      return buildSuccessResponse(Map.of("message", "商品已拒绝"));
+    } catch (Exception e) {
+      return buildErrorResponse("操作失败: " + e.getMessage());
+    }
+  }
+
+  /**
    * 商品下架（运营管理员操作）
    * @param id 商品ID
    * @return 操作结果
@@ -291,6 +326,38 @@ public class OpsController {
   public Map<String, Object> rejectCirclePost(@PathVariable Long postId, @RequestBody(required = false) Map<String, Object> request) {
     String reason = request != null && request.get("reason") != null ? String.valueOf(request.get("reason")) : "运营驳回";
     return buildSuccessResponse(circleService.rejectPost(postId, reason));
+  }
+
+  // ========== 订单管理接口（OPS专用）==========
+
+  /**
+   * 同意退款
+   * @param id 订单ID
+   * @return 操作结果
+   */
+  @PostMapping("/orders/{id}/refund/approve")
+  public Map<String, Object> approveRefund(@PathVariable Long id) {
+    try {
+      orderService.approveRefund(id, null); // OPS用户操作，传null
+      return buildSuccessResponse(Map.of("message", "退款成功"));
+    } catch (Exception e) {
+      return buildErrorResponse("退款失败: " + e.getMessage());
+    }
+  }
+
+  /**
+   * 拒绝退款
+   * @param id 订单ID
+   * @return 操作结果
+   */
+  @PostMapping("/orders/{id}/refund/reject")
+  public Map<String, Object> rejectRefund(@PathVariable Long id) {
+    try {
+      orderService.rejectRefund(id, null); // OPS用户操作，传null
+      return buildSuccessResponse(Map.of("message", "已拒绝退款"));
+    } catch (Exception e) {
+      return buildErrorResponse("操作失败: " + e.getMessage());
+    }
   }
 
   private int pageNo(OpsListRequest request) {

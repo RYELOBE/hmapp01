@@ -65,24 +65,8 @@
             </svg>
           </button>
 
-          <button
-            class="icon-btn notification-btn"
-            aria-label="通知"
-            @click="router.push('/portal/messages')"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-            >
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-            </svg>
-            <span class="notification-badge">3</span>
-          </button>
+          <!-- 消息下拉组件 -->
+          <NotificationDropdown ref="notificationRef" />
 
           <template v-if="authStore.isLoggedIn">
             <a-dropdown trigger="click" position="br">
@@ -295,6 +279,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useAuthStore } from "../../stores/auth";
 import { Message } from "@arco-design/web-vue";
 import AiAssistant from "../../components/common/AiAssistant.vue";
+import NotificationDropdown from "../../components/common/NotificationDropdown.vue";
 import { getCartList } from "../../services/users";
 
 const route = useRoute();
@@ -303,6 +288,7 @@ const authStore = useAuthStore();
 
 const mobileMenuOpen = ref(false);
 const cartCount = ref(0);
+const notificationRef = ref(null);
 
 const navItems = [
   { label: "首页", path: "/portal/home" },
@@ -401,12 +387,15 @@ async function loadCartCount() {
   }
 }
 
+// 消息下拉组件会自动加载未读数
+
 onMounted(() => {
   loadCartCount();
 
   // 监听路由变化，更新购物车数量
   router.afterEach(() => {
     loadCartCount();
+    notificationRef.value?.refresh();
   });
 });
 </script>
@@ -609,22 +598,44 @@ onMounted(() => {
 }
 
 .notification-btn {
+  position: relative;
+
   .notification-badge {
     position: absolute;
-    top: 4px;
-    right: 4px;
-    min-width: 16px;
-    height: 16px;
-    padding: 0 4px;
+    top: 2px;
+    right: 2px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
     font-size: 11px;
     font-weight: 600;
-    color: var(--text-white);
-    background-color: #f53f3f;
-    border-radius: var(--radius-full);
+    color: #fff;
+    background: linear-gradient(135deg, #ff4d4f 0%, #f53f3f 100%);
+    border-radius: 9px;
     display: flex;
     align-items: center;
     justify-content: center;
     border: 2px solid var(--bg-white);
+    box-shadow: 0 2px 4px rgba(245, 63, 63, 0.3);
+    animation: badge-pulse 2s ease-in-out infinite;
+    line-height: 1;
+    z-index: 10;
+  }
+
+  &:hover {
+    .notification-badge {
+      animation: none;
+      transform: scale(1.05);
+    }
+  }
+}
+
+@keyframes badge-pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
   }
 }
 

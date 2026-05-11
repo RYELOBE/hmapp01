@@ -13,14 +13,24 @@ public interface NotificationService {
     List<NotificationDTO> getNotifications(NotificationQueryDTO query);
     
     /**
-     * 获取未读消息数量
+     * 获取消息详情
      */
-    Integer getUnreadCount();
+    NotificationDTO getNotificationById(Long id);
     
     /**
-     * 获取最近消息
+     * 获取用户未读消息数量
      */
-    List<NotificationDTO> getRecentNotifications(Integer limit);
+    int countUnread(Long userId);
+    
+    /**
+     * 统计消息数量
+     */
+    int countNotifications(NotificationQueryDTO query);
+    
+    /**
+     * 获取用户最近消息
+     */
+    List<NotificationDTO> getRecentNotifications(Long userId, int limit);
     
     /**
      * 标记消息为已读
@@ -33,24 +43,22 @@ public interface NotificationService {
     void markMultipleAsRead(List<Long> ids);
     
     /**
-     * 标记全部为已读
+     * 标记用户全部消息为已读
      */
-    void markAllAsRead();
+    void markAllAsRead(Long userId);
     
     /**
-     * 删除消息
+     * 删除消息（软删除）
      */
     void deleteNotification(Long id);
     
     /**
-     * 发送通知
+     * 发送通知给指定用户
      */
-    void sendNotification(NotificationDTO notification);
+    void sendNotification(Long receiverId, String title, String content, String type, String businessId, String businessType);
     
     /**
      * 自动生成业务通知
      */
     void createBusinessNotification(String businessType, String businessId, String title, String content, Long receiverId);
-
-    long countNotifications(String type, Boolean unread, String priority, String keyword);
 }

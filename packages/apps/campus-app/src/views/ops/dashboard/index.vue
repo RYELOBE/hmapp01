@@ -1,485 +1,723 @@
 <template>
   <div class="ops-dashboard">
-    <PageContainer title="运营工作台" subtitle="数据概览与快捷操作">
-      <a-spin :loading="loading" style="width: 100%">
-        <a-row :gutter="[16, 16]" class="stats-row">
-          <a-col :xs="24" :sm="12" :md="6" v-for="card in statCards" :key="card.key">
-            <StatsCard
-              :icon-component="card.iconComponent"
-              :value="stats[card.key] ?? 0"
-              :label="card.label"
-              :color="card.color"
-              :trend="card.trendKey ? { value: stats[card.trendKey], isUp: stats[card.trendKey] > 0 } : null"
-            />
-          </a-col>
-        </a-row>
+    <a-spin :loading="loading" style="width: 100%">
+      <!-- 第一行：KPI统计卡片 -->
+      <a-row :gutter="[16, 16]" class="kpi-row">
+        <a-col :xs="12" :sm="12" :md="6" v-for="(card, index) in kpiCards" :key="index">
+          <div class="kpi-card" :style="{ '--accent-color': card.color }">
+            <div class="kpi-icon">
+              <component :is="card.icon" />
+            </div>
+            <div class="kpi-content">
+              <div class="kpi-value">
+                {{ formatNumber(stats[card.key] || 0) }}
+                <span v-if="card.suffix" class="kpi-suffix">{{ card.suffix }}</span>
+              </div>
+              <div class="kpi-label">{{ card.label }}</div>
+              <div 
+                v-if="card.trendKey && stats[card.trendKey] !== undefined" 
+                class="kpi-trend"
+                :class="{ 'trend-up': stats[card.trendKey] > 0, 'trend-down': stats[card.trendKey] < 0 }"
+              >
+                {{ stats[card.trendKey] > 0 ? '↑' : '↓' }} 
+                {{ Math.abs(stats[card.trendKey] || 0) }}
+                <span class="trend-label">今日</span>
+              </div>
+            </div>
+          </div>
+        </a-col>
+      </a-row>
 
-        <a-row :gutter="[16, 16]" class="stats-row">
-          <a-col :xs="12" :sm="6" v-for="card in secondaryStatCards" :key="card.key">
-            <StatsCard
-              :icon-component="card.iconComponent"
-              :value="stats[card.key] ?? 0"
-              :label="card.label"
-              :color="card.color"
-            />
-          </a-col>
-        </a-row>
+      <!-- 第二行：左右分栏 -->
+      <a-row :gutter="[16, 16]" class="main-section">
+        <!-- 左侧：待办事项 (55%) -->
+        <a-col :xs="24" :lg="13">
+          <a-card title="📋 待办事项" :bordered="false" class="pending-card">
+            <template #extra>
+              <a-link @click="$router.push('/ops/review')">查看全部 →</a-link>
+            </template>
 
-        <a-card title="快捷操作" :bordered="false" class="quick-actions-card">
-          <a-row :gutter="[16, 16]">
-            <a-col :xs="12" :sm="8" :md="6" v-for="action in quickActions" :key="action.label">
-              <div class="action-item" @click="handleQuickAction(action)">
-                <div class="action-icon" :style="{ background: action.bgColor, color: action.color }">
-                  <component :is="action.iconComponent" />
+            <!-- 商品审核 -->
+            <div v-if="counts.items > 0" class="pending-group">
+              <div class="group-header">
+                <span class="group-title">🔴 商品审核</span>
+                <a-badge :count="counts.items" :max-count="99" />
+              </div>
+              <div 
+                v-for="item in pendingItemsByType.item.slice(0, 2)" 
+                :key="item.id"
+                class="pending-item"
+              >
+                <div class="item-info">
+                  <div class="item-title">{{ item.title || '未命名商品' }}</div>
+                  <div class="item-meta">{{ item.author || '未知卖家' }} · {{ formatTimeAgo(item.time) }}</div>
                 </div>
-                <div class="action-label">{{ action.label }}</div>
+                <a-button type="primary" size="small" @click="goToReview(item)">
+                  审核
+                </a-button>
               </div>
-            </a-col>
-          </a-row>
-        </a-card>
+              <a-link v-if="counts.items > 2" class="more-link" @click="$router.push('/ops/items')">
+                还有 {{ counts.items - 2 }} 条 →
+              </a-link>
+            </div>
 
-        <a-row :gutter="16" class="charts-section">
-          <a-col :xs="24" :lg="14">
-            <a-card title="近7天订单趋势" :bordered="false" class="chart-card">
-              <div class="chart-placeholder">
-                <icon-apps />
-                <span>订单趋势图表（预留）</span>
+            <!-- 评价审核 -->
+            <div v-if="counts.reviews > 0" class="pending-group">
+              <div class="group-header">
+                <span class="group-title">⭐ 评价审核</span>
+                <a-badge :count="counts.reviews" :max-count="99" />
               </div>
-            </a-card>
-          </a-col>
-
-          <a-col :xs="24" :lg="10">
-            <a-card title="商品分类占比" :bordered="false" class="chart-card">
-              <div class="chart-placeholder">
-                <icon-list />
-                <span>分类占比图表（预留）</span>
-              </div>
-            </a-card>
-          </a-col>
-        </a-row>
-
-        <a-row :gutter="16" class="todo-section">
-          <a-col :xs="24" :lg="12">
-            <a-card title="待审核商品" :bordered="false" class="todo-card">
-              <template #extra>
-                <a-link @click="$router.push('/ops/items/review')">查看全部 →</a-link>
-              </template>
-              <a-table
-                :data="pendingReviews"
-                :pagination="false"
-                :columns="reviewColumns"
-                size="small"
-                :scroll="{ y: 300 }"
-                row-key="id"
+              <div 
+                v-for="item in pendingItemsByType.review.slice(0, 2)" 
+                :key="item.id"
+                class="pending-item"
               >
-                <template #thumbnail="{ record }">
-                  <a-avatar :size="40" shape="square">
-                    <img v-if="record.thumbnail" :src="record.thumbnail" alt="" />
-                    <icon-storage v-else />
-                  </a-avatar>
-                </template>
-                <template #price="{ record }">
-                  <span class="price">¥{{ record.price?.toFixed(2) || '—' }}</span>
-                </template>
-                <template #action="{ record }">
-                  <a-button type="text" size="small" @click="$router.push(`/ops/reviews/${record.id}`)">
-                    去审核
+                <div class="item-info">
+                  <div class="item-title">{{ truncate(item.content || item.title, 30) }}</div>
+                  <div class="item-meta">{{ item.author || '未知买家' }} · {{ formatTimeAgo(item.time) }}</div>
+                </div>
+                <a-space>
+                  <a-button type="primary" size="small" status="success" @click="approveItem(item)">
+                    通过
                   </a-button>
-                </template>
-              </a-table>
-              <a-empty v-if="!loading && pendingReviews.length === 0" description="暂无待审核商品" />
-            </a-card>
-          </a-col>
+                </a-space>
+              </div>
+              <a-link v-if="counts.reviews > 2" class="more-link" @click="$router.push('/ops/review-manage')">
+                还有 {{ counts.reviews - 2 }} 条 →
+              </a-link>
+            </div>
 
-          <a-col :xs="24" :lg="12">
-            <a-card title="最新订单" :bordered="false" class="todo-card">
-              <template #extra>
-                <a-link @click="$router.push('/ops/orders/list')">查看全部 →</a-link>
-              </template>
-              <a-table
-                :data="recentOrders"
-                :pagination="false"
-                :columns="orderColumns"
-                size="small"
-                :scroll="{ y: 300 }"
-                row-key="id"
+            <!-- 帖子审核 -->
+            <div v-if="counts.posts > 0" class="pending-group">
+              <div class="group-header">
+                <span class="group-title">💬 帖子审核</span>
+                <a-badge :count="counts.posts" :max-count="99" />
+              </div>
+              <div 
+                v-for="item in pendingItemsByType.post.slice(0, 2)" 
+                :key="item.id"
+                class="pending-item"
               >
-                <template #amount="{ record }">
-                  <span class="price">¥{{ record.amount?.toFixed(2) || '—' }}</span>
-                </template>
-                <template #status="{ record }">
-                  <a-tag :color="getOrderStatusColor(record.status)" size="small">
-                    {{ getOrderStatusLabel(record.status) }}
-                  </a-tag>
-                </template>
-              </a-table>
-              <a-empty v-if="!loading && recentOrders.length === 0" description="暂无订单数据" />
-            </a-card>
-          </a-col>
-        </a-row>
+                <div class="item-info">
+                  <div class="item-title">{{ item.title || '未命名帖子' }}</div>
+                  <div class="item-meta">{{ item.author || '未知用户' }} · {{ formatTimeAgo(item.time) }}</div>
+                </div>
+                <a-button type="primary" size="small" @click="goToReview(item)">
+                  审核
+                </a-button>
+              </div>
+              <a-link v-if="counts.posts > 2" class="more-link" @click="$router.push('/ops/circle')">
+                还有 {{ counts.posts - 2 }} 条 →
+              </a-link>
+            </div>
 
-        <a-row :gutter="16" class="timeline-section">
-          <a-col :span="24">
-            <a-card title="最近活动" :bordered="false">
-              <a-timeline v-if="recentActivities.length > 0">
-                <a-timeline-item
-                  v-for="activity in recentActivities"
-                  :key="activity.id"
-                  :dot-color="activity.dotColor"
-                >
-                  <div class="activity-content">
-                    <div class="activity-title">{{ activity.title }}</div>
-                    <div class="activity-time">{{ activity.time }}</div>
+            <a-empty v-if="counts.total === 0" description="暂无待办事项 🎉" />
+          </a-card>
+        </a-col>
+
+        <!-- 右侧：最新动态 (45%) -->
+        <a-col :xs="24" :lg="11">
+          <a-card title="📈 最新动态" :bordered="false" class="activity-card">
+            <template #extra>
+              <a-button type="text" size="small" @click="refreshActivities">
+                <template #icon><icon-refresh /></template>
+                刷新
+              </a-button>
+            </template>
+
+            <a-timeline v-if="activities.length > 0" pending>
+              <a-timeline-item
+                v-for="activity in activities.slice(0, 8)"
+                :key="activity.id"
+                :dot-color="activity.dotColor || '#86909C'"
+              >
+                <div class="activity-content">
+                  <div class="activity-title">{{ activity.title || '系统活动' }}</div>
+                  <div v-if="activity.description" class="activity-desc">
+                    {{ activity.description }}
                   </div>
-                </a-timeline-item>
-              </a-timeline>
-              <a-empty v-else description="暂无活动记录" />
-            </a-card>
-          </a-col>
-        </a-row>
-      </a-spin>
-    </PageContainer>
+                  <div class="activity-time">{{ formatTimeAgo(activity.time) }}</div>
+                </div>
+              </a-timeline-item>
+            </a-timeline>
+
+            <a-empty v-else description="暂无动态" />
+          </a-card>
+        </a-col>
+      </a-row>
+    </a-spin>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import { Message } from "@arco-design/web-vue";
+import { ref, reactive, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { Message } from '@arco-design/web-vue'
 import {
   IconUserGroup,
   IconStorage,
-  IconFile,
   IconTag,
-  IconPlusCircle,
   IconClockCircle,
-  IconCheckCircle,
-  IconEye,
-  IconExport,
-  IconNotification,
-  IconApps,
-  IconList,
-} from "@arco-design/web-vue/es/icon";
-import PageContainer from "../../../components/layout/PageContainer/PageContainer.vue";
-import StatsCard from "../../../components/data/StatsCard/StatsCard.vue";
-import {
-  getStatistics,
-  getReviewQueue,
-  getOpsOrders,
-} from "../../../services/api";
+  IconRefresh,
+} from '@arco-design/web-vue/es/icon'
+import { opsHttp as http } from '../../../services/http'
 
-const router = useRouter();
-const loading = ref(false);
-const stats = ref({});
-const pendingReviews = ref([]);
-const recentOrders = ref([]);
-const recentActivities = ref([]);
+const router = useRouter()
+const loading = ref(false)
+const stats = ref({})
+const pendingItems = ref([])
+const activities = ref([])
+const counts = reactive({
+  items: 0,
+  reviews: 0,
+  posts: 0,
+  total: 0
+})
 
-const statCards = [
-  {
-    key: "totalUsers",
-    label: "总用户数",
-    iconComponent: IconUserGroup,
-    color: "#165DFF",
-    trendKey: "newUsersToday",
-  },
-  {
-    key: "totalItems",
-    label: "总商品数",
-    iconComponent: IconStorage,
-    color: "#00B42A",
-  },
-  {
-    key: "totalOrders",
-    label: "总订单数",
-    iconComponent: IconFile,
-    color: "#FF7D00",
-  },
-  {
-    key: "todayRevenue",
-    label: "今日成交额",
-    iconComponent: IconTag,
-    color: "#F53F3F",
-  },
-];
+let refreshTimer = null
 
-const secondaryStatCards = [
+// KPI卡片配置
+const kpiCards = [
   {
-    key: "newUsersToday",
-    label: "今日新增用户",
-    iconComponent: IconPlusCircle,
-    color: "#722ED1",
+    key: 'totalUsers',
+    label: '总用户数',
+    icon: IconUserGroup,
+    color: '#165DFF',
+    trendKey: 'newUsersToday'
   },
   {
-    key: "pendingItems",
-    label: "待审核商品数",
-    iconComponent: IconClockCircle,
-    color: "#FF7D00",
+    key: 'totalItems',
+    label: '总商品数',
+    icon: IconStorage,
+    color: '#00B42A',
+    trendKey: 'newItemsToday'
   },
   {
-    key: "pendingReviewsCount",
-    label: "待审核评价数",
-    iconComponent: IconClockCircle,
-    color: "#F53F3F",
+    key: 'todayOrders',
+    label: '今日订单',
+    icon: IconTag,
+    color: '#FF7D00',
+    suffix: '',
+    trendKey: 'orderGrowth'
   },
   {
-    key: "pendingPosts",
-    label: "待审核帖子数",
-    iconComponent: IconClockCircle,
-    color: "#14C9C9",
-  },
-];
+    key: 'pendingTotal',
+    label: '待审核数',
+    icon: IconClockCircle,
+    color: '#F53F3F'
+  }
+]
 
-const reviewColumns = [
-  { title: "缩略图", dataIndex: "thumbnail", width: 70, slotName: "thumbnail" },
-  { title: "标题", dataIndex: "title", ellipsis: true, tooltip: true },
-  { title: "价格", dataIndex: "price", width: 90, slotName: "price" },
-  { title: "卖家", dataIndex: "seller", width: 100, ellipsis: true },
-  { title: "发布时间", dataIndex: "createTime", width: 120 },
-  { title: "操作", slotName: "action", width: 80, align: "center" },
-];
+// 按类型分组的待办项
+const pendingItemsByType = computed(() => {
+  return {
+    item: pendingItems.value.filter(item => item.type === 'item'),
+    review: pendingItems.value.filter(item => item.type === 'review'),
+    post: pendingItems.value.filter(item => item.type === 'post')
+  }
+})
 
-const orderColumns = [
-  { title: "订单号", dataIndex: "orderNo", ellipsis: true },
-  { title: "买家", dataIndex: "buyer", width: 100, ellipsis: true },
-  { title: "金额", dataIndex: "amount", width: 100, slotName: "amount" },
-  { title: "状态", dataIndex: "status", width: 90, slotName: "status" },
-  { title: "时间", dataIndex: "createTime", width: 140 },
-];
+// 格式化数字（超过1万显示为x.x万）
+function formatNumber(num) {
+  if (!num && num !== 0) return '0'
+  if (num >= 10000) return (num / 10000).toFixed(1) + '万'
+  if (num >= 1000) return (num / 1000).toFixed(1) + 'k'
+  return num.toString()
+}
 
-const quickActions = [
-  { label: "进入审批工作台", iconComponent: IconCheckCircle, path: "/ops/items/review", color: "#165DFF", bgColor: "#E6F1FF" },
-  { label: "查看最新订单", iconComponent: IconEye, path: "/ops/orders/list", color: "#00B42A", bgColor: "#E8FFEA" },
-  { label: "批量导出数据", iconComponent: IconExport, handler: "exportData", color: "#FF7D00", bgColor: "#FFF7E8" },
-  { label: "发布系统公告", iconComponent: IconNotification, handler: "publishNotice", color: "#722ED1", bgColor: "#F5E8FF" },
-];
+// 截断文本
+function truncate(text, len = 20) {
+  if (!text) return ''
+  return text.length > len ? text.substring(0, len) + '...' : text
+}
 
+// 格式化时间为相对时间
+function formatTimeAgo(time) {
+  if (!time) return ''
+  
+  const date = new Date(time)
+  const now = new Date()
+  const diff = now - date
+  
+  if (diff < 60000) return '刚刚'
+  if (diff < 3600000) return Math.floor(diff / 60000) + ' 分钟前'
+  if (diff < 86400000) return Math.floor(diff / 3600000) + ' 小时前'
+  if (diff < 604800000) return Math.floor(diff / 86400000) + ' 天前'
+  
+  // 超过7天显示具体日期
+  return date.toLocaleDateString('zh-CN', { 
+    month: 'short', 
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// 加载所有数据
 async function loadDashboardData() {
-  loading.value = true;
+  loading.value = true
+  
   try {
-    const [statsRes, reviewsRes, ordersRes] = await Promise.allSettled([
-      getStatistics(),
-      getReviewQueue({ pageSize: 10 }),
-      getOpsOrders({ pageSize: 10 }),
-    ]);
-
-    if (statsRes.status === "fulfilled") {
-      stats.value = statsRes.value?.statistics || statsRes.value || {};
+    const [statsRes, pendingRes, activitiesRes] = await Promise.allSettled([
+      http.get('/ops/stats/brief'),
+      http.get('/ops/pending-items?limit=6'),
+      http.get('/ops/recent-activities?limit=10')
+    ])
+    
+    console.log('[Dashboard] API响应:', { statsRes, pendingRes, activitiesRes })
+    
+    // 处理统计数据
+    if (statsRes.status === 'fulfilled' && statsRes.value?.data) {
+      const data = statsRes.value.data
+      stats.value = {
+        totalUsers: data.totalUsers || 0,
+        newUsersToday: data.newUsersToday || 0,
+        totalItems: data.totalItems || 0,
+        newItemsToday: data.newItemsToday || 0,
+        todayOrders: data.todayOrders || data.todayOrderCount || 0,
+        todayRevenue: data.todayRevenue || 0,
+        orderGrowth: data.orderGrowth || 0,
+        pendingTotal: data.pendingTotal || 0 ||
+          (data.pendingItems || 0) + (data.pendingReviews || 0) + (data.pendingPosts || 0),
+        pendingItems: data.pendingItems || 0,
+        pendingReviews: data.pendingReviews || 0,
+        pendingPosts: data.pendingPosts || 0
+      }
+      
+      // 更新待办数量
+      counts.items = data.pendingItems || 0
+      counts.reviews = data.pendingReviews || 0
+      counts.posts = data.pendingPosts || 0
+      counts.total = (data.pendingItems || 0) + (data.pendingReviews || 0) + (data.pendingPosts || 0)
+      
+      console.log('[Dashboard] 统计数据:', stats.value)
+    } else {
+      console.warn('[Dashboard] 统计API失败或无数据')
+      // 设置默认值避免页面空白
+      stats.value = {
+        totalUsers: 0,
+        totalItems: 0,
+        todayOrders: 0,
+        pendingTotal: 0
+      }
     }
-
-    if (reviewsRes.status === "fulfilled") {
-      pendingReviews.value = reviewsRes.value?.list || reviewsRes.value?.items || reviewsRes.value || [];
+    
+    // 处理待办事项
+    if (pendingRes.status === 'fulfilled' && pendingRes.value?.data) {
+      const data = pendingRes.value.data
+      
+      // 支持多种数据格式
+      pendingItems.value = data.items || data.list || data.reviews || []
+      
+      // 如果返回的是counts，更新计数
+      if (data.counts) {
+        counts.items = data.counts.items || counts.items
+        counts.reviews = data.counts.reviews || counts.reviews
+        counts.posts = data.counts.posts || counts.posts
+        counts.total = data.counts.total || counts.total
+      }
+      
+      console.log('[Dashboard] 待办事项:', pendingItems.value.length, '条')
+    } else {
+      console.warn('[Dashboard] 待办API失败，使用空数组')
+      pendingItems.value = []
+      
+      // 如果没有真实数据，使用统计数据的count生成占位符
+      if (stats.value.pendingItems > 0) {
+        for (let i = 0; i < Math.min(stats.value.pendingItems, 2); i++) {
+          pendingItems.value.push({
+            id: `mock_item_${i}`,
+            type: 'item',
+            title: `商品待审核 #${i + 1}`,
+            author: '卖家',
+            time: new Date().toISOString(),
+            status: 'PENDING'
+          })
+        }
+      }
+      
+      if (stats.value.pendingReviews > 0) {
+        for (let i = 0; i < Math.min(stats.value.pendingReviews, 2); i++) {
+          pendingItems.value.push({
+            id: `mock_review_${i}`,
+            type: 'review',
+            content: '用户评价内容...',
+            author: '买家',
+            time: new Date(Date.now() - 3600000 * (i + 1)),
+            status: 'PENDING'
+          })
+        }
+      }
     }
-
-    if (ordersRes.status === "fulfilled") {
-      recentOrders.value = ordersRes.value?.list || ordersRes.value?.items || ordersRes.value || [];
+    
+    // 处理最新动态
+    if (activitiesRes.status === 'fulfilled' && activitiesRes.value?.data) {
+      const data = activitiesRes.value.data
+      
+      activities.value = (data.activities || data.list || []).map(item => ({
+        ...item,
+        dotColor: getDotColor(item.type)
+      }))
+      
+      console.log('[Dashboard] 动态数据:', activities.value.length, '条')
+    } else {
+      console.warn('[Dashboard] 动态API失败')
+      activities.value = []
     }
-
-    generateMockActivities();
-  } catch (e) {
-    console.error("[Dashboard] load error:", e);
-    Message.error("加载数据失败，请刷新重试");
+    
+  } catch (error) {
+    console.error('[Dashboard] 加载失败:', error)
+    Message.error('数据加载失败，请刷新重试')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
 }
 
-function generateMockActivities() {
-  const now = new Date();
-  recentActivities.value = [
-    { id: 1, title: "新用户注册：张三", time: formatTimeAgo(new Date(now - 5 * 60000)), dotColor: "#165DFF" },
-    { id: 2, title: "商品审核通过：智能手表 Pro", time: formatTimeAgo(new Date(now - 10 * 60000)), dotColor: "#00B42A" },
-    { id: 3, title: "新订单生成：ORD20260502001", time: formatTimeAgo(new Date(now - 15 * 60000)), dotColor: "#FF7D00" },
-    { id: 4, title: "异常订单告警：支付超时", time: formatTimeAgo(new Date(now - 30 * 60000)), dotColor: "#F53F3F" },
-    { id: 5, title: "新商品发布申请：无线耳机 X3", time: formatTimeAgo(new Date(now - 45 * 60000)), dotColor: "#722ED1" },
-  ];
-}
-
-function formatTimeAgo(date) {
-  const diff = Date.now() - date.getTime();
-  const minutes = Math.floor(diff / 60000);
-  if (minutes < 60) return `${minutes}分钟前`;
-  const hours = Math.floor(minutes / 60);
-  if (hours < 24) return `${hours}小时前`;
-  const days = Math.floor(hours / 24);
-  return `${days}天前`;
-}
-
-function getOrderStatusColor(status) {
+// 根据类型获取圆点颜色
+function getDotColor(type) {
   const colors = {
-    PENDING_PAYMENT: "orange",
-    PAID: "blue",
-    SHIPPED: "cyan",
-    COMPLETED: "green",
-    CANCELLED: "red",
-    REFUNDING: "red",
-    REFUNDED: "gray",
-  };
-  return colors[status] || "gray";
+    order: '#00B42A',       // 新订单 - 绿色
+    user: '#165DFF',        // 用户注册 - 蓝色
+    completed: '#FF7D00',   // 订单完成 - 橙色
+    item: '#722ED1',        // 新商品 - 紫色
+    review: '#FF7D00',      // 评价提交 - 金色
+    post: '#14C9C9'         // 帖子发布 - 青色
+  }
+  return colors[type] || '#86909C'
 }
 
-function getOrderStatusLabel(status) {
-  const labels = {
-    PENDING_PAYMENT: "待付款",
-    PAID: "待发货",
-    SHIPPED: "待收货",
-    COMPLETED: "已完成",
-    CANCELLED: "已取消",
-    REFUNDING: "退款中",
-    REFUNDED: "已退款",
-  };
-  return labels[status] || status;
-}
-
-function handleQuickAction(action) {
-  if (action.path) {
-    router.push(action.path);
-  } else if (action.handler === "exportData") {
-    Message.info("批量导出功能开发中");
-  } else if (action.handler === "publishNotice") {
-    Message.info("系统公告发布功能开发中");
+// 刷新动态
+async function refreshActivities() {
+  Message.loading({ content: '刷新中...', duration: 500 })
+  
+  try {
+    const res = await http.get('/ops/recent-activities?limit=10')
+    
+    if (res?.data?.activities) {
+      activities.value = res.data.activities.map(item => ({
+        ...item,
+        dotColor: getDotColor(item.type)
+      }))
+      Message.success('已刷新')
+    }
+  } catch (e) {
+    console.error('[Dashboard] 刷新失败:', e)
+    Message.error('刷新失败')
   }
 }
 
-onMounted(loadDashboardData);
+// 跳转到审核页面
+function goToReview(item) {
+  if (item.type === 'item' || item.type === 'post') {
+    router.push('/ops/items')
+  } else if (item.type === 'review') {
+    router.push('/ops/review-manage')
+  } else {
+    router.push('/ops/review')
+  }
+}
+
+// 快速通过评价
+async function approveItem(item) {
+  try {
+    await http.post(`/ops/reviews/${item.id}/approve`)
+    Message.success('已通过')
+    loadDashboardData() // 刷新数据
+  } catch (e) {
+    console.error('[Dashboard] 审核失败:', e)
+    Message.error('操作失败')
+  }
+}
+
+onMounted(() => {
+  loadDashboardData()
+  
+  // 每5分钟自动刷新
+  refreshTimer = setInterval(loadDashboardData, 5 * 60 * 1000)
+})
+
+onUnmounted(() => {
+  if (refreshTimer) {
+    clearInterval(refreshTimer)
+  }
+})
 </script>
 
 <style lang="scss" scoped>
 .ops-dashboard {
-  background: #f5f6f7;
-  min-height: calc(100vh - 64px);
   padding: 0;
+  min-height: calc(100vh - 64px);
+  background: #F7F8FA;
 }
 
-.stats-row {
+// ========== KPI卡片区域 ==========
+.kpi-row {
   margin-bottom: 16px;
 }
 
-.quick-actions-card {
+.kpi-card {
+  position: relative;
+  background: #FFFFFF;
   border-radius: 8px;
-  margin-bottom: 16px;
-
-  :deep(.arco-card-body) {
-    padding: 16px 20px;
-  }
-}
-
-.action-item {
-  text-align: center;
-  cursor: pointer;
-  padding: 16px 12px;
-  border-radius: 8px;
-  border: 1px solid var(--color-border-2);
+  padding: 20px;
+  border-left: 4px solid var(--accent-color);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  display: flex;
+  align-items: center;
+  gap: 16px;
   transition: all 0.2s ease;
+  cursor: default;
 
   &:hover {
-    border-color: var(--color-primary);
-    background: var(--color-primary-light-1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(22, 93, 255, 0.15);
   }
 
-  .action-icon {
+  .kpi-icon {
     width: 48px;
     height: 48px;
     border-radius: 12px;
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
     font-size: 24px;
-    margin-bottom: 10px;
+    color: var(--accent-color);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--accent-color) 10%, transparent) 0%,
+      color-mix(in srgb, var(--accent-color) 5%, transparent) 100%
+    );
+    flex-shrink: 0;
   }
 
-  .action-label {
-    font-size: 13px;
-    color: var(--color-text-2);
-    font-weight: 500;
-  }
-}
+  .kpi-content {
+    flex: 1;
+    min-width: 0;
 
-.charts-section {
-  margin-bottom: 16px;
-}
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1D2129;
+      line-height: 1.2;
 
-.chart-card {
-  border-radius: 8px;
-  min-height: 320px;
+      .kpi-suffix {
+        font-size: 14px;
+        font-weight: 400;
+        color: #86909C;
+        margin-left: 4px;
+      }
+    }
 
-  .chart-placeholder {
-    height: 280px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    color: #86909c;
-    font-size: 14px;
+    .kpi-label {
+      font-size: 14px;
+      color: #86909C;
+      margin-top: 2px;
+      font-weight: 400;
+    }
 
-    :deep(.arco-icon) {
-      font-size: 48px;
-      opacity: 0.4;
+    .kpi-trend {
+      display: inline-flex;
+      align-items: center;
+      gap: 2px;
+      font-size: 12px;
+      margin-top: 4px;
+      padding: 2px 8px;
+      border-radius: 4px;
+
+      &.trend-up {
+        color: #00B42A;
+        background: #E8FFEA;
+      }
+
+      &.trend-down {
+        color: #F53F3F;
+        background: #FFECE8;
+      }
+
+      .trend-label {
+        opacity: 0.8;
+        margin-left: 2px;
+      }
     }
   }
 }
 
-.todo-section {
+// ========== 主内容区域 ==========
+.main-section {
   margin-bottom: 16px;
 }
 
-.todo-card {
+// ========== 待办事项卡片 ==========
+.pending-card {
   border-radius: 8px;
-  min-height: 400px;
+  height: 100%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 
   :deep(.arco-card-header) {
-    border-bottom: 1px solid var(--color-border-2);
+    border-bottom: 1px solid #E5E6EB;
     padding: 16px 20px;
   }
 
   :deep(.arco-card-body) {
     padding: 16px 20px;
   }
+
+  .pending-group {
+    &:not(:last-child) {
+      margin-bottom: 20px;
+      padding-bottom: 16px;
+      border-bottom: 1px dashed #E5E6EB;
+    }
+
+    .group-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+
+      .group-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1D2129;
+      }
+    }
+
+    .pending-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: #FAFBFC;
+      transition: all 0.15s ease;
+
+      &:hover {
+        background: #F2F3F5;
+      }
+
+      &:not(:last-child) {
+        margin-bottom: 8px;
+      }
+
+      .item-info {
+        flex: 1;
+        min-width: 0;
+
+        .item-title {
+          font-size: 13px;
+          font-weight: 500;
+          color: #1D2129;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          margin-bottom: 2px;
+        }
+
+        .item-meta {
+          font-size: 12px;
+          color: #86909C;
+        }
+      }
+    }
+
+    .more-link {
+      display: block;
+      text-align: center;
+      font-size: 12px;
+      color: #165DFF;
+      margin-top: 8px;
+      padding: 4px 0;
+      
+      &:hover {
+        color: #4080FF;
+      }
+    }
+  }
 }
 
-.timeline-section {
-  margin-bottom: 16px;
-}
+// ========== 最新动态卡片 ==========
+.activity-card {
+  border-radius: 8px;
+  height: 100%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 
-.price {
-  font-weight: 500;
-  color: #f53f3f;
-}
-
-.activity-content {
-  .activity-title {
-    font-size: 14px;
-    color: var(--color-text-1);
-    font-weight: 500;
-    margin-bottom: 4px;
+  :deep(.arco-card-header) {
+    border-bottom: 1px solid #E5E6EB;
+    padding: 16px 20px;
   }
 
-  .activity-time {
-    font-size: 12px;
-    color: var(--color-text-3);
+  :deep(.arco-card-body) {
+    padding: 16px 20px;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  .activity-content {
+    .activity-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: #1D2129;
+      margin-bottom: 2px;
+    }
+
+    .activity-desc {
+      font-size: 13px;
+      color: #4E5969;
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+
+    .activity-time {
+      font-size: 12px;
+      color: #C9CDD4;
+    }
+  }
+}
+
+// ========== 响应式适配 ==========
+@media screen and (max-width: 991px) {
+  .kpi-row {
+    .a-col {
+      width: 50% !important;
+      margin-bottom: 12px;
+    }
+
+    .kpi-card {
+      padding: 16px;
+
+      .kpi-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+      }
+
+      .kpi-content .kpi-value {
+        font-size: 24px;
+      }
+    }
   }
 }
 
 @media screen and (max-width: 767px) {
-  .quick-actions-card {
-    :deep(.arco-card-body) {
-      padding: 12px 16px;
+  .ops-dashboard {
+    .kpi-row {
+      margin-bottom: 12px;
     }
-  }
 
-  .chart-card {
-    min-height: 260px;
-
-    .chart-placeholder {
-      height: 220px;
+    .main-section {
+      .a-col {
+        width: 100% !important;
+        margin-bottom: 16px;
+      }
     }
-  }
 
-  .todo-card {
-    min-height: auto;
+    .pending-card,
+    .activity-card {
+      :deep(.arco-card-body) {
+        max-height: none;
+      }
+    }
   }
 }
 </style>

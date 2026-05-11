@@ -17,14 +17,17 @@ public class ReviewService {
   private final OrderRepository orderRepository;
   private final UserRepository userRepository;
   private final ItemRepository itemRepository;
+  private final NotificationService notificationService;
   private final ObjectMapper objectMapper = new ObjectMapper();
 
   public ReviewService(ReviewRepository reviewRepository, OrderRepository orderRepository,
-      UserRepository userRepository, ItemRepository itemRepository) {
+      UserRepository userRepository, ItemRepository itemRepository,
+      NotificationService notificationService) {
     this.reviewRepository = reviewRepository;
     this.orderRepository = orderRepository;
     this.userRepository = userRepository;
     this.itemRepository = itemRepository;
+    this.notificationService = notificationService;
   }
 
   public Map<String, Object> createReview(Long buyerId, Long orderId, Long itemId, int rating, String content, Object images) {
@@ -57,6 +60,7 @@ public class ReviewService {
       }
       sellerId = ((Number) order.get("sellerId")).longValue();
     } else {
+      // 无orderId时，允许任何人评价商品
       var item = itemRepository.findById(itemId);
       if (item == null) {
         throw new IllegalArgumentException("商品不存在");
@@ -74,6 +78,16 @@ public class ReviewService {
       enrichedReview.put("buyerName", user.get("nickname"));
       enrichedReview.put("userName", user.get("nickname"));
     });
+
+    // 通知卖家有新评价
+    Long reviewId = ((Number) review.get("id")).longValue();
+    var item = itemRepository.findById(itemId);
+    String itemTitle = item != null ? (String) item.get("title") : "商品";
+    String buyerName = userOpt.map(u -> (String) u.get("nickname")).orElse("买家");
+    notificationService.sendNotification(
+        sellerId, "收到新评价",
+        String.format("%s 对您的商品《%s》发表了评价，评分：%d星", buyerName, itemTitle, rating),
+        "REVIEW", String.valueOf(reviewId), "REVIEW");
 
     return Map.of("code", 200, "message", "评价已提交，待审核后展示", "data", enrichedReview);
   }
@@ -230,6 +244,17 @@ public class ReviewService {
       throw new IllegalArgumentException("只能审核待审核状态的评价");
     }
     reviewRepository.updateStatus(reviewId, "APPROVED");
+    
+    // 通知买家审核通过
+    Long buyerId = ((Number) review.get("buyerId")).longValue();
+    Long itemId = ((Number) review.get("itemId")).longValue();
+    var item = itemRepository.findById(itemId);
+    String itemTitle = item != null ? (String) item.get("title") : "商品";
+    notificationService.sendNotification(
+        buyerId, "评价审核通过",
+        String.format("您对《%s》的评价已审核通过", itemTitle),
+        "REVIEW", String.valueOf(reviewId), "REVIEW");
+    
     return Map.of("code", 200, "message", "评价审核通过");
   }
 
@@ -241,6 +266,17 @@ public class ReviewService {
       throw new IllegalArgumentException("只能驳回待审核状态的评价");
     }
     reviewRepository.updateStatus(reviewId, "REJECTED");
+    
+    // 通知买家审核未通过
+    Long buyerId = ((Number) review.get("buyerId")).longValue();
+    Long itemId = ((Number) review.get("itemId")).longValue();
+    var item = itemRepository.findById(itemId);
+    String itemTitle = item != null ? (String) item.get("title") : "商品";
+    notificationService.sendNotification(
+        buyerId, "评价审核未通过",
+        String.format("您对《%s》的评价未通过审核，原因：%s", itemTitle, reason != null ? reason : "无"),
+        "REVIEW", String.valueOf(reviewId), "REVIEW");
+    
     return Map.of("code", 200, "message", "评价已驳回", "data", Map.of("reason", reason));
   }
 
@@ -289,6 +325,18 @@ public class ReviewService {
     }
 
     reviewRepository.updateReply(reviewId, content);
+    
+    // 通知买家有新回复
+    Map<String, Object> review = reviewOpt.get();
+    Long buyerId = ((Number) review.get("buyerId")).longValue();
+    Long itemId = ((Number) review.get("itemId")).longValue();
+    var item = itemRepository.findById(itemId);
+    String itemTitle = item != null ? (String) item.get("title") : "商品";
+    notificationService.sendNotification(
+        buyerId, "评价已回复",
+        String.format("卖家回复了您对《%s》的评价：%s", itemTitle, content),
+        "REVIEW", String.valueOf(reviewId), "REVIEW");
+    
     return Map.of("code", 200, "message", "回复成功");
   }
 
@@ -313,18 +361,43 @@ public class ReviewService {
   }
 
   public Map<String, Object> getReviewQueuePaged(String status, String keyword, String category, int pageNo, int pageSize) {
-    List<Map<String, Object>> rows = itemRepository.findByPage(status, keyword, category, pageNo, pageSize);
-    int total = itemRepository.countByFilter(status, keyword, category);
-    return Map.of("code", 200, "data", Map.of("items", rows, "totalCount", total, "pageNo", pageNo, "pageSize", pageSize));
+    List<Map<String, Object>> reviews;
+    int total;
+
+    if (keyword != null && !keyword.isEmpty()) {
+      reviews = reviewRepository.findByKeywordPaged(keyword, status, pageNo, pageSize);
+      total = reviewRepository.countByKeywordAndStatus(keyword, status);
+    } else if (status != null && !status.isEmpty()) {
+      reviews = reviewRepository.findByStatusPaged(status, pageNo, pageSize);
+      total = reviewRepository.countByStatus(status);
+    } else {
+      reviews = reviewRepository.findAllPaged(pageNo, pageSize);
+      total = reviewRepository.countAll();
+    }
+
+    List<Map<String, Object>> enrichedReviews = enrichReviewsWithTarget(reviews);
+
+    return Map.of(
+        "code", 200,
+        "data", Map.of(
+            "reviews", enrichedReviews,
+            "items", enrichedReviews,
+            "rows", enrichedReviews,
+            "totalCount", total,
+            "total", total,
+            "pageNo", pageNo,
+            "pageSize", pageSize
+        )
+    );
   }
 
-  public Map<String, Object> approve(Long itemId, Long operatorId) {
-    itemRepository.updateReviewStatus(itemId, "APPROVED", "审核通过");
+  public Map<String, Object> approve(Long reviewId, Long operatorId) {
+    reviewRepository.updateStatus(reviewId, "APPROVED");
     return Map.of("code", 200, "message", "审核已通过");
   }
 
-  public Map<String, Object> reject(Long itemId, Long operatorId, String reason) {
-    itemRepository.updateReviewStatus(itemId, "REJECTED", reason);
+  public Map<String, Object> reject(Long reviewId, Long operatorId, String reason) {
+    reviewRepository.updateStatus(reviewId, "REJECTED");
     return Map.of("code", 200, "message", "已驳回");
   }
 
@@ -385,6 +458,37 @@ public class ReviewService {
     }
 
     return String.valueOf(imageValue);
+  }
+
+  private List<Map<String, Object>> enrichReviewsWithTarget(List<Map<String, Object>> reviews) {
+    List<Map<String, Object>> enrichedReviews = new ArrayList<>();
+    for (Map<String, Object> review : reviews) {
+      Map<String, Object> enriched = new java.util.HashMap<>(review);
+
+      Object buyerIdObj = review.get("buyerId");
+      if (buyerIdObj instanceof Number buyerIdNumber) {
+        Long buyerId = buyerIdNumber.longValue();
+        userRepository.findById(buyerId).ifPresent(user -> {
+          enriched.put("buyerName", user.get("nickname"));
+          enriched.put("buyerNickname", user.get("nickname"));
+          enriched.put("userName", user.get("nickname"));
+        });
+      }
+
+      Object itemIdObj = review.get("itemId");
+      if (itemIdObj instanceof Number itemIdNumber) {
+        Map<String, Object> item = itemRepository.findById(itemIdNumber.longValue());
+        if (item != null) {
+          enriched.put("targetTitle", item.get("title"));
+          enriched.put("itemTitle", item.get("title"));
+          enriched.put("itemImage", extractFirstImage(item.get("imageUrls")));
+          enriched.put("type", "ITEM");
+        }
+      }
+
+      enrichedReviews.add(enriched);
+    }
+    return enrichedReviews;
   }
 
   private String normalizeImages(Object images) {

@@ -50,7 +50,7 @@
       <!-- 操作按钮组 -->
       <div v-if="showActions" class="action-buttons">
         <template v-if="currentStatus === 'PENDING_PAYMENT'">
-          <a-button type="primary" size="small" @click="$emit('pay', order.id)">
+          <a-button type="primary" size="small" @click="goToPay">
             去付款
           </a-button>
           <a-button size="small" @click="$emit('cancel', order.id)">
@@ -58,17 +58,11 @@
           </a-button>
         </template>
 
-        <template v-else-if="currentStatus === 'PENDING_SHIPMENT'">
-          <a-button type="text" status="danger" size="small" @click="$emit('refund', order.id)">
-            申请退款
-          </a-button>
-        </template>
-
-        <template v-else-if="currentStatus === 'SHIPPED' || currentStatus === 'PENDING_RECEIVE'">
+        <template v-else-if="currentStatus === 'PAID'">
           <a-button type="primary" size="small" @click="$emit('confirm', order.id)">
-            确认收货
+            确认完成
           </a-button>
-          <a-button size="small" @click="$emit('refund', order.id)">
+          <a-button type="text" status="danger" size="small" @click="$emit('refund', order.id)">
             申请退款
           </a-button>
         </template>
@@ -89,7 +83,15 @@
         </template>
 
         <template v-else-if="currentStatus === 'REFUNDING'">
-          <a-tag color="red">退款中</a-tag>
+          <template v-if="isSeller">
+            <a-button type="primary" size="small" @click="$emit('approve-refund', order.id)">
+              同意退款
+            </a-button>
+            <a-button type="text" status="danger" size="small" @click="$emit('reject-refund', order.id)">
+              拒绝退款
+            </a-button>
+          </template>
+          <a-tag v-else color="red">退款中</a-tag>
         </template>
       </div>
     </div>
@@ -98,8 +100,11 @@
 
 <script setup>
 import { computed } from 'vue';
+import { useRouter } from 'vue-router';
 import StatusTag from '../common/StatusTag/StatusTag.vue';
 import ConditionTag from './ConditionTag.vue';
+
+const router = useRouter();
 
 const props = defineProps({
   order: {
@@ -114,6 +119,10 @@ const props = defineProps({
   clickable: {
     type: Boolean,
     default: false
+  },
+  isSeller: {
+    type: Boolean,
+    default: false
   }
 });
 
@@ -125,7 +134,9 @@ const emit = defineEmits([
   'review',
   'rebuy',
   'delete',
-  'click'
+  'click',
+  'approve-refund',
+  'reject-refund'
 ]);
 
 const currentStatus = computed(() => {
@@ -163,6 +174,11 @@ function formatTime(dateStr) {
     hour: '2-digit',
     minute: '2-digit'
   });
+}
+
+function goToPay() {
+  // 跳转到支付页面
+  router.push(`/portal/orders/pay/${props.order.id}`);
 }
 </script>
 

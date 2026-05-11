@@ -70,6 +70,14 @@
           <icon-star-fill size="28" />
           <span>我的收藏</span>
         </div>
+        <div class="action-card" @click="$router.push('/portal/circles')">
+          <icon-message size="28" />
+          <span>我的圈子</span>
+        </div>
+        <div class="action-card" @click="$router.push('/portal/my-reviews')">
+          <icon-star size="28" />
+          <span>我的评价</span>
+        </div>
         <div class="action-card" v-if="isSeller" @click="$router.push('/portal/seller/items')">
           <icon-apps size="28" />
           <span>我的商品</span>
@@ -77,10 +85,6 @@
         <div class="action-card" v-if="isSeller" @click="$router.push('/portal/seller/publish')">
           <icon-plus-circle size="28" />
           <span>发布商品</span>
-        </div>
-        <div class="action-card" @click="$router.push('/portal/addresses')">
-          <icon-location size="28" />
-          <span>收货地址</span>
         </div>
       </div>
     </section>
@@ -458,9 +462,10 @@ import {
   IconMobile,
   IconFile,
   IconStarFill,
+  IconStar,
+  IconMessage,
   IconApps,
   IconPlusCircle,
-  IconLocation,
   IconCamera,
   IconInfoCircle,
 } from "@arco-design/web-vue/es/icon";

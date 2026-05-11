@@ -101,21 +101,21 @@
                 </div>
               </div>
 
-              <!-- 评价列表 - 使用 a-comment -->
+              <!-- 评价列表 - 使用二次封装的 Comment 组件 -->
               <div v-if="reviews.length > 0" class="reviews-list">
-                <a-comment
+                <Comment
                   v-for="review in reviews"
                   :key="review.id"
+                  :comment="review"
+                  :id="review.id"
                   :author="review.userName || '匿名用户'"
-                  :datetime="formatReviewTime(review.createdAt)"
-                  align="right"
+                  :content="review.content"
+                  :datetime="review.createdAt"
+                  :show-actions="false"
+                  :show-reply="false"
+                  :show-like="false"
                 >
-                  <template #avatar>
-                    <a-avatar :size="40" class="user-avatar">
-                      {{ (review.userName || "用")[0] }}
-                    </a-avatar>
-                  </template>
-
+                  <!-- 自定义 actions 插槽：显示星级评分 -->
                   <template #actions>
                     <a-rate
                       :model-value="review.rating"
@@ -125,6 +125,7 @@
                     />
                   </template>
 
+                  <!-- 自定义 content 插槽：显示评价内容 + 图片 + 卖家回复 -->
                   <template #content>
                     <div class="review-content" v-html="review.content"></div>
 
@@ -143,17 +144,56 @@
                     </div>
 
                     <!-- 卖家回复 - 嵌套评论 -->
-                    <a-comment
+                    <Comment
                       v-if="review.reply"
                       author="卖家回复"
-                      datetime=""
+                      :content="review.reply"
+                      :datetime="''"
+                      :show-actions="false"
+                      :show-reply="false"
+                      :show-like="false"
+                      avatar-size="32"
                     >
                       <template #content>
                         <div class="seller-reply">{{ review.reply }}</div>
                       </template>
-                    </a-comment>
+                    </Comment>
+
+                    <!-- 卖家回复按钮（仅卖家显示） -->
+                    <div v-if="isSeller && !review.reply" class="review-reply-action">
+                      <a-button
+                        type="text"
+                        size="small"
+                        @click="openReplyInput(review)"
+                      >
+                        <template #icon><icon-message /></template>
+                        回复评价
+                      </a-button>
+                    </div>
+
+                    <!-- 回复输入框 -->
+                    <div v-if="review.showReplyInput" class="reply-input-section">
+                      <a-textarea
+                        v-model="review.replyContent"
+                        placeholder="请输入回复内容..."
+                        :auto-size="{ minRows: 2, maxRows: 4 }"
+                        size="small"
+                      />
+                      <div class="reply-actions">
+                        <a-button size="small" @click="cancelReply(review)">取消</a-button>
+                        <a-button
+                          type="primary"
+                          size="small"
+                          :loading="review.submittingReply"
+                          :disabled="!review.replyContent?.trim()"
+                          @click="submitReply(review)"
+                        >
+                          提交回复
+                        </a-button>
+                      </div>
+                    </div>
                   </template>
-                </a-comment>
+                </Comment>
 
                 <!-- 加载更多 -->
                 <div v-if="hasMoreReviews" class="load-more-wrapper">
@@ -429,6 +469,7 @@ import {
 } from "../../services/api";
 import http from "../../services/core/http";
 import { useAuthStore } from "../../stores/auth";
+import Comment from "../../components/comment/Comment.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -441,6 +482,13 @@ const favoriteCount = ref(0);
 const isInCart = ref(false);
 const cartItemId = ref(null);
 const cartLoading = ref(false);
+
+// 判断当前用户是否是商品卖家
+const isSeller = computed(() => {
+  if (!authStore.isLoggedIn || !detail.value) return false;
+  return detail.value.sellerId === authStore.user?.id ||
+         authStore.roles?.includes('SELLER');
+});
 
 const showLoginPrompt = ref(false);
 
@@ -599,9 +647,9 @@ function normalizeReview(review) {
   let images = review.images || [];
   if (typeof images === "string") {
     try {
-      images = JSON.parse(images || "[]");
+      images = JSON.parse(images);
     } catch {
-      images = images ? [images] : [];
+      images = [];
     }
   }
 
@@ -610,7 +658,46 @@ function normalizeReview(review) {
     userName: review.userName || review.buyerNickname || "匿名用户",
     images: Array.isArray(images) ? images : [],
     reply: review.reply || review.replyContent || "",
+    showReplyInput: false,
+    replyContent: '',
+    submittingReply: false,
   };
+}
+
+// 打开回复输入框
+function openReplyInput(review) {
+  review.showReplyInput = true;
+  review.replyContent = '';
+}
+
+// 取消回复
+function cancelReply(review) {
+  review.showReplyInput = false;
+  review.replyContent = '';
+}
+
+// 提交卖家回复
+async function submitReply(review) {
+  if (!review.replyContent?.trim()) {
+    Message.warning('请输入回复内容');
+    return;
+  }
+
+  review.submittingReply = true;
+  try {
+    const result = await http.post(`/reviews/${review.id}/reply`, {
+      content: review.replyContent.trim(),
+    });
+    Message.success(result?.message || '回复成功');
+    review.reply = review.replyContent.trim();
+    review.showReplyInput = false;
+    review.replyContent = '';
+  } catch (e) {
+    console.error('[ItemDetail] 回复失败:', e);
+    Message.error(e.response?.data?.message || e.message || '回复失败');
+  } finally {
+    review.submittingReply = false;
+  }
 }
 
 async function loadReviews(reset = false) {
@@ -662,6 +749,7 @@ async function submitReview() {
       ? reviewForm.images
       : [reviewForm.images].filter(Boolean);
 
+    // 使用商品详情页专用评价接口
     const result = await http.post(`/items/${route.params.id}/reviews`, {
       rating: reviewForm.rating,
       content: reviewForm.content.trim(),
@@ -677,30 +765,11 @@ async function submitReview() {
 
     await loadReviews(true);
   } catch (e) {
-    Message.error(e.message || "提交评价失败");
+    console.error('[ItemDetail] 提交评价失败:', e);
+    Message.error(e.response?.data?.message || e.message || "提交评价失败");
   } finally {
     submittingReview.value = false;
   }
-}
-
-function formatReviewTime(dateStr) {
-  if (!dateStr) return "";
-  const date = new Date(dateStr);
-  const now = new Date();
-  const diff = now - date;
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
-
-  if (minutes < 1) return "刚刚";
-  if (minutes < 60) return `${minutes}分钟前`;
-  if (hours < 24) return `${hours}小时前`;
-  if (days < 30) return `${days}天前`;
-  return date.toLocaleDateString("zh-CN", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  });
 }
 
 async function loadDetail() {
@@ -712,6 +781,13 @@ async function loadDetail() {
     await checkIsFavorite();
     await syncCartState();
     await loadReviews(true);
+
+    // 检查是否需要自动打开评价弹窗
+    if (route.query.showReview === '1' && authStore.isLoggedIn) {
+      setTimeout(() => {
+        handleShowReviewModal();
+      }, 500);
+    }
   } catch (error) {
     console.error("加载详情失败:", error);
   } finally {
@@ -1016,9 +1092,28 @@ onMounted(loadDetail);
   background: linear-gradient(135deg, #f0f5ff 0%, #e8f3fe 100%);
   border-radius: 8px;
   border-left: 3px solid #165dff;
+  color: #1d2129;
   font-size: 14px;
-  color: #4e5969;
   line-height: 1.6;
+}
+
+.review-reply-action {
+  margin-top: 12px;
+  padding-left: 8px;
+}
+
+.reply-input-section {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f7f8fa;
+  border-radius: 8px;
+}
+
+.reply-actions {
+  margin-top: 10px;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
 }
 
 .empty-reviews {

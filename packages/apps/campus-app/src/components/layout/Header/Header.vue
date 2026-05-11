@@ -61,6 +61,29 @@
               <icon-down class="dropdown-arrow" />
             </div>
             <template #content>
+              <!-- 卖家专属菜单 -->
+              <template v-if="isSeller">
+                <a-doption value="publish">
+                  <template #icon><icon-plus /></template>
+                  发布商品
+                </a-doption>
+                <a-doption value="my-items">
+                  <template #icon><icon-apps /></template>
+                  我的商品
+                </a-doption>
+                <a-doption divider />
+              </template>
+              
+              <!-- 运营专属菜单 -->
+              <template v-if="isOps">
+                <a-doption value="ops">
+                  <template #icon><icon-settings /></template>
+                  运营后台
+                </a-doption>
+                <a-doption divider />
+              </template>
+              
+              <!-- 通用菜单 -->
               <a-doption value="profile">
                 <template #icon><icon-user /></template>
                 个人中心
@@ -112,7 +135,10 @@ import {
   IconExport,
   IconDown,
   IconMenu,
-  IconClose
+  IconClose,
+  IconPlus,
+  IconApps,
+  IconSettings
 } from '@arco-design/web-vue/es/icon'
 import { Message } from '@arco-design/web-vue'
 
@@ -133,7 +159,8 @@ const props = defineProps({
     type: Object,
     default: () => ({
       username: '',
-      avatar: ''
+      avatar: '',
+      roles: []
     })
   }
 })
@@ -145,6 +172,11 @@ const router = useRouter()
 
 const searchKeyword = ref('')
 const mobileMenuOpen = ref(false)
+
+// 用户角色判断
+const userRoles = computed(() => props.userInfo?.roles || [])
+const isSeller = computed(() => userRoles.value.includes('SELLER'))
+const isOps = computed(() => userRoles.value.includes('OPS'))
 
 const navItems = [
   { label: '首页', path: '/portal/home' },
@@ -197,6 +229,15 @@ function handleUserAction(key) {
       break
     case 'favorites':
       router.push('/portal/favorites')
+      break
+    case 'publish':
+      router.push('/portal/seller/items/publish')
+      break
+    case 'my-items':
+      router.push('/portal/seller/items')
+      break
+    case 'ops':
+      router.push('/ops')
       break
     case 'logout':
       emit('logout')

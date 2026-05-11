@@ -11,8 +11,8 @@
     <template #tabs>
       <a-tabs v-model:active-key="activeTab" type="line" @change="handleTabChange">
         <a-tab-pane key="REFUNDING" title="待退款"></a-tab-pane>
-        <a-tab-pane key="APPROVED" title="已通过"></a-tab-pane>
-        <a-tab-pane key="REJECTED" title="已拒绝"></a-tab-pane>
+        <a-tab-pane key="REFUNDED" title="已退款"></a-tab-pane>
+        <a-tab-pane key="" title="全部订单"></a-tab-pane>
       </a-tabs>
     </template>
 
@@ -109,9 +109,8 @@ const detailVisible = ref(false)
 const currentOrder = ref(null)
 
 const statusMap = {
-  PENDING: { label: '待支付', color: 'orange' },
+  PENDING_PAYMENT: { label: '待支付', color: 'orange' },
   PAID: { label: '已支付', color: 'blue' },
-  SHIPPED: { label: '已发货', color: 'cyan' },
   COMPLETED: { label: '已完成', color: 'green' },
   REFUNDING: { label: '退款中', color: 'orangered' },
   REFUNDED: { label: '已退款', color: 'gray' },
@@ -174,7 +173,7 @@ function viewDetail(record) {
 
 async function approveOrder(record) {
   try {
-    await http.post(`/orders/${record.id}/refund/approve`)
+    await http.post(`/ops/orders/${record.id}/refund/approve`)
     Message.success('退款已通过')
     loadData()
   } catch (e) {
@@ -184,7 +183,7 @@ async function approveOrder(record) {
 
 async function rejectOrder(record) {
   try {
-    await http.post(`/orders/${record.id}/refund/reject`)
+    await http.post(`/ops/orders/${record.id}/refund/reject`)
     Message.success('退款已拒绝')
     loadData()
   } catch (e) {

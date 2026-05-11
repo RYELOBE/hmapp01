@@ -64,7 +64,10 @@
               </template>
 
               <template v-else-if="item.reviewStatus === 'APPROVED'">
-                <a-button type="text" status="warning" size="small" @click="offlineItem(item)">下架</a-button>
+                <a-button size="small" @click="viewDetail(item)">查看</a-button>
+                <a-tooltip content="如需下架请联系运营人员">
+                  <a-button type="text" status="warning" size="small" disabled>下架</a-button>
+                </a-tooltip>
                 <a-button size="small" @click="editItem(item, true)">编辑需重审</a-button>
               </template>
 
@@ -122,7 +125,7 @@ import {
 } from "@arco-design/web-vue/es/icon";
 import StatusTag from "../../../components/common/StatusTag/StatusTag.vue";
 import ConditionTag from "../../../components/data/ConditionTag.vue";
-import { getMyItems, offShelfItem, deleteItem as apiDeleteItem, updateItem } from "../../../services/items";
+import { getMyItems, deleteItem as apiDeleteItem, updateItem } from "../../../services/items";
 
 const router = useRouter();
 const loading = ref(false);
@@ -203,20 +206,6 @@ async function publishDraft(item) {
     Message.success("已提交审核");
     loadData();
   } catch (e) { Message.error(e.message || "操作失败"); }
-}
-
-async function offlineItem(item) {
-  Modal.confirm({
-    title: "确认下架",
-    content: `确定要下架「${item.title}」吗？`,
-    onOk: async () => {
-      try {
-        await offShelfItem(item.id);
-        Message.success("已下架");
-        loadData();
-      } catch (e) { Message.error(e.message || "操作失败"); }
-    },
-  });
 }
 
 async function onlineItem(item) {

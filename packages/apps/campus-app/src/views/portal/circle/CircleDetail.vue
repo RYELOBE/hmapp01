@@ -7,14 +7,15 @@
           <template #icon><icon-arrow-left /></template>
           返回圈子
         </a-button>
+        <span class="nav-title">{{ post?.title || '帖子详情' }}</span>
       </div>
     </div>
 
     <a-spin :loading="loading" class="detail-container">
       <template v-if="post">
-        <a-row :gutter="[24, 0]">
+        <a-row :gutter="[20, 20]">
           <!-- 左侧：帖子主体内容 -->
-          <a-col :span="16" class="main-col">
+          <a-col :xs="24" :lg="16" class="main-col">
             <!-- 帖子卡片 -->
             <div class="post-card">
               <!-- 作者信息栏 -->
@@ -114,97 +115,25 @@
                 </a-button>
               </div>
 
-              <!-- 评论列表 -->
+              <!-- 评论列表（使用二次封装的 Comment 组件） -->
               <div v-if="comments.length > 0" class="comments-list">
-                <div
+                <Comment
                   v-for="comment in comments"
                   :key="comment.id"
-                  class="comment-item"
-                >
-                  <a-avatar :size="40" class="comment-avatar">
-                    {{ (comment.userName || '用')[0] }}
-                  </a-avatar>
-                  <div class="comment-body">
-                    <div class="comment-header">
-                      <span class="user-name">{{ comment.userName || '匿名用户' }}</span>
-                      <span class="comment-time">{{ formatTime(comment.createdAt) }}</span>
-                    </div>
-                    <p class="comment-content">{{ comment.content }}</p>
-
-                    <!-- 回复按钮和子评论 -->
-                    <div class="comment-actions">
-                      <button
-                        v-if="authStore.token"
-                        class="reply-btn"
-                        @click="showReplyBox(comment.id)"
-                      >
-                        <icon-reply /> 回复
-                      </button>
-                      <button 
-                        v-if="authStore.token"
-                        class="like-btn" 
-                        @click="likeComment(comment)"
-                        :class="{ liked: comment.isLiked }"
-                      >
-                        <icon-heart-fill v-if="comment.isLiked" style="color: #F53F3F;" />
-                        <icon-heart v-else />
-                        {{ comment.likeCount || 0 }}
-                      </button>
-                    </div>
-
-                    <!-- 回复输入框（点击回复后显示） -->
-                    <div v-if="activeReplyId === comment.id" class="reply-input-box">
-                      <a-input
-                        v-model="replyContent"
-                        :placeholder="`回复 ${comment.userName || '用户'}...`"
-                        size="small"
-                        @press-enter="submitReply(comment)"
-                      >
-                        <template #suffix>
-                          <a-button
-                            type="text"
-                            size="small"
-                            :disabled="!replyContent.trim()"
-                            :loading="replying"
-                            @click="submitReply(comment)"
-                          >
-                            发送
-                          </a-button>
-                        </template>
-                      </a-input>
-                    </div>
-
-                    <!-- 子评论列表（回复） -->
-                    <div v-if="comment.replies && comment.replies.length > 0" class="replies-list">
-                      <div
-                        v-for="reply in comment.replies"
-                        :key="reply.id"
-                        class="reply-item"
-                      >
-                        <a-avatar :size="28" class="reply-avatar">
-                          {{ (reply.userName || '用')[0] }}
-                        </a-avatar>
-                        <div class="reply-body">
-                          <span class="reply-user">{{ reply.userName || '匿名' }}</span>
-                          <span v-if="reply.replyToName" class="reply-to">
-                            回复 <strong>@{{ reply.replyToName }}</strong>
-                          </span>
-                          <span class="reply-text">: {{ reply.content }}</span>
-                          <div class="reply-meta">
-                            <span>{{ formatTime(reply.createdAt) }}</span>
-                            <button 
-                              v-if="authStore.token"
-                              class="reply-btn-small" 
-                              @click="showReplyBox(reply.parentId || comment.id, reply.userName)"
-                            >
-                              回复
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                  :comment="comment"
+                  :id="comment.id"
+                  :author="comment.userName || '匿名用户'"
+                  :content="comment.content"
+                  :datetime="comment.createTime"
+                  :like-count="comment.likeCount"
+                  :is-liked="comment.isLiked"
+                  :replies="comment.replies || []"
+                  :show-actions="authStore.token"
+                  :show-reply="authStore.token"
+                  :show-like="authStore.token"
+                  :on-submit-reply="handleCommentSubmitReply"
+                  :on-like="handleCommentLike"
+                />
               </div>
 
               <!-- 空状态 -->
@@ -223,7 +152,8 @@
           </a-col>
 
           <!-- 右侧：作者信息卡 -->
-          <a-col :span="8" class="side-col">
+          <!-- 右侧：侧边栏 -->
+          <a-col :xs="24" :lg="8" class="side-col">
             <div class="author-card">
               <div class="card-header">
                 <a-avatar :size="64" class="big-avatar">
@@ -280,7 +210,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Message } from '@arco-design/web-vue';
 import {
@@ -289,10 +219,9 @@ import {
   IconHeartFill,
   IconMessage,
   IconShareAlt,
-  IconReply,
-  IconEye,
 } from '@arco-design/web-vue/es/icon';
 import { useAuthStore } from '../../../stores/auth';
+import Comment from '../../../components/comment/Comment.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -315,15 +244,32 @@ const submittingComment = ref(false);
 const loadingComments = ref(false);
 const hasMoreComments = ref(false);
 const commentsPage = ref(1);
-const commentsRef = ref(null);
-
-// 回复相关
-const activeReplyId = ref(null);
-const replyContent = ref('');
-const replying = ref(false);
 
 // 推荐帖子
 const recommendPosts = ref([]);
+
+// 监听路由参数变化（处理热门推荐帖子点击后页面不刷新的问题）
+watch(
+  () => route.params.id,
+  async (newId) => {
+    if (newId) {
+      // 重置所有状态
+      post.value = null;
+      comments.value = [];
+      commentsPage.value = 1;
+      isLiked.value = false;
+      likeCount.value = 0;
+      commentCount.value = 0;
+      commentInput.value = '';
+
+      // 重新加载数据
+      await loadPost();
+      
+      // 滚动到顶部
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+);
 
 function formatTime(dateStr) {
   if (!dateStr) return '';
@@ -449,13 +395,51 @@ async function loadComments(reset = false) {
     }
 
     const list = data.data?.comments || [];
-    
+
     // 处理评论数据
-    const processedList = list.map(c => ({
-      ...c,
-      replies: c.replies || [],
-      isLiked: false,
-      userName: c.userName || '匿名用户',
+    const processedList = await Promise.all(list.map(async c => {
+      const commentObj = {
+        ...c,
+        replies: c.replies || [],
+        isLiked: false,
+        userName: c.userName || '匿名用户',
+      };
+
+      // 检查父评论点赞状态
+      if (authStore.token) {
+        try {
+          const likeResponse = await fetch(`/api/circle/comments/${c.id}/like-status`, {
+            headers: getAuthHeaders(),
+          });
+          if (likeResponse.ok) {
+            const likeData = await likeResponse.json();
+            commentObj.isLiked = likeData.data.liked;
+          }
+        } catch (e) {
+          console.warn('[CircleDetail] 检查评论点赞状态失败:', e);
+        }
+
+        // 检查子评论点赞状态
+        if (commentObj.replies && commentObj.replies.length > 0) {
+          commentObj.replies = await Promise.all(commentObj.replies.map(async reply => {
+            const replyObj = { ...reply, isLiked: false, userName: reply.userName || '匿名用户' };
+            try {
+              const replyLikeResponse = await fetch(`/api/circle/comments/${reply.id}/like-status`, {
+                headers: getAuthHeaders(),
+              });
+              if (replyLikeResponse.ok) {
+                const replyLikeData = await replyLikeResponse.json();
+                replyObj.isLiked = replyLikeData.data.liked;
+              }
+            } catch (e) {
+              console.warn('[CircleDetail] 检查子评论点赞状态失败:', e);
+            }
+            return replyObj;
+          }));
+        }
+      }
+
+      return commentObj;
     }));
 
     if (reset) {
@@ -615,101 +599,60 @@ async function submitComment() {
   }
 }
 
-function showReplyBox(commentId, toUserName = '') {
-  if (activeReplyId.value === commentId) {
-    activeReplyId.value = null;
-    replyContent.value = '';
-  } else {
-    activeReplyId.value = commentId;
-    replyContent.value = toUserName ? `@${toUserName} ` : '';
+/**
+ * 处理评论回复（回调函数）
+ */
+async function handleCommentSubmitReply({ parentId, replyToName, content }) {
+  if (!content || !authStore.token) return;
+
+  const postId = route.params.id;
+
+  const requestBody = {
+    content,
+    parentId,
+  };
+
+  if (replyToName) {
+    requestBody.replyToName = replyToName;
   }
+
+  const response = await fetch(`/api/circle/posts/${postId}/comments`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(requestBody),
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || '回复失败');
+  }
+
+  // 刷新评论列表
+  await loadComments(true);
 }
 
-async function submitReply(parentComment) {
-  let content = replyContent.value.trim();
-  
-  // 去除@用户名部分
-  if (content.startsWith('@')) {
-    content = content.replace(/^@\S+\s*/, '').trim();
-  }
-  
-  if (!content) return;
-
+/**
+ * 处理评论点赞（回调函数）
+ */
+async function handleCommentLike(commentId) {
   if (!authStore.token) {
-    Message.warning('请先登录后再回复');
-    return;
+    throw new Error('请先登录');
   }
 
-  replying.value = true;
+  const response = await fetch(`/api/circle/comments/${commentId}/like`, {
+    method: 'POST',
+    headers: getAuthHeaders(),
+  });
 
-  try {
-    const postId = route.params.id;
-    
-    console.log('[CircleDetail] 发表回复:', { 
-      postId, 
-      parentId: parentComment.id,
-      content 
-    });
+  const data = await response.json();
 
-    const response = await fetch(`/api/circle/posts/${postId}/comments`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        content,
-        parentId: parentComment.id,
-      }),
-    });
-
-    const data = await response.json();
-    console.log('[CircleDetail] 发表回复API返回:', { status: response.status, data });
-
-    if (response.ok) {
-      // 关闭输入框
-      activeReplyId.value = null;
-      replyContent.value = '';
-      Message.success('回复成功！💬');
-      
-      // 重新加载评论
-      await loadComments(true);
-      
-      console.log('[CircleDetail] 回复成功，已刷新评论列表');
-    } else if (response.status === 401) {
-      Message.error('登录已过期，请重新登录');
-      authStore.$reset();
-      router.push('/login');
-    } else {
-      throw new Error(data.message || '回复失败');
-    }
-  } catch (e) {
-    console.error('[CircleDetail] 回复失败:', e);
-    Message.error(e.message || '回复失败');
-  } finally {
-    replying.value = false;
-  }
-}
-
-async function likeComment(comment) {
-  if (!authStore.token) {
-    Message.warning('请先登录后再操作');
-    return;
+  if (!response.ok) {
+    throw new Error(data.message || '操作失败');
   }
 
-  try {
-    // 切换本地状态
-    comment.isLiked = !comment.isLiked;
-    comment.likeCount = (comment.likeCount || 0) + (comment.isLiked ? 1 : -1);
-    
-    // TODO: 调用点赞评论API（如果后端支持）
-    console.log('[CircleDetail] 评论点赞:', { 
-      commentId: comment.id, 
-      isLiked: comment.isLiked 
-    });
-  } catch (e) {
-    // 回滚状态
-    comment.isLiked = !comment.isLiked;
-    comment.likeCount = (comment.likeCount || 0) + (comment.isLiked ? 1 : -1);
-    Message.error('操作失败');
-  }
+  // 刷新评论列表以更新点赞状态
+  await loadComments(true);
 }
 
 function handleShare() {
@@ -746,20 +689,34 @@ $text-tertiary: #86909C;
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(10px);
   border-bottom: 1px solid #E5E6EB;
-  padding: 12px 0;
+  padding: 10px 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
 
   .nav-container {
     max-width: 1400px;
     margin: 0 auto;
-    padding: 0 32px;
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .nav-title {
+    font-size: 15px;
+    font-weight: 500;
+    color: $text-primary;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .back-btn {
     color: $text-secondary;
     font-size: 14px;
+    flex-shrink: 0;
     
     &:hover {
       color: $primary-blue;
@@ -770,41 +727,53 @@ $text-tertiary: #86909C;
 .detail-container {
   max-width: 1400px;
   margin: 24px auto;
-  padding: 0 32px;
+  padding: 0 40px;
 }
 
 .main-col {
-  flex: none !important;
-  width: 66.666% !important;
+  flex: 1 !important;
+  min-width: 0;
 }
 
 .side-col {
-  flex: none !important;
-  width: 33.333% !important;
+  width: 280px !important;
+  flex-shrink: 0 !important;
 }
 
 .post-card {
   background: white;
-  border-radius: 12px;
-  padding: 28px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  margin-bottom: 20px;
+  border-radius: 16px;
+  padding: 32px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  }
 }
 
 .author-section {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 20px;
-  padding-bottom: 18px;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
   border-bottom: 1px solid #F2F3F5;
 
   .author-avatar {
     background: linear-gradient(135deg, $primary-blue, #4080FF);
     color: white;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: 700;
     flex-shrink: 0;
+    box-shadow: 0 4px 12px rgba($primary-blue, 0.25);
+    transition: transform 0.3s ease;
+
+    &:hover {
+      transform: scale(1.05);
+    }
   }
 
   .author-info {
@@ -812,107 +781,172 @@ $text-tertiary: #86909C;
     min-width: 0;
 
     .author-name {
-      font-size: 16px;
+      font-size: 17px;
       font-weight: 600;
       color: $text-primary;
-      margin: 0 0 4px 0;
+      margin: 0 0 6px 0;
+      transition: color 0.3s ease;
+
+      &:hover {
+        color: $primary-blue;
+        cursor: pointer;
+      }
     }
 
     .post-meta {
       font-size: 13px;
       color: $text-tertiary;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      &::before {
+        content: "📅";
+        font-size: 14px;
+      }
     }
   }
 }
 
 .post-title {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 700;
   color: $text-primary;
-  line-height: 1.5;
-  margin: 0 0 18px 0;
+  line-height: 1.4;
+  margin: 0 0 24px 0;
+  letter-spacing: -0.02em;
 }
 
 .post-content {
   font-size: 15px;
   color: $text-secondary;
-  line-height: 1.8;
-  margin-bottom: 20px;
+  line-height: 1.9;
+  margin-bottom: 24px;
   white-space: pre-wrap;
   word-break: break-word;
+  padding: 20px;
+  background: #FAFBFC;
+  border-radius: 12px;
+  border-left: 4px solid $primary-blue;
 }
 
 .post-images {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  margin-bottom: 18px;
+  gap: 12px;
+  margin-bottom: 24px;
 
   .image-item {
     aspect-ratio: 16 / 10;
-    border-radius: 8px;
+    border-radius: 10px;
     background-size: cover;
     background-position: center;
     cursor: pointer;
-    transition: transform 0.25s ease;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
     &:hover {
-      transform: scale(1.03);
+      transform: scale(1.03) translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+      z-index: 2;
     }
   }
 
   .more-images {
     aspect-ratio: 16 / 10;
-    background: rgba($primary-blue, 0.08);
+    background: linear-gradient(135deg, rgba($primary-blue, 0.08), rgba($primary-blue, 0.15));
     color: $primary-blue;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
-    font-weight: 600;
-    border-radius: 8px;
+    font-size: 20px;
+    font-weight: 700;
+    border-radius: 10px;
     cursor: default;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: linear-gradient(135deg, rgba($primary-blue, 0.12), rgba($primary-blue, 0.2));
+      transform: scale(1.02);
+    }
   }
 }
 
 .post-tags {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: 10px;
+  margin-bottom: 24px;
 
   .tag {
     font-size: 13px;
     color: $primary-blue;
-    background: #E8F3FF;
-    padding: 4px 12px;
-    border-radius: 14px;
+    background: linear-gradient(135deg, #E8F3FF, #D6E9FF);
+    padding: 6px 14px;
+    border-radius: 16px;
     font-weight: 500;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+
+    &:hover {
+      background: $primary-blue;
+      color: white;
+      border-color: $primary-blue;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba($primary-blue, 0.25);
+    }
   }
 }
 
 .interaction-bar {
   display: flex;
-  gap: 16px;
-  padding-top: 18px;
-  border-top: 1px solid #F2F3F5;
+  gap: 18px;
+  padding-top: 24px;
+  border-top: 2px solid #F2F3F5;
 
   .action-btn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    background: #F7F8FA;
+    gap: 8px;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #F7F8FA, #EEF0F3);
     border: none;
-    border-radius: 20px;
+    border-radius: 22px;
     font-size: 14px;
     color: $text-secondary;
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0;
+      height: 0;
+      background: radial-gradient(circle, currentColor 0%, transparent 70%);
+      opacity: 0;
+      transition: all 0.5s ease;
+      transform: translate(-50%, -50%);
+    }
 
     &:hover:not(:disabled) {
-      background: #E8F3FF;
+      background: linear-gradient(135deg, #E8F3FF, #D6E9FF);
       color: $primary-blue;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba($primary-blue, 0.2);
+
+      &::before {
+        width: 100%;
+        height: 100%;
+        opacity: 0.05;
+      }
+    }
+
+    &:active:not(:disabled) {
+      transform: translateY(0);
     }
 
     &:disabled {
@@ -921,41 +955,71 @@ $text-tertiary: #86909C;
     }
 
     &.active {
-      background: #FFF1F0;
+      background: linear-gradient(135deg, #FFF1F0, #FFE8E6);
       color: #F53F3F;
+      box-shadow: 0 4px 12px rgba(245, 63, 63, 0.2);
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(245, 63, 63, 0.25);
+      }
     }
 
     .count {
-      font-weight: 600;
-      margin-left: 2px;
+      font-weight: 700;
+      margin-left: 4px;
+      min-width: 16px;
+      text-align: center;
     }
   }
 }
 
 .comments-section {
   background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  }
 }
 
 .section-title {
-  font-size: 17px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: $text-primary;
-  margin: 0 0 20px 0;
+  margin: 0 0 24px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  &::before {
+    content: "💬";
+    font-size: 20px;
+  }
 }
 
 .comment-input-box {
-  background: #FAFBFC;
-  border-radius: 10px;
-  padding: 16px;
-  margin-bottom: 24px;
+  background: linear-gradient(135deg, #FAFBFC, #F5F6F8);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 28px;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+
+  &:focus-within {
+    border-color: $primary-blue;
+    background: white;
+    box-shadow: 0 4px 20px rgba($primary-blue, 0.1);
+  }
 
   :deep(.arco-textarea-wrapper) {
     background: transparent;
     border: 1px solid #E5E6EB;
-    
+
     &:focus-within {
       border-color: $primary-blue;
       box-shadow: 0 0 0 3px rgba($primary-blue, 0.1);
@@ -966,26 +1030,37 @@ $text-tertiary: #86909C;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-top: 10px;
+    margin-top: 12px;
 
     .tip {
-      font-size: 12px;
+      font-size: 13px;
       color: $text-tertiary;
+
+      &::before {
+        content: "⌨️ ";
+      }
     }
   }
 }
 
 .login-tip {
   text-align: center;
-  padding: 32px;
-  background: #FAFBFC;
-  border-radius: 10px;
-  margin-bottom: 24px;
+  padding: 40px;
+  background: linear-gradient(135deg, #FAFBFC, #F5F6F8);
+  border-radius: 12px;
+  margin-bottom: 28px;
+  border: 2px dashed #E5E6EB;
 
   p {
-    margin: 0 0 12px 0;
-    font-size: 14px;
+    margin: 0 0 16px 0;
+    font-size: 15px;
     color: $text-secondary;
+  }
+
+  a-button {
+    border-radius: 22px;
+    padding: 10px 24px;
+    font-weight: 600;
   }
 }
 
@@ -993,158 +1068,6 @@ $text-tertiary: #86909C;
   display: flex;
   flex-direction: column;
   gap: 24px;
-}
-
-.comment-item {
-  display: flex;
-  gap: 14px;
-
-  .comment-avatar {
-    background: linear-gradient(135deg, #86909C, #B8BFC9);
-    color: white;
-    font-size: 14px;
-    font-weight: 600;
-    flex-shrink: 0;
-  }
-
-  .comment-body {
-    flex: 1;
-    min-width: 0;
-
-    .comment-header {
-      display: flex;
-      align-items: baseline;
-      gap: 10px;
-      margin-bottom: 6px;
-
-      .user-name {
-        font-size: 14px;
-        font-weight: 600;
-        color: $text-primary;
-      }
-
-      .comment-time {
-        font-size: 12px;
-        color: $text-tertiary;
-      }
-    }
-
-    .comment-content {
-      font-size: 14px;
-      color: $text-primary;
-      line-height: 1.6;
-      margin: 0 0 10px 0;
-    }
-
-    .comment-actions {
-      display: flex;
-      gap: 16px;
-
-      .reply-btn,
-      .like-btn {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 10px;
-        background: none;
-        border: none;
-        border-radius: 6px;
-        font-size: 13px;
-        color: $text-tertiary;
-        cursor: pointer;
-        transition: all 0.2s ease;
-
-        &:hover {
-          background: #F2F3F5;
-          color: $primary-blue;
-        }
-
-        &.liked {
-          color: #F53F3F;
-        }
-      }
-    }
-
-    .reply-input-box {
-      margin-top: 12px;
-      padding-left: 12px;
-      border-left: 2px solid $primary-blue;
-
-      :deep(.arco-input-wrapper) {
-        border-radius: 6px;
-        
-        &:focus-within {
-          border-color: $primary-blue;
-        }
-      }
-    }
-
-    .replies-list {
-      margin-top: 14px;
-      padding: 14px;
-      background: #FAFBFC;
-      border-radius: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-
-      .reply-item {
-        display: flex;
-        gap: 10px;
-
-        .reply-avatar {
-          background: linear-gradient(135deg, #B8BFC9, #D1D5DB);
-          color: white;
-          font-size: 11px;
-          font-weight: 600;
-          flex-shrink: 0;
-        }
-
-        .reply-body {
-          flex: 1;
-          font-size: 13px;
-          line-height: 1.6;
-          color: $text-secondary;
-
-          .reply-user {
-            font-weight: 600;
-            color: $text-primary;
-          }
-
-          .reply-to {
-            color: $text-tertiary;
-            
-            strong {
-              color: $primary-blue;
-            }
-          }
-
-          .reply-text {
-            color: $text-secondary;
-          }
-
-          .reply-meta {
-            display: flex;
-            gap: 12px;
-            margin-top: 6px;
-            font-size: 12px;
-            color: $text-tertiary;
-
-            .reply-btn-small {
-              background: none;
-              border: none;
-              color: $text-tertiary;
-              cursor: pointer;
-              
-              &:hover {
-                color: $primary-blue;
-              }
-            }
-          }
-        }
-      }
-    }
-  }
 }
 
 .empty-comments {
@@ -1165,112 +1088,190 @@ $text-tertiary: #86909C;
 
 .author-card {
   background: white;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  margin-bottom: 20px;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  margin-bottom: 24px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  }
 
   .card-header {
     text-align: center;
-    margin-bottom: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #F2F3F5;
+    margin-bottom: 24px;
+    padding-bottom: 24px;
+    border-bottom: 2px solid #F2F3F5;
 
     .big-avatar {
       background: linear-gradient(135deg, $primary-blue, #4080FF);
       color: white;
-      font-size: 24px;
+      font-size: 26px;
       font-weight: 700;
-      margin-bottom: 12px;
+      margin-bottom: 14px;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: auto;
+      margin-right: auto;
+      box-shadow: 0 6px 20px rgba($primary-blue, 0.3);
+      transition: transform 0.3s ease;
+
+      &:hover {
+        transform: scale(1.05) rotate(3deg);
+      }
     }
 
     .card-name {
-      font-size: 17px;
-      font-weight: 600;
+      font-size: 18px;
+      font-weight: 700;
       color: $text-primary;
-      margin: 0 0 6px 0;
+      margin: 0 0 8px 0;
+      transition: color 0.3s ease;
+
+      &:hover {
+        color: $primary-blue;
+        cursor: pointer;
+      }
     }
 
     .card-desc {
       font-size: 13px;
       color: $text-tertiary;
       margin: 0;
+      line-height: 1.6;
     }
   }
 
   .card-stats {
     display: flex;
     justify-content: center;
-    margin-bottom: 18px;
+    gap: 16px;
+    margin-bottom: 24px;
 
     .single-stat {
       text-align: center;
-      padding: 16px 32px;
+      padding: 18px 36px;
       background: linear-gradient(135deg, #E8F3FF 0%, #F0F5FF 100%);
       border-radius: 12px;
+      flex: 1;
+      transition: all 0.3s ease;
+
+      &:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba($primary-blue, 0.15);
+      }
 
       strong {
         display: block;
-        font-size: 28px;
-        font-weight: 700;
+        font-size: 32px;
+        font-weight: 800;
         color: $primary-blue;
-        margin: 8px 0 4px 0;
+        margin: 10px 0 6px 0;
+        letter-spacing: -0.02em;
       }
 
       span {
         font-size: 13px;
         color: $text-tertiary;
+        font-weight: 500;
       }
+    }
+  }
+
+  .follow-btn {
+    width: 100%;
+    border-radius: 22px;
+    padding: 12px 24px;
+    font-weight: 600;
+    font-size: 15px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba($primary-blue, 0.25);
     }
   }
 }
 
 .recommend-card {
   background: white;
-  border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  }
 
   .recommend-title {
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 17px;
+    font-weight: 700;
     color: $text-primary;
-    margin: 0 0 16px 0;
+    margin: 0 0 20px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    &::before {
+      content: "🔥";
+      font-size: 18px;
+    }
   }
 
   .recommend-list {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 16px;
 
     .recommend-item {
       display: flex;
-      gap: 12px;
-      padding: 10px;
-      border-radius: 8px;
+      gap: 14px;
+      padding: 14px;
+      border-radius: 12px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.3s ease;
+      background: #FAFBFC;
 
       &:hover {
-        background: #F7F8FA;
+        background: linear-gradient(135deg, #E8F3FF, #F0F5FF);
+        transform: translateX(4px);
+        box-shadow: 0 4px 12px rgba($primary-blue, 0.1);
+
+        .rank {
+          transform: scale(1.1);
+        }
       }
 
       .rank {
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 13px;
-        font-weight: 700;
+        font-size: 14px;
+        font-weight: 800;
         color: $text-tertiary;
-        background: #F2F3F5;
-        border-radius: 6px;
+        background: linear-gradient(135deg, #F2F3F5, #E5E6EB);
+        border-radius: 8px;
         flex-shrink: 0;
+        transition: all 0.3s ease;
 
         &.top3 {
           background: linear-gradient(135deg, #FF6B35, #F53F3F);
           color: white;
+          box-shadow: 0 4px 10px rgba(245, 63, 63, 0.25);
+
+          &:hover {
+            box-shadow: 0 6px 15px rgba(245, 63, 63, 0.35);
+          }
         }
       }
 
@@ -1279,21 +1280,35 @@ $text-tertiary: #86909C;
         min-width: 0;
 
         .recommend-title-text {
-          font-size: 13px;
-          font-weight: 500;
+          font-size: 14px;
+          font-weight: 600;
           color: $text-primary;
-          line-height: 1.4;
-          margin: 0 0 4px 0;
+          line-height: 1.5;
+          margin: 0 0 6px 0;
           overflow: hidden;
           text-overflow: ellipsis;
           display: -webkit-box;
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
+          transition: color 0.3s ease;
+
+          &:hover {
+            color: $primary-blue;
+          }
         }
 
         .recommend-stats {
-          font-size: 12px;
+          font-size: 13px;
           color: $text-tertiary;
+          font-weight: 500;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+
+          &::before {
+            content: "💬";
+            font-size: 12px;
+          }
         }
       }
     }

@@ -14,10 +14,12 @@ public class ItemService {
 
   private final ItemRepository itemRepository;
   private final UserRepository userRepository;
+  private final NotificationService notificationService;
 
-  public ItemService(ItemRepository itemRepository, UserRepository userRepository) {
+  public ItemService(ItemRepository itemRepository, UserRepository userRepository, NotificationService notificationService) {
     this.itemRepository = itemRepository;
     this.userRepository = userRepository;
+    this.notificationService = notificationService;
   }
 
   /**
@@ -38,8 +40,21 @@ public class ItemService {
     validateSeller(sellerId);
     String imageUrlsStr = parseImageUrls(imageUrls);
 
-    return itemRepository.save(title, price, description, sellerId,
+    Map<String, Object> savedItem = itemRepository.save(title, price, description, sellerId,
         getSellerNickname(sellerId), imageUrlsStr, category, conditionLevel, campus);
+    
+    // 通知运营人员有新商品待审核
+    Long itemId = ((Number) savedItem.get("id")).longValue();
+    notificationService.sendNotification(
+        null, // null receiverId 表示发送给运营人员
+        "新商品待审核",
+        String.format("卖家 %s 发布了新商品：%s，请及时审核", getSellerNickname(sellerId), title),
+        "REVIEW",
+        String.valueOf(itemId),
+        "ITEM"
+    );
+    
+    return savedItem;
   }
 
   /**
@@ -178,25 +193,49 @@ public class ItemService {
     if (status == null || status.isEmpty()) {
       throw new IllegalArgumentException("审核状态不能为空");
     }
+    
+    Map<String, Object> item = itemRepository.findById(id);
+    if (item == null) {
+      throw new IllegalArgumentException("商品不存在");
+    }
+    
     itemRepository.updateReviewStatus(id, status, reason);
+    
+    // 通知卖家审核结果
+    Long sellerId = ((Number) item.get("sellerId")).longValue();
+    String title = (String) item.get("title");
+    
+    if ("APPROVED".equals(status)) {
+      notificationService.sendNotification(
+          sellerId, "商品审核通过",
+          String.format("您的商品 \"%s\" 已通过审核，现已上架", title),
+          "REVIEW", String.valueOf(id), "ITEM");
+    } else if ("REJECTED".equals(status)) {
+      notificationService.sendNotification(
+          sellerId, "商品审核未通过",
+          String.format("您的商品 \"%s\" 未通过审核，原因：%s", title, reason != null ? reason : "无"),
+          "REVIEW", String.valueOf(id), "ITEM");
+    }
   }
 
   /**
    * 下架商品
    * @param itemId 商品ID
-   * @param sellerId 卖家ID
+   * @param sellerId 卖家ID（运营人员传null）
    */
   public void offShelfItem(Long itemId, Long sellerId) {
-    validateSeller(sellerId);
-
     Map<String, Object> item = itemRepository.findById(itemId);
     if (item == null) {
       throw new IllegalArgumentException("商品不存在");
     }
-    if (!sellerId.equals(item.get("sellerId"))) {
-      throw new IllegalArgumentException("只能下架自己的商品");
+    // sellerId为null表示运营人员操作，跳过权限校验
+    if (sellerId != null) {
+      validateSeller(sellerId);
+      if (!sellerId.equals(item.get("sellerId"))) {
+        throw new IllegalArgumentException("只能下架自己的商品");
+      }
     }
-    itemRepository.updateReviewStatus(itemId, "OFF_SHELF", "卖家主动下架");
+    itemRepository.updateReviewStatus(itemId, "OFF_SHELF", sellerId != null ? "卖家主动下架" : "运营人员下架");
   }
 
   public Map<String, Object> updateItem(Long itemId, Long sellerId, String title, Integer price,
@@ -217,7 +256,8 @@ public class ItemService {
     if (item == null) {
       throw new IllegalArgumentException("商品不存在");
     }
-    if (!sellerId.equals(item.get("sellerId"))) {
+    // sellerId为null表示运营人员操作，跳过权限校验
+    if (sellerId != null && !sellerId.equals(item.get("sellerId"))) {
       throw new IllegalArgumentException("只能删除自己的商品");
     }
     itemRepository.delete(itemId);

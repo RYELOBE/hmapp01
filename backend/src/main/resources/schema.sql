@@ -285,13 +285,29 @@ CREATE TABLE circle_post (
 CREATE TABLE circle_comment (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   post_id BIGINT NOT NULL,
+  parent_id BIGINT NULL DEFAULT NULL,
   user_id BIGINT NOT NULL,
   user_name VARCHAR(64) NOT NULL,
+  reply_to_user_name VARCHAR(64) NULL DEFAULT NULL,
   content VARCHAR(1000) NOT NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
+  like_count INT NOT NULL DEFAULT 0,
   create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
   INDEX idx_post_id (post_id),
+  INDEX idx_parent_id (parent_id),
   INDEX idx_user_id (user_id),
+  INDEX idx_status (status),
   INDEX idx_create_time (create_time)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS circle_comment_like (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  comment_id BIGINT NOT NULL,
+  user_id BIGINT NOT NULL,
+  create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_comment_user (comment_id, user_id),
+  INDEX idx_comment_id (comment_id),
+  INDEX idx_user_id (user_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE circle_like (

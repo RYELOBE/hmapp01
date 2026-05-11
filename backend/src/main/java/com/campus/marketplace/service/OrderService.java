@@ -17,21 +17,22 @@ public class OrderService {
   private final OrderRepository orderRepository;
   private final ItemRepository itemRepository;
   private final UserRepository userRepository;
+  private final NotificationService notificationService;
 
   private static final List<String> VALID_STATUSES = List.of(
       "PENDING_PAYMENT", "PAID", "SHIPPED", "COMPLETED", "CANCELLED", "REFUNDING", "REFUNDED"
   );
 
-  public OrderService(OrderRepository orderRepository, ItemRepository itemRepository, UserRepository userRepository) {
+  public OrderService(OrderRepository orderRepository, ItemRepository itemRepository, UserRepository userRepository, NotificationService notificationService) {
     this.orderRepository = orderRepository;
     this.itemRepository = itemRepository;
     this.userRepository = userRepository;
+    this.notificationService = notificationService;
   }
 
   private static final Map<String, List<String>> STATUS_TRANSITIONS = Map.of(
       "PENDING_PAYMENT", List.of("PAID", "CANCELLED"),
-      "PAID", List.of("SHIPPED", "CANCELLED", "REFUNDING"),
-      "SHIPPED", List.of("COMPLETED", "REFUNDING"),
+      "PAID", List.of("COMPLETED", "CANCELLED", "REFUNDING"),
       "REFUNDING", List.of("REFUNDED", "PAID"),
       "COMPLETED", List.of(),
       "CANCELLED", List.of(),
@@ -90,12 +91,25 @@ public class OrderService {
     String sellerName = (String) item.get("sellerName");
     String buyerName = getBuyerName(buyerId);
 
-    return orderRepository.save(buyerId, sellerId, itemId, itemTitle, itemImage,
+    Map<String, Object> savedOrder = orderRepository.save(buyerId, sellerId, itemId, itemTitle, itemImage,
         price, quantity, receiverName, receiverPhone, receiverAddress, buyerName, sellerName);
+    
+    // 发送通知给卖家
+    Long orderId = ((Number) savedOrder.get("id")).longValue();
+    notificationService.sendNotification(
+        sellerId,
+        "新订单通知",
+        String.format("您有新的订单：%s，买家：%s，请及时处理", itemTitle, buyerName),
+        "TRANSACTION",
+        String.valueOf(orderId),
+        "ORDER"
+    );
+    
+    return savedOrder;
   }
 
   /**
-   * 模拟支付
+   * 买家付款
    */
   public void pay(Long orderId, Long userId) {
     Map<String, Object> order = validateOrderAccess(orderId, userId);
@@ -104,36 +118,54 @@ public class OrderService {
       throw new IllegalArgumentException("订单状态不允许支付");
     }
     orderRepository.updateStatus(orderId, "PAID");
+    
+    // 发送通知给卖家：买家已付款，等待线下交易
+    Long sellerId = ((Number) order.get("sellerId")).longValue();
+    String itemTitle = (String) order.get("itemTitle");
+    notificationService.sendNotification(
+        sellerId,
+        "订单已付款",
+        String.format("订单 %s 已付款，请与买家线下交易", itemTitle),
+        "TRANSACTION",
+        String.valueOf(orderId),
+        "ORDER"
+    );
   }
 
   /**
-   * 卖家发货
+   * 确认完成（线下交易后）
    */
-  public void ship(Long orderId, Long sellerId, String expressCompany, String expressNo) {
-    Map<String, Object> order = validateOrderOwnership(orderId, sellerId);
-    String currentStatus = (String) order.get("status");
-    if (!canTransition(currentStatus, "SHIPPED")) {
-      throw new IllegalArgumentException("订单状态不允许发货");
+  public void confirmOrder(Long orderId, Long userId) {
+    Map<String, Object> order = findOrderById(orderId);
+    Long buyerId = ((Number) order.get("buyerId")).longValue();
+    Long sellerId = ((Number) order.get("sellerId")).longValue();
+    
+    // 买卖双方都可以确认完成
+    if (!userId.equals(buyerId) && !userId.equals(sellerId)) {
+      throw new IllegalArgumentException("无权操作此订单");
     }
-    if (expressCompany == null || expressCompany.isEmpty()) {
-      throw new IllegalArgumentException("快递公司不能为空");
-    }
-    if (expressNo == null || expressNo.isEmpty()) {
-      throw new IllegalArgumentException("快递单号不能为空");
-    }
-    orderRepository.ship(orderId, expressCompany, expressNo);
-  }
-
-  /**
-   * 确认收货
-   */
-  public void confirmOrder(Long orderId, Long buyerId) {
-    Map<String, Object> order = validateOrderBuyerAccess(orderId, buyerId);
+    
     String currentStatus = (String) order.get("status");
     if (!canTransition(currentStatus, "COMPLETED")) {
-      throw new IllegalArgumentException("订单状态不允许确认收货");
+      throw new IllegalArgumentException("订单状态不允许确认完成");
     }
     orderRepository.updateStatus(orderId, "COMPLETED");
+    
+    // 发送通知给对方
+    String itemTitle = (String) order.get("itemTitle");
+    if (userId.equals(buyerId)) {
+      // 买家确认，通知卖家
+      notificationService.sendNotification(
+          sellerId, "交易完成",
+          String.format("订单 %s 已确认完成，交易成功", itemTitle),
+          "TRANSACTION", String.valueOf(orderId), "ORDER");
+    } else {
+      // 卖家确认，通知买家
+      notificationService.sendNotification(
+          buyerId, "交易完成",
+          String.format("订单 %s 已确认完成，交易成功", itemTitle),
+          "TRANSACTION", String.valueOf(orderId), "ORDER");
+    }
   }
 
   /**
@@ -152,6 +184,22 @@ public class OrderService {
       throw new IllegalArgumentException("订单状态不允许取消");
     }
     orderRepository.updateStatus(orderId, "CANCELLED");
+    
+    // 发送通知给对方
+    String itemTitle = (String) order.get("itemTitle");
+    if (userId.equals(buyerId)) {
+      // 买家取消，通知卖家
+      notificationService.sendNotification(
+          sellerId, "订单取消通知",
+          String.format("订单 %s 已被买家取消", itemTitle),
+          "TRANSACTION", String.valueOf(orderId), "ORDER");
+    } else {
+      // 卖家取消，通知买家
+      notificationService.sendNotification(
+          buyerId, "订单取消通知",
+          String.format("订单 %s 已被卖家取消", itemTitle),
+          "TRANSACTION", String.valueOf(orderId), "ORDER");
+    }
   }
 
   /**
@@ -164,30 +212,72 @@ public class OrderService {
       throw new IllegalArgumentException("订单状态不允许申请退款");
     }
     orderRepository.updateStatus(orderId, "REFUNDING");
+    
+    // 发送通知给卖家
+    Long sellerId = ((Number) order.get("sellerId")).longValue();
+    String itemTitle = (String) order.get("itemTitle");
+    notificationService.sendNotification(
+        sellerId, "退款申请通知",
+        String.format("买家申请订单 %s 的退款，请及时处理", itemTitle),
+        "TRANSACTION", String.valueOf(orderId), "ORDER");
   }
 
   /**
    * 同意退款
+   * @param orderId 订单ID
+   * @param userId 操作用户ID（卖家或运营人员）
    */
-  public void approveRefund(Long orderId, Long sellerId) {
-    Map<String, Object> order = validateOrderOwnership(orderId, sellerId);
+  public void approveRefund(Long orderId, Long userId) {
+    Map<String, Object> order = findOrderById(orderId);
+    Long sellerId = ((Number) order.get("sellerId")).longValue();
+    // userId为null或不是卖家时，表示运营人员操作
+    boolean isOps = userId == null || !userId.equals(sellerId);
+    if (!isOps) {
+      validateOrderOwnership(orderId, userId);
+    }
+    
     String currentStatus = (String) order.get("status");
     if (!canTransition(currentStatus, "REFUNDED")) {
       throw new IllegalArgumentException("订单状态不允许退款");
     }
     orderRepository.updateStatus(orderId, "REFUNDED");
+    
+    // 发送通知给买家
+    Long buyerId = ((Number) order.get("buyerId")).longValue();
+    String itemTitle = (String) order.get("itemTitle");
+    notificationService.sendNotification(
+        buyerId, "退款成功通知",
+        String.format("订单 %s 的退款申请已通过，退款已到账", itemTitle),
+        "TRANSACTION", String.valueOf(orderId), "ORDER");
   }
 
   /**
    * 拒绝退款
+   * @param orderId 订单ID
+   * @param userId 操作用户ID（卖家或运营人员）
    */
-  public void rejectRefund(Long orderId, Long sellerId) {
-    Map<String, Object> order = validateOrderOwnership(orderId, sellerId);
+  public void rejectRefund(Long orderId, Long userId) {
+    Map<String, Object> order = findOrderById(orderId);
+    Long sellerId = ((Number) order.get("sellerId")).longValue();
+    // userId为null或不是卖家时，表示运营人员操作
+    boolean isOps = userId == null || !userId.equals(sellerId);
+    if (!isOps) {
+      validateOrderOwnership(orderId, userId);
+    }
+    
     String currentStatus = (String) order.get("status");
     if (!"REFUNDING".equals(currentStatus)) {
       throw new IllegalArgumentException("订单状态不允许拒绝退款");
     }
     orderRepository.updateStatus(orderId, "PAID");
+    
+    // 发送通知给买家
+    Long buyerId = ((Number) order.get("buyerId")).longValue();
+    String itemTitle = (String) order.get("itemTitle");
+    notificationService.sendNotification(
+        buyerId, "退款拒绝通知",
+        String.format("订单 %s 的退款申请已被拒绝", itemTitle),
+        "TRANSACTION", String.valueOf(orderId), "ORDER");
   }
 
   /**
@@ -405,7 +495,7 @@ public class OrderService {
   }
 
   /**
-   * 验证订单参数
+   * 验证订单参数（校园线下交易模式，收货人信息可选）
    */
   private void validateOrderParams(Long itemId, Integer quantity, String receiverName, String receiverPhone) {
     if (itemId == null) {
@@ -414,12 +504,7 @@ public class OrderService {
     if (quantity == null || quantity < 1) {
       throw new IllegalArgumentException("商品数量必须大于0");
     }
-    if (receiverName == null || receiverName.isEmpty()) {
-      throw new IllegalArgumentException("收货人姓名不能为空");
-    }
-    if (receiverPhone == null || receiverPhone.isEmpty()) {
-      throw new IllegalArgumentException("联系电话不能为空");
-    }
+    // 校园线下交易模式，收货人信息可选
   }
 
   /**

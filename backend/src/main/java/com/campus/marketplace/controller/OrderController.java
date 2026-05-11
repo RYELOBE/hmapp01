@@ -3,9 +3,7 @@ package com.campus.marketplace.controller;
 import org.springframework.security.access.prepost.PreAuthorize;
 import com.campus.marketplace.service.CurrentUserService;
 import com.campus.marketplace.service.OrderService;
-import com.campus.marketplace.service.NotificationService;
 import java.util.Map;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,12 +18,10 @@ import org.springframework.web.bind.annotation.RestController;
 public class OrderController {
   private final OrderService orderService;
   private final CurrentUserService currentUserService;
-  private final NotificationService notificationService;
 
-  public OrderController(OrderService orderService, CurrentUserService currentUserService, NotificationService notificationService) {
+  public OrderController(OrderService orderService, CurrentUserService currentUserService) {
     this.orderService = orderService;
     this.currentUserService = currentUserService;
-    this.notificationService = notificationService;
   }
 
   /** 创建订单 */
@@ -72,25 +68,18 @@ public class OrderController {
     return Map.of("code", 200, "data", order);
   }
 
-  /** 模拟支付 */
+  /** 买家付款 */
   @PostMapping("/{id}/pay")
   public Map<String, Object> pay(@PathVariable Long id) {
     orderService.pay(id, currentUserService.userId());
     return Map.of("code", 200, "message", "支付成功");
   }
 
-  /** 确认收货 */
+  /** 确认完成（买卖双方均可操作） */
   @PostMapping("/{id}/confirm")
   public Map<String, Object> confirm(@PathVariable Long id) {
     orderService.confirmOrder(id, currentUserService.userId());
-    return Map.of("code", 200, "message", "确认收货成功");
-  }
-
-  /** 卖家发货 */
-  @PostMapping("/{id}/ship")
-  public Map<String, Object> ship(@PathVariable Long id, @RequestBody ShipRequest request) {
-    orderService.ship(id, currentUserService.userId(), request.expressCompany(), request.expressNo());
-    return Map.of("code", 200, "message", "发货成功");
+    return Map.of("code", 200, "message", "交易完成");
   }
 
   /** 取消订单 */
@@ -104,21 +93,6 @@ public class OrderController {
   @PostMapping("/{id}/refund")
   public Map<String, Object> requestRefund(@PathVariable Long id) {
     orderService.requestRefund(id, currentUserService.userId());
-    
-    // 发送退款申请通知给运营人员
-    try {
-      notificationService.createBusinessNotification(
-        "ORDER", 
-        id.toString(), 
-        "订单退款申请", 
-        "用户申请退款，订单ID: " + id + "，请及时处理", 
-        null
-      );
-    } catch (Exception e) {
-      // 记录日志但不影响主流程
-      System.err.println("Failed to send refund notification: " + e.getMessage());
-    }
-    
     return Map.of("code", 200, "message", "退款申请已提交");
   }
 
@@ -144,10 +118,5 @@ public class OrderController {
       String receiverName,
       String receiverPhone,
       String receiverAddress
-  ) {}
-
-  public record ShipRequest(
-      String expressCompany,
-      String expressNo
   ) {}
 }

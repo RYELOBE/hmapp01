@@ -220,8 +220,11 @@ async function loadCart() {
   loading.value = true;
   try {
     const res = await getCartList();
-    cartItems.value = res || [];
+    // 后端返回 { code: 200, data: [...] }
+    cartItems.value = res?.data || [];
+    console.log('[Cart] 加载购物车:', { count: cartItems.value.length });
   } catch (e) {
+    console.error('[Cart] 加载失败:', e);
     Message.error(e.message || "加载购物车失败");
   } finally {
     loading.value = false;

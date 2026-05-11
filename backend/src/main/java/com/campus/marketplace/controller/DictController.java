@@ -116,9 +116,8 @@ public class DictController {
   private List<Map<String, Object>> getOrderStatuses() {
     List<Map<String, Object>> list = new ArrayList<>();
     addWithColor(list, "", "全部状态", "");
-    addWithColor(list, "PENDING_PAYMENT", "待付款", "orange");
-    addWithColor(list, "PAID", "待发货", "arcoblue");
-    addWithColor(list, "SHIPPED", "待收货", "cyan");
+    addWithColor(list, "PENDING_PAYMENT", "待支付", "orange");
+    addWithColor(list, "PAID", "待交易", "arcoblue");
     addWithColor(list, "COMPLETED", "已完成", "green");
     addWithColor(list, "CANCELLED", "已取消", "gray");
     addWithColor(list, "REFUNDING", "退款中", "orangered");

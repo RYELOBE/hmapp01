@@ -44,6 +44,10 @@ const OrderConfirm = () =>
   import(
     /* webpackChunkName: "portal-order-confirm" */ "../views/portal/orders/OrderConfirm.vue"
   );
+const OrderPay = () =>
+  import(
+    /* webpackChunkName: "portal-order-pay" */ "../views/portal/orders/OrderPay.vue"
+  );
 const ProfileView = () =>
   import(
     /* webpackChunkName: "portal-profile" */ "../views/portal/Profile.vue"
@@ -53,7 +57,7 @@ const OpsLayout = () =>
   import(/* webpackChunkName: "ops-layout" */ "../views/ops/Layout.vue");
 const OpsDashboard = () =>
   import(
-    /* webpackChunkName: "ops-dashboard" */ "../views/ops/dashboard/EnhancedDashboard.vue"
+    /* webpackChunkName: "ops-dashboard" */ "../views/ops/dashboard/index.vue"
   );
 const OpsReview = () =>
   import(
@@ -128,8 +132,18 @@ const routes = [
         component: ItemDetail,
       },
       {
+        path: "orders/confirm",
+        component: OrderConfirm,
+        meta: { roles: ["BUYER"] },
+      },
+      {
         path: "orders/confirm/:id",
         component: OrderConfirm,
+        meta: { roles: ["BUYER"] },
+      },
+      {
+        path: "orders/pay/:id",
+        component: OrderPay,
         meta: { roles: ["BUYER"] },
       },
       {
@@ -178,11 +192,6 @@ const routes = [
         name: "portalMyReviews",
         component: () => import("../views/portal/MyReviews.vue"),
         meta: { title: "我的评价", roles: ["BUYER"] },
-      },
-      {
-        path: "review/:orderId",
-        component: () => import("../views/portal/ReviewSubmit.vue"),
-        meta: { roles: ["BUYER"] },
       },
       {
         path: "seller/stats",

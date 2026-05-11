@@ -77,9 +77,19 @@ public class CircleController {
   @PostMapping("/posts/{id}/comments")
   @PreAuthorize("isAuthenticated()")
   public Map<String, Object> addComment(@PathVariable Long id,
-      @RequestBody Map<String, String> body) {
+      @RequestBody Map<String, Object> body) {
     Long userId = currentUserService.userId();
-    Map<String, Object> comment = circleService.addComment(id, userId, body.get("content"));
+    String content = (String) body.get("content");
+    Object parentIdObj = body.get("parentId");
+    Long parentId = parentIdObj != null ? ((Number) parentIdObj).longValue() : null;
+    String replyToName = (String) body.get("replyToName");
+
+    Map<String, Object> comment;
+    if (parentId != null) {
+      comment = circleService.addComment(id, parentId, replyToName, userId, content);
+    } else {
+      comment = circleService.addComment(id, userId, content);
+    }
     return buildSuccessResponse(comment);
   }
 
@@ -198,6 +208,28 @@ public class CircleController {
   public Map<String, Object> rejectComment(@PathVariable Long id) {
     circleService.rejectComment(id);
     return buildSuccessResponse(Map.of("message", "评论已删除"));
+  }
+
+  /** 评论点赞/取消点赞 */
+  @PostMapping("/comments/{id}/like")
+  @PreAuthorize("isAuthenticated()")
+  public Map<String, Object> toggleCommentLike(@PathVariable Long id) {
+    Long userId = currentUserService.userId();
+    boolean liked = circleService.toggleCommentLike(id, userId);
+    Map<String, Object> result = new HashMap<>();
+    result.put("liked", liked);
+    return buildSuccessResponse(result);
+  }
+
+  /** 检查评论是否已点赞 */
+  @GetMapping("/comments/{id}/like-status")
+  @PreAuthorize("isAuthenticated()")
+  public Map<String, Object> checkCommentLiked(@PathVariable Long id) {
+    Long userId = currentUserService.userId();
+    boolean liked = circleService.checkCommentLiked(id, userId);
+    Map<String, Object> result = new HashMap<>();
+    result.put("liked", liked);
+    return buildSuccessResponse(result);
   }
 
   private Map<String, Object> buildSuccessResponse(Object data) {

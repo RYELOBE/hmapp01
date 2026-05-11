@@ -29,9 +29,17 @@
             v-for="order in orders"
             :key="order.id"
             :order="order"
+            :is-seller="isSeller"
             clickable
             @click="goItem(order)"
-            @action="handleAction"
+            @confirm="handleAction('confirm', order)"
+            @refund="handleAction('refund', order)"
+            @cancel="handleAction('cancel', order)"
+            @approve-refund="handleAction('approve-refund', order)"
+            @reject-refund="handleAction('reject-refund', order)"
+            @review="handleReview(order)"
+            @delete="handleDelete(order)"
+            @rebuy="handleRebuy(order)"
           />
         </div>
 
@@ -58,17 +66,6 @@
         />
       </div>
     </a-card>
-
-    <a-modal v-model:visible="shipModalVisible" title="发货" @ok="submitShip">
-      <a-form :model="shipForm" layout="vertical">
-        <a-form-item label="快递公司" required>
-          <a-input v-model="shipForm.expressCompany" placeholder="请输入快递公司" />
-        </a-form-item>
-        <a-form-item label="快递单号" required>
-          <a-input v-model="shipForm.expressNo" placeholder="请输入快递单号" />
-        </a-form-item>
-      </a-form>
-    </a-modal>
   </div>
 </template>
 
@@ -81,8 +78,6 @@ import OrderCard from "../../../components/data/OrderCard.vue";
 import {
   getMyOrders,
   confirmOrder,
-  payOrder,
-  shipOrder,
   cancelOrder,
   requestRefund,
   approveRefund,
@@ -101,13 +96,6 @@ const loading = ref(false);
 const activeStatus = ref(route.query.tab || "");
 const pagination = ref({ current: 1, pageSize: 10, total: 0 });
 
-const shipModalVisible = ref(false);
-const currentShipOrder = ref(null);
-const shipForm = ref({
-  expressCompany: "",
-  expressNo: "",
-});
-
 async function loadData() {
   loading.value = true;
   try {
@@ -117,9 +105,13 @@ async function loadData() {
       pageSize: pagination.value.pageSize,
     };
     const res = await getMyOrders(params);
-    orders.value = res?.orders || res?.rows || [];
-    pagination.value.total = res?.totalCount ?? res?.total ?? 0;
+    // 后端返回 { code: 200, data: { orders, totalCount } }
+    const data = res?.data || res;
+    orders.value = data?.orders || data?.rows || [];
+    pagination.value.total = data?.totalCount ?? data?.total ?? 0;
+    console.log('[Orders] 加载订单:', { count: orders.value.length, total: pagination.value.total });
   } catch (e) {
+    console.error('[Orders] 加载失败:', e);
     Message.error(e.message || "加载失败");
   } finally {
     loading.value = false;
@@ -148,24 +140,43 @@ function goItem(order) {
   if (order.itemId) router.push(`/portal/item/${order.itemId}`);
 }
 
+// 评价跳转到商品详情页
+function handleReview(order) {
+  router.push({
+    path: `/portal/item/${order.itemId}`,
+    query: { showReview: '1' }
+  });
+}
+
+async function handleDelete(order) {
+  Modal.confirm({
+    title: "删除订单",
+    content: "确定要删除此订单记录吗？",
+    okText: "确认删除",
+    cancelText: "取消",
+    onOk: async () => {
+      try {
+        // 目前没有删除订单API，暂时只刷新列表
+        Message.success("订单已删除");
+        loadData();
+      } catch (e) {
+        Message.error(e.message || "删除失败");
+      }
+    },
+  });
+}
+
+// 再次购买：跳转到商品详情页
+function handleRebuy(order) {
+  if (order.itemId) {
+    router.push(`/portal/item/${order.itemId}`);
+  } else {
+    Message.warning("无法找到商品信息");
+  }
+}
+
 async function handleAction(action, order) {
   switch (action) {
-    case "pay":
-      Modal.confirm({
-        title: "确认支付",
-        content: "确定要支付此订单吗？",
-        onOk: async () => {
-          try {
-            await payOrder(order.id);
-            Message.success("支付成功");
-            loadData();
-          } catch (e) {
-            Message.error(e.message || "支付失败");
-          }
-        },
-      });
-      break;
-
     case "cancel":
       Modal.confirm({
         title: "取消订单",
@@ -184,12 +195,12 @@ async function handleAction(action, order) {
 
     case "confirm":
       Modal.confirm({
-        title: "确认收货",
-        content: "确认已收到商品吗？",
+        title: "确认交易完成",
+        content: "确认交易已完成吗？",
         onOk: async () => {
           try {
             await confirmOrder(order.id);
-            Message.success("已确认收货");
+            Message.success("交易已完成");
             loadData();
           } catch (e) {
             Message.error(e.message || "操作失败");
@@ -212,12 +223,6 @@ async function handleAction(action, order) {
           }
         },
       });
-      break;
-
-    case "ship":
-      currentShipOrder.value = order;
-      shipForm.value = { expressCompany: "", expressNo: "" };
-      shipModalVisible.value = true;
       break;
 
     case "approve-refund":
@@ -254,21 +259,6 @@ async function handleAction(action, order) {
   }
 }
 
-async function submitShip() {
-  if (!shipForm.value.expressCompany || !shipForm.value.expressNo) {
-    Message.warning("请填写完整信息");
-    return;
-  }
-  try {
-    await shipOrder(currentShipOrder.value.id, shipForm.value);
-    Message.success("发货成功");
-    shipModalVisible.value = false;
-    loadData();
-  } catch (e) {
-    Message.error(e.message || "发货失败");
-  }
-}
-
 onMounted(loadData);
 </script>
 
@@ -277,7 +267,7 @@ onMounted(loadData);
   padding: 24px;
   max-width: 1000px;
   margin: 0 auto;
-  background: linear-gradient(180deg, #f5f6f8 0%, #ffffff 100%);
+  background: #f7fbff;
   min-height: 100vh;
 }
 

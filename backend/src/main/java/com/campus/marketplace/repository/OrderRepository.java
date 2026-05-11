@@ -98,6 +98,20 @@ public class OrderRepository {
     return count != null && count > 0;
   }
 
+  /** 检查是否已购买过该商品（包括已完成和已退款） */
+  public boolean hasPurchasedItem(Long buyerId, Long itemId) {
+    String sql = "SELECT COUNT(*) FROM orders WHERE buyer_id = ? AND item_id = ? AND status IN ('COMPLETED', 'REFUNDED')";
+    Integer count = jdbc.queryForObject(sql, Integer.class, buyerId, itemId);
+    return count != null && count > 0;
+  }
+
+  /** 获取买家对某商品的已完成订单 */
+  public Map<String, Object> findCompletedOrderByBuyerAndItem(Long buyerId, Long itemId) {
+    String sql = "SELECT * FROM orders WHERE buyer_id = ? AND item_id = ? AND status = 'COMPLETED' LIMIT 1";
+    var results = jdbc.query(sql, ROW_MAPPER, buyerId, itemId);
+    return results.isEmpty() ? null : results.get(0);
+  }
+
   public List<Map<String, Object>> findAll() {
     return jdbc.query("SELECT * FROM orders ORDER BY created_at DESC, id DESC", ROW_MAPPER);
   }

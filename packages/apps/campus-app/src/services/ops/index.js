@@ -28,12 +28,12 @@ export async function getReviewQueue(params = {}) {
   return unwrap(await http.post("/ops/reviews", params));
 }
 
-export async function approveItem(id, data) {
-  return unwrap(await http.post(`/ops/reviews/${id}/approve`, data));
+export async function approveItem(id) {
+  return unwrap(await http.post(`/ops/items/${id}/approve`));
 }
 
-export async function rejectItem(id, data) {
-  return unwrap(await http.post(`/ops/reviews/${id}/reject`, data));
+export async function rejectItem(id, reason) {
+  return unwrap(await http.post(`/ops/items/${id}/reject`, { reason }));
 }
 
 // ── 商品管理（走 OPS 接口，不需要 SELLER 角色） ──────────────────────────

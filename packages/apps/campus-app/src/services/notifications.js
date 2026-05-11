@@ -1,4 +1,4 @@
-import { opsHttp as http } from './http'
+import { http } from './http'
 
 // 获取消息列表
 export function getNotifications(params = {}) {
@@ -17,7 +17,7 @@ export function getRecentNotifications(limit = 5) {
 
 // 标记消息为已读
 export function markAsRead(id) {
-  return http.post(`/notifications/${id}/read`)
+  return http.put(`/notifications/${id}/read`)
 }
 
 // 批量标记为已读

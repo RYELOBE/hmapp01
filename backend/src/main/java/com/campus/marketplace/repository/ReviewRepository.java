@@ -190,6 +190,58 @@ public class ReviewRepository {
     return count != null ? count : 0;
   }
 
+  /** 按关键词和状态分页查询 */
+  public List<Map<String, Object>> findByKeywordPaged(String keyword, String status, int page, int pageSize) {
+    int offset = (page - 1) * pageSize;
+    StringBuilder sql = new StringBuilder("SELECT * FROM review WHERE 1=1");
+    List<Object> params = new java.util.ArrayList<>();
+
+    if (keyword != null && !keyword.isEmpty()) {
+      sql.append(" AND (content LIKE ? OR id = ?)");
+      params.add("%" + keyword + "%");
+      try {
+        params.add(Long.parseLong(keyword));
+      } catch (NumberFormatException e) {
+        params.add(0L);
+      }
+    }
+
+    if (status != null && !status.isEmpty()) {
+      sql.append(" AND status = ?");
+      params.add(status);
+    }
+
+    sql.append(" ORDER BY created_at DESC LIMIT ? OFFSET ?");
+    params.add(pageSize);
+    params.add(offset);
+
+    return jdbc.query(sql.toString(), ROW_MAPPER, params.toArray());
+  }
+
+  /** 按关键词和状态统计数量 */
+  public int countByKeywordAndStatus(String keyword, String status) {
+    StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM review WHERE 1=1");
+    List<Object> params = new java.util.ArrayList<>();
+
+    if (keyword != null && !keyword.isEmpty()) {
+      sql.append(" AND (content LIKE ? OR id = ?)");
+      params.add("%" + keyword + "%");
+      try {
+        params.add(Long.parseLong(keyword));
+      } catch (NumberFormatException e) {
+        params.add(0L);
+      }
+    }
+
+    if (status != null && !status.isEmpty()) {
+      sql.append(" AND status = ?");
+      params.add(status);
+    }
+
+    Integer count = jdbc.queryForObject(sql.toString(), Integer.class, params.toArray());
+    return count != null ? count : 0;
+  }
+
   /** 统计所有评价数量 */
   public int countAll() {
     Integer count = jdbc.queryForObject(

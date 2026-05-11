@@ -88,25 +88,16 @@
                 size="large"
                 long
                 :loading="submitting"
-                :disabled="!defaultAddress"
                 @click="submitOrders"
                 class="submit-btn"
               >
                 提交订单 ({{ orderItems.length }}个商品)
               </a-button>
-              <p v-if="!defaultAddress" class="address-tip">
-                请先选择或添加收货地址
-              </p>
             </a-card>
           </a-col>
         </a-row>
       </div>
     </a-spin>
-
-    <EditAddressModal
-      v-model:visible="showAddressModal"
-      @success="handleAddressSuccess"
-    />
   </div>
 </template>
 
@@ -116,15 +107,12 @@ import { useRouter, useRoute } from "vue-router";
 import { Message } from "@arco-design/web-vue";
 import {
   IconArrowLeft,
-  IconLocation,
-  IconEdit,
+  IconInfoCircle,
 } from "@arco-design/web-vue/es/icon";
 import { parseFirstImageUrl } from "../../../utils/image-utils";
 import { getErrorMessage } from "../../../utils/error-utils";
-import AddressCard from "../../../components/data/AddressCard.vue";
 import ConditionTag from "../../../components/data/ConditionTag.vue";
-import EditAddressModal from "../../../components/data/EditAddressModal.vue";
-import { getItemDetail, createOrder, getDefaultAddress, getAddressList, getCartList } from "../../../services/api";
+import { getItemDetail, createOrder, getCartList } from "../../../services/api";
 
 const router = useRouter();
 const route = useRoute();
@@ -132,8 +120,6 @@ const route = useRoute();
 const loading = ref(false);
 const submitting = ref(false);
 const orderItems = ref([]); // 改为数组，支持多商品
-const defaultAddress = ref(null);
-const showAddressModal = ref(false);
 
 const CATEGORY_MAP = {
   digital: "数码", book: "教材", clothing: "服饰",
@@ -200,7 +186,8 @@ async function loadOrderItems() {
     }
     
     // 获取购物车列表并筛选出选中的项
-    const allCartItems = await getCartList();
+    const cartRes = await getCartList();
+    const allCartItems = cartRes?.data || [];
     const selectedCartItems = allCartItems.filter(cartItem => 
       cartIds.includes(cartItem.id)
     );
@@ -246,39 +233,16 @@ async function loadOrderItems() {
   }
 }
 
-async function loadDefaultAddress() {
-  try {
-    const res = await getDefaultAddress();
-    if (res) {
-      defaultAddress.value = res;
-    }
-  } catch (e) {
-    try {
-      const list = await getAddressList();
-      if (Array.isArray(list) && list.length > 0) {
-        const found = list.find((addr) => addr.isDefault) || list[0];
-        defaultAddress.value = found;
-      }
-    } catch (err) {
-      console.warn("[OrderConfirm] 加载地址失败:", err);
-    }
-  }
-}
-
-function handleAddressSuccess(address) {
-  defaultAddress.value = address;
-}
+onMounted(() => {
+  loadOrderItems();
+});
 
 async function submitOrders() {
-  if (!defaultAddress.value) {
-    Message.warning("请先选择收货地址");
-    return;
-  }
-
   submitting.value = true;
   try {
-    const address = defaultAddress.value;
     let successCount = 0;
+    let lastOrderId = null;
+    const errors = [];
     
     // 批量创建订单（每个商品创建一个独立订单）
     for (const orderItem of orderItems.value) {
@@ -293,7 +257,6 @@ async function submitOrders() {
         const orderData = {
           itemId: orderItem.item.id,
           quantity: orderItem.quantity || 1,
-          note: '校园线下交易，请与卖家联系',
         };
 
         console.log('[OrderConfirm] 创建订单参数:', orderData);
@@ -301,21 +264,34 @@ async function submitOrders() {
         const result = await createOrder(orderData);
         console.log('[OrderConfirm] 订单创建成功:', result);
         
+        lastOrderId = result?.data?.id || result?.id;
         successCount++;
       } catch (e) {
         console.error(`[OrderConfirm] 创建订单失败 (${orderItem?.item?.title || '未知商品'}):`, e);
+        const errorMsg = getErrorMessage(e);
         errors.push({
           item: orderItem?.item?.title || '未知商品',
-          error: e.message || '创建失败'
+          error: errorMsg
         });
       }
     }
     
     if (successCount > 0) {
       Message.success(`成功创建 ${successCount} 个订单`);
-      router.push("/portal/orders");
+      // 如果有失败的，也提示
+      if (errors.length > 0) {
+        Message.warning(`${errors.length} 个商品创建失败：${errors[0].error}`);
+      }
+      // 跳转到支付页面
+      if (lastOrderId) {
+        router.push(`/portal/orders/pay/${lastOrderId}`);
+      } else {
+        router.push("/portal/orders");
+      }
     } else {
-      throw new Error("所有订单创建失败");
+      // 所有订单都失败了，显示第一个具体错误
+      const firstError = errors[0];
+      Message.error(firstError?.error || '订单创建失败');
     }
   } catch (e) {
     const errorMsg = getErrorMessage(e);
@@ -324,14 +300,195 @@ async function submitOrders() {
     submitting.value = false;
   }
 }
-
-onMounted(() => {
-  loadOrderItems();
-  // 校园线下交易模式：无需加载收货地址
-});
 </script>
 
 <style lang="scss" scoped>
+.order-confirm-page {
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #f7fbff;
+  min-height: 100vh;
+}
+
+.page-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+
+  .page-title {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #1d2129;
+  }
+}
+
+.confirm-content {
+  .section-card {
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 16px;
+
+    :deep(.arco-card-header) {
+      font-weight: 600;
+      color: #1d2129;
+    }
+  }
+}
+
+.order-item {
+  padding: 16px 0;
+
+  &:first-child {
+    padding-top: 0;
+  }
+
+  &:last-child {
+    padding-bottom: 0;
+  }
+}
+
+.item-info-card {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.item-image-wrapper {
+  flex-shrink: 0;
+
+  .item-image {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #f0f0f0;
+
+    &--empty {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f5f6f8;
+      font-size: 32px;
+    }
+  }
+}
+
+.item-detail {
+  flex: 1;
+  min-width: 0;
+
+  .item-title {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 500;
+    color: #1d2129;
+    line-height: 1.5;
+  }
+
+  .item-meta {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .item-category {
+    color: #86909c;
+    font-size: 13px;
+  }
+}
+
+.price-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 8px;
+
+  .price-label {
+    color: #86909c;
+    font-size: 13px;
+  }
+
+  .price-value {
+    color: #f53f3f;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .quantity-info {
+    color: #4e5969;
+    font-size: 14px;
+  }
+
+  .subtotal {
+    color: #f53f3f;
+    font-size: 16px;
+    font-weight: 600;
+    margin-left: auto;
+  }
+}
+
+.summary-card {
+  background: white;
+  border-radius: 12px;
+  position: sticky;
+  top: 24px;
+
+  :deep(.arco-card-header) {
+    font-weight: 600;
+    color: #1d2129;
+  }
+
+  .summary-list {
+    padding: 16px 0;
+  }
+
+  .summary-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    color: #4e5969;
+    font-size: 14px;
+
+    &.summary-total {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1d2129;
+
+      .total-amount {
+        color: #f53f3f;
+        font-size: 24px;
+        font-weight: 700;
+      }
+    }
+  }
+
+  .summary-divider {
+    height: 1px;
+    background: #e5e6eb;
+    margin: 8px 0;
+  }
+
+  .free-shipping {
+    color: #00b42a;
+    font-weight: 500;
+  }
+
+  .submit-btn {
+    height: 48px;
+    font-size: 16px;
+    font-weight: 500;
+    border-radius: 8px;
+    margin-top: 16px;
+  }
+}
+
 .trade-notice {
   background: linear-gradient(135deg, #E8F3FF 0%, #F0F5FF 100%);
   border: 1px solid #D6E9FF;
@@ -362,13 +519,39 @@ onMounted(() => {
     .notice-tip {
       color: #86909C;
       font-size: 13px;
-      padding-left: 12px;
+      padding: 8px 12px;
       border-left: 3px solid #165DFF;
       background: white;
-      padding: 8px 12px;
       border-radius: 4px;
       margin-top: 12px;
     }
+  }
+}
+
+@media (max-width: 991px) {
+  .order-confirm-page {
+    padding: 16px;
+  }
+
+  .item-image-wrapper .item-image {
+    width: 80px;
+    height: 80px;
+  }
+
+  .price-info {
+    flex-wrap: wrap;
+    gap: 8px;
+
+    .subtotal {
+      width: 100%;
+      margin-top: 8px;
+      text-align: right;
+    }
+  }
+
+  .summary-card {
+    position: static;
+    margin-top: 16px;
   }
 }
 </style>

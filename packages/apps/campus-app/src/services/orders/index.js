@@ -28,10 +28,6 @@ export async function payOrder(id) {
   return await http.post(`/orders/${id}/pay`);
 }
 
-export async function shipOrder(id, data) {
-  return await http.post(`/orders/${id}/ship`, data);
-}
-
 export async function requestRefund(id) {
   return await http.post(`/orders/${id}/refund`);
 }
