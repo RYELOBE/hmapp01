@@ -268,7 +268,7 @@ const generateAIResponse = (userMessage) => {
   }
   
   if (msg.includes('你好') || msg.includes('您好') || msg.includes('嗨') || msg.includes('hi') || msg.includes('hello')) {
-    return '您好！👋 欢迎来到校园二手交易平台！\n\n我是您的AI助手，可以帮您：\n\n🔍 搜索和咨询商品\n💡 获取个性化推荐\n📝 了解交易流程\n🎁 查看优惠活动\n❓ 解答各类问题\n\n请问有什么可以帮您的？'
+    return '您好！👋 欢迎来到校园闲置物品流转平台！\n\n我是您的AI助手，可以帮您：\n\n🔍 搜索和咨询商品\n💡 获取个性化推荐\n📝 了解交易流程\n🎁 查看优惠活动\n❓ 解答各类问题\n\n请问有什么可以帮您的？'
   }
   
   if (msg.includes('联系') || msg.includes('客服') || msg.includes('人工')) {

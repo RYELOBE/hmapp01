@@ -5,7 +5,7 @@
         <div class="header-content">
           <div class="logo" @click="$router.push('/home')">
             <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23165DFF'/%3E%3Ctext x='50' y='65' font-size='40' fill='white' text-anchor='middle' font-weight='bold'%3E%E4%BA%8C%3C/text%3E%3C/svg%3E" alt="logo" class="logo-img" />
-            <span class="logo-text">校园二手交易平台</span>
+            <span class="logo-text">校园闲置物品流转平台</span>
           </div>
           <div class="header-actions">
             <a-button type="text" @click="$router.push('/home')">首页</a-button>

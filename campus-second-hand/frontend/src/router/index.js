@@ -118,8 +118,8 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   document.title = to.meta.title 
-    ? `${to.meta.title} - 校园二手交易平台` 
-    : '校园二手交易平台'
+    ? `${to.meta.title} - 基于GLM大模型的校园闲置物品流转平台` 
+    : '基于GLM大模型的校园闲置物品流转平台'
   
   const userStore = useUserStore()
   

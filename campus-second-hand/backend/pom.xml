@@ -16,7 +16,7 @@
     <artifactId>campus-second-hand</artifactId>
     <version>1.0.0</version>
     <name>campus-second-hand</name>
-    <description>校园二手交易平台</description>
+    <description>基于GLM大模型的校园闲置物品流转平台</description>
 
     <properties>
         <java.version>17</java.version>
