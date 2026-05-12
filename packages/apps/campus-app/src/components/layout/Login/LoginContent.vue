@@ -103,7 +103,7 @@
 import { reactive, ref } from "vue";
 import { Message } from "@arco-design/web-vue";
 import { IconCheck, IconUser, IconLock } from "@arco-design/web-vue/es/icon";
-import { login, opsLogin } from "../auth-sdk.js";
+import { login, opsLogin } from ";
 
 const props = defineProps({
   loginConfig: {

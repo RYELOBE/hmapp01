@@ -145,7 +145,7 @@
             />
           </svg>
         </div>
-        <h2 class="deco-title">校园二手交易平台</h2>
+        <h2 class="deco-title">校园闲置物品流转平台</h2>
         <p class="deco-subtitle">闲置不浪费，校园淘好物</p>
       </div>
     </div>
@@ -234,7 +234,7 @@
         <!-- 注册表单 -->
         <div v-else class="auth-card">
           <h1 class="auth-title">创建新账号</h1>
-          <p class="auth-subtitle">加入校园二手交易平台</p>
+          <p class="auth-subtitle">加入校园闲置物品流转平台</p>
 
           <a-form
             :model="registerForm"
@@ -256,13 +256,28 @@
             </a-form-item>
 
             <a-form-item
+              field="nickname"
+              hide-label
+            >
+              <a-input
+                v-model="registerForm.nickname"
+                placeholder="昵称（选填，默认为用户名）"
+                size="large"
+                allow-clear
+              >
+                <template #prefix>
+                  <icon-user style="color: #86909c" />
+                </template>
+              </a-input>
+            </a-form-item>
+
+            <a-form-item
               field="phone"
-              :rules="[{ required: true, message: '请输入手机号' }]"
               hide-label
             >
               <a-input
                 v-model="registerForm.phone"
-                placeholder="手机号码"
+                placeholder="手机号（选填）"
                 size="large"
                 allow-clear
               >
@@ -413,6 +428,7 @@ const loginForm = reactive({
 // 注册表单
 const registerForm = reactive({
   username: "",
+  nickname: "",
   phone: "",
   password: "",
   confirmPassword: "",
@@ -444,11 +460,26 @@ async function handleLogin() {
 
   loading.value = true;
   try {
-    await authStore.login({
-      username: loginForm.username,
-      password: loginForm.password,
-    });
+    // 根据当前路径判断是否为运营登录
+    const isOpsLogin = route.path === '/ops/login' || route.path.startsWith('/ops');
+    console.log("[Login] 检测到运营登录:", isOpsLogin, "当前路径:", route.path);
+    
+    if (isOpsLogin) {
+      await authStore.opsLogin({
+        username: loginForm.username,
+        password: loginForm.password,
+      });
+    } else {
+      await authStore.login({
+        username: loginForm.username,
+        password: loginForm.password,
+      });
+    }
+    
     Message.success("登录成功！");
+
+    // 等待一个tick确保authStore状态完全更新
+    await new Promise(resolve => setTimeout(resolve, 100));
 
     console.log("[Login] ===== 开始计算跳转目标 =====");
     // 智能路由跳转：角色优先策略
@@ -456,15 +487,21 @@ async function handleLogin() {
     const redirect = route.query.redirect;
 
     console.log("[Login] 用户角色:", JSON.stringify(roles));
+    console.log("[Login] isOps:", authStore.isOps);
+    console.log("[Login] authStore.user:", authStore.user);
+    console.log("[Login] authStore.token:", authStore.token ? authStore.token.substring(0, 50) + "..." : "null");
     console.log("[Login] URL中的redirect参数:", redirect);
     console.log("[Login] 当前路径:", route.path);
 
     let targetPath = "";
 
     // 角色优先判断（运营人员必须去运营端）
-    if (roles.includes("OPS")) {
+    const hasOpsRole = authStore.isOps || roles.some(role => role.startsWith("OPS"));
+    console.log("[Login] 备用角色检查 - hasOpsRole:", hasOpsRole);
+    
+    if (hasOpsRole) {
       targetPath = "/ops/dashboard";
-      console.log("[Login] → 检测到OPS角色，跳转到运营后台");
+      console.log("[Login] → 检测到运营角色，跳转到运营后台");
     } else if (roles.includes("SELLER") && !roles.includes("BUYER")) {
       targetPath = "/portal/seller/items";
       console.log("[Login] → 纯SELLER角色，跳转到卖家中心");
@@ -521,8 +558,8 @@ function getRedirectPath(roles) {
 }
 
 async function handleRegister() {
-  if (!registerForm.username || !registerForm.phone || !registerForm.password) {
-    Message.warning("请填写完整的注册信息");
+  if (!registerForm.username || !registerForm.password) {
+    Message.warning("请填写用户名和密码");
     return;
   }
 
@@ -546,6 +583,7 @@ async function handleRegister() {
     // 调用注册API
     await authStore.register({
       username: registerForm.username,
+      nickname: registerForm.nickname || registerForm.username,
       phone: registerForm.phone,
       password: registerForm.password,
       roles: registerForm.roles,

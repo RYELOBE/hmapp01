@@ -79,4 +79,20 @@ public class AISessionRepository {
     }
     return sessions;
   }
+
+  /**
+   * 创建新会话
+   */
+  public void createSession(String sessionId, Long userId) {
+    jdbc.update(
+        "INSERT INTO ai_session (session_id, user_id, title, updated_at) VALUES (?, ?, '新对话', NOW())",
+        sessionId, userId);
+  }
+
+  /**
+   * 删除会话（只删除自己的会话）
+   */
+  public void deleteSession(String sessionId, Long userId) {
+    jdbc.update("DELETE FROM ai_session WHERE session_id = ? AND user_id = ?", sessionId, userId);
+  }
 }

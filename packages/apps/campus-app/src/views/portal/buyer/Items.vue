@@ -6,7 +6,7 @@
         <div class="hero-pattern"></div>
       </div>
       <div class="hero-content">
-        <div class="hero-badge">🎓 校园二手交易平台</div>
+        <div class="hero-badge">🎓 校园闲置物品流转平台</div>
         <h1 class="hero-title">全部商品</h1>
         <p class="hero-subtitle">发现更多优质二手好物 · 让闲置物品找到新主人</p>
       </div>
@@ -192,7 +192,7 @@ const items = ref([]);
 const loading = ref(false);
 const total = ref(0);
 const currentPage = ref(1);
-const pageSize = ref(8);
+const pageSize = ref(9);
 const sidebarCollapsed = ref(false);
 
 const categories = ref([]);
@@ -317,7 +317,7 @@ async function loadDictOptions() {
   try {
     const res = await getDictOptions();
     const data = res?.data || res;
-    categories.value = [{ value: "", label: "全部分类", icon: "📦" }, ...(data?.categories || [])];
+    categories.value = data?.categories || [];
     conditions.value = [{ value: "", label: "不限" }, ...(data?.conditions || [])];
     campuses.value = data?.campuses || [];
   } catch (e) {

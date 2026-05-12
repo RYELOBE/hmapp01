@@ -152,10 +152,14 @@ async function loadData() {
       priority: priorityFilter.value || undefined,
       unread: readFilter.value === 'unread' ? true : readFilter.value === 'read' ? false : undefined
     }
+    console.log('[MessageCenter] 请求参数:', params)
 
     const response = await getNotifications(params)
-    tableData.value = response.data || []
-    pagination.total = response.total || 0
+    console.log('[MessageCenter] 响应:', response)
+    const data = response?.data?.data ?? response?.data ?? response
+    tableData.value = data?.records || data?.list || []
+    pagination.total = data?.totalCount ?? data?.total ?? 0
+    console.log('[MessageCenter] 数据条数:', tableData.value.length)
   } catch (error) {
     console.error('[MessageCenter] load error:', error)
     Message.error('加载消息列表失败')
@@ -167,7 +171,8 @@ async function loadData() {
 async function loadUnreadCount() {
   try {
     const response = await getUnreadCount()
-    unreadCount.value = response.data || 0
+    console.log('[MessageCenter] 未读数响应:', response)
+    unreadCount.value = response?.data?.count ?? response?.data ?? 0
   } catch (error) {
     console.error('[MessageCenter] loadUnreadCount error:', error)
   }

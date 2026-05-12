@@ -62,30 +62,48 @@
     <!-- 快捷操作 -->
     <section class="quick-actions">
       <div class="action-cards">
-        <div class="action-card" @click="$router.push('/portal/orders')">
-          <icon-file size="28" />
-          <span>我的订单</span>
-        </div>
-        <div class="action-card" @click="$router.push('/portal/favorites')">
-          <icon-star-fill size="28" />
-          <span>我的收藏</span>
-        </div>
-        <div class="action-card" @click="$router.push('/portal/circles')">
-          <icon-message size="28" />
-          <span>我的圈子</span>
-        </div>
-        <div class="action-card" @click="$router.push('/portal/my-reviews')">
-          <icon-star size="28" />
-          <span>我的评价</span>
-        </div>
-        <div class="action-card" v-if="isSeller" @click="$router.push('/portal/seller/items')">
+        <!-- 运营人员：只显示运营中心入口 -->
+        <div class="action-card" v-if="isOps" @click="$router.push('/ops/dashboard')">
           <icon-apps size="28" />
-          <span>我的商品</span>
+          <span>运营中心</span>
         </div>
-        <div class="action-card" v-if="isSeller" @click="$router.push('/portal/seller/publish')">
-          <icon-plus-circle size="28" />
-          <span>发布商品</span>
-        </div>
+
+        <!-- 买家/卖家功能：OPS不显示 -->
+        <template v-if="!isOps">
+          <div class="action-card" v-if="isBuyer || isSeller" @click="$router.push('/portal/orders')">
+            <icon-file size="28" />
+            <span>{{ isSeller && !isBuyer ? '已售订单' : '我的订单' }}</span>
+          </div>
+          <div class="action-card" v-if="isBuyer" @click="$router.push('/portal/favorites')">
+            <icon-star-fill size="28" />
+            <span>我的收藏</span>
+          </div>
+          <div class="action-card" v-if="isBuyer" @click="$router.push('/portal/cart')">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="9" cy="21" r="1" />
+              <circle cx="20" cy="21" r="1" />
+              <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+            </svg>
+            <span>我的购物车</span>
+          </div>
+          <div class="action-card" @click="$router.push('/portal/circles')">
+            <icon-message size="28" />
+            <span>我的圈子</span>
+          </div>
+          <div class="action-card" @click="$router.push('/portal/my-reviews')">
+            <icon-star size="28" />
+            <span>我的评价</span>
+          </div>
+          <!-- 卖家专属功能 -->
+          <div class="action-card" v-if="isSeller" @click="$router.push('/portal/seller/items')">
+            <icon-apps size="28" />
+            <span>我的商品</span>
+          </div>
+          <div class="action-card" v-if="isSeller" @click="$router.push('/portal/seller/publish')">
+            <icon-plus-circle size="28" />
+            <span>发布商品</span>
+          </div>
+        </template>
       </div>
     </section>
 
@@ -498,6 +516,14 @@ const userInitial = computed(() => {
 
 const isSeller = computed(() => {
   return user.value?.roles?.includes('SELLER');
+});
+
+const isOps = computed(() => {
+  return user.value?.roles?.includes('OPS');
+});
+
+const isBuyer = computed(() => {
+  return user.value?.roles?.includes('BUYER');
 });
 
 // 统计数据（从API获取）

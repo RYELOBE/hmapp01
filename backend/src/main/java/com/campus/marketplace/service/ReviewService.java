@@ -155,9 +155,42 @@ public class ReviewService {
           enriched.put("buyerName", user.get("nickname"));
         });
       }
+      // 递归加载子回复
+      Long reviewId = ((Number) review.get("id")).longValue();
+      List<Map<String, Object>> replies = loadRepliesRecursive(reviewId);
+      enriched.put("replies", replies);
+      
       enrichedReviews.add(enriched);
     }
     return enrichedReviews;
+  }
+  
+  /** 递归加载子回复 */
+  private List<Map<String, Object>> loadRepliesRecursive(Long parentId) {
+    List<Map<String, Object>> replies = reviewRepository.findByParentId(parentId);
+    List<Map<String, Object>> enrichedReplies = new ArrayList<>();
+    
+    for (Map<String, Object> reply : replies) {
+      Map<String, Object> enriched = new java.util.HashMap<>(reply);
+      
+      // 获取回复者信息
+      Object buyerIdObj = reply.get("buyerId");
+      if (buyerIdObj instanceof Number buyerIdNumber) {
+        Long buyerId = buyerIdNumber.longValue();
+        userRepository.findById(buyerId).ifPresent(user -> {
+          enriched.put("userName", user.get("nickname"));
+        });
+      }
+      
+      // 递归加载子回复的回复
+      Long replyId = ((Number) reply.get("id")).longValue();
+      List<Map<String, Object>> childReplies = loadRepliesRecursive(replyId);
+      enriched.put("replies", childReplies);
+      
+      enrichedReplies.add(enriched);
+    }
+    
+    return enrichedReplies;
   }
 
   public Map<String, Object> getMyReviews(Long buyerId, int page, int pageSize, String status) {
@@ -324,20 +357,26 @@ public class ReviewService {
       throw new IllegalArgumentException("评价不存在");
     }
 
-    reviewRepository.updateReply(reviewId, content);
-    
-    // 通知买家有新回复
     Map<String, Object> review = reviewOpt.get();
-    Long buyerId = ((Number) review.get("buyerId")).longValue();
     Long itemId = ((Number) review.get("itemId")).longValue();
+    
+    // 获取用户昵称
+    var userOpt = userRepository.findById(userId);
+    String userName = userOpt.map(u -> (String) u.get("nickname")).orElse("匿名用户");
+    
+    // 创建嵌套回复
+    Map<String, Object> reply = reviewRepository.createReply(reviewId, itemId, userId, userName, content);
+    
+    // 通知评价作者有新回复
+    Long buyerId = ((Number) review.get("buyerId")).longValue();
     var item = itemRepository.findById(itemId);
     String itemTitle = item != null ? (String) item.get("title") : "商品";
     notificationService.sendNotification(
         buyerId, "评价已回复",
-        String.format("卖家回复了您对《%s》的评价：%s", itemTitle, content),
+        String.format("有人回复了您对《%s》的评价：%s", itemTitle, content),
         "REVIEW", String.valueOf(reviewId), "REVIEW");
     
-    return Map.of("code", 200, "message", "回复成功");
+    return Map.of("code", 200, "message", "回复已提交，待审核后展示", "data", reply);
   }
 
   public Map<String, Object> getReviewStats(Long itemId) {

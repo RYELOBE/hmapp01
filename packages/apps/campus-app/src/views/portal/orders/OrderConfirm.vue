@@ -54,7 +54,7 @@
                 <icon-info-circle style="color: #165DFF; font-size: 20px;" />
                 <div class="notice-text">
                   <h4>校园线下交易</h4>
-                  <p>本平台为校园二手交易平台，下单后请与卖家联系，约定时间地点进行线下面对面交易。</p>
+                  <p>本平台为校园闲置物品流转平台，下单后请与卖家联系，约定时间地点进行线下面对面交易。</p>
                   <p class="notice-tip">💡 建议选择人多的公共场所进行交易，注意安全！</p>
                 </div>
               </div>

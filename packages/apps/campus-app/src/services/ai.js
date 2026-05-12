@@ -15,3 +15,11 @@ export async function fetchSessionMessages(sessionId, optionConfig = {}) {
 export async function chatWithAssistant(message, optionConfig = {}) {
   return http.post("/ai/chat", message, {}, optionConfig);
 }
+
+export async function createNewSession(optionConfig = {}) {
+  return http.post("/ai/sessions", {}, {}, optionConfig);
+}
+
+export async function deleteSession(sessionId, optionConfig = {}) {
+  return http.delete(`/ai/sessions/${sessionId}`, {}, optionConfig);
+}

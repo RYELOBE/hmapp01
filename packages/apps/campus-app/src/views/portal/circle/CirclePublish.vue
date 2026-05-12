@@ -45,7 +45,7 @@
                 <icon-close />
               </span>
             </div>
-            <label v-if="previewImages.length < 9" class="image-add" @click="triggerUpload">
+            <div v-if="previewImages.length < 9" class="image-add" @click="triggerUpload">
               <icon-plus />
               <span>添加图片</span>
               <input
@@ -56,7 +56,7 @@
                 style="display: none"
                 @change="handleFileSelect"
               />
-            </label>
+            </div>
           </div>
         </div>
 

@@ -73,23 +73,31 @@ export function getJWTSubject(token) {
 
 export function getJWTRoles(token) {
   const payload = parseJWT(token);
+  console.log("[JWT] 解析的payload:", payload);
   const roles = payload?.roles || payload?.authorities || [];
+  console.log("[JWT] 原始角色数据:", roles);
 
   if (typeof roles === 'string') {
     try {
-      return JSON.parse(roles);
+      const parsed = JSON.parse(roles);
+      console.log("[JWT] 解析后的角色数组:", parsed);
+      return parsed;
     } catch {
+      console.log("[JWT] 角色字符串解析失败，返回单个角色:", roles);
       return [roles];
     }
   }
 
   if (Array.isArray(roles)) {
-    return roles.map(role => {
+    const processed = roles.map(role => {
       if (typeof role === 'string') return role;
       return role?.authority || role?.role || String(role);
     });
+    console.log("[JWT] 处理后的角色数组:", processed);
+    return processed;
   }
 
+  console.log("[JWT] 没有找到角色数据，返回空数组");
   return [];
 }
 

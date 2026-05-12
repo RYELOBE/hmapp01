@@ -1,7 +1,7 @@
 <template>
   <div class="shell-home">
     <a-card title="欢迎使用 CampusTrade" class="welcome-card">
-      <p class="welcome-text">校园二手交易平台，让闲置物品焕发新生</p>
+      <p class="welcome-text">校园闲置物品流转平台，让闲置物品焕发新生</p>
       <a-space class="action-buttons">
         <a-button type="primary" @click="goToPortal">进入交易中心</a-button>
         <a-button @click="goToOps" v-if="hasOpsRole">进入运营中心</a-button>

@@ -29,6 +29,13 @@ public class ReviewRepository {
     row.put("rating", rs.getInt("rating"));
     row.put("content", rs.getString("content"));
     row.put("images", rs.getString("images"));
+    // 嵌套回复字段
+    Object parentIdObj = rs.getObject("parent_id");
+    row.put("parentId", parentIdObj != null ? ((Number) parentIdObj).longValue() : null);
+    Object replyToUserIdObj = rs.getObject("reply_to_user_id");
+    row.put("replyToUserId", replyToUserIdObj != null ? ((Number) replyToUserIdObj).longValue() : null);
+    row.put("replyToUserName", rs.getString("reply_to_user_name"));
+    // 兼容旧字段
     row.put("replyContent", rs.getString("reply"));
     row.put("replyTime", rs.getTimestamp("reply_time") != null ? rs.getTimestamp("reply_time").toString() : null);
     row.put("status", rs.getString("status"));
@@ -101,7 +108,7 @@ public class ReviewRepository {
 
   public List<Map<String, Object>> findByItemId(Long itemId) {
     return jdbc.query(
-        "SELECT * FROM review WHERE item_id = ? ORDER BY created_at DESC",
+        "SELECT * FROM review WHERE item_id = ? AND parent_id IS NULL ORDER BY created_at DESC",
         ROW_MAPPER, itemId);
   }
 
@@ -130,7 +137,7 @@ public class ReviewRepository {
   public List<Map<String, Object>> findByItemIdPaged(Long itemId, int page, int pageSize) {
     int offset = (page - 1) * pageSize;
     return jdbc.query(
-        "SELECT * FROM review WHERE item_id = ? AND status = 'APPROVED' ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        "SELECT * FROM review WHERE item_id = ? AND status = 'APPROVED' AND parent_id IS NULL ORDER BY created_at DESC LIMIT ? OFFSET ?",
         ROW_MAPPER, itemId, pageSize, offset);
   }
 
@@ -138,7 +145,7 @@ public class ReviewRepository {
   public List<Map<String, Object>> findByItemIdAndStatusPaged(Long itemId, String status, int page, int pageSize) {
     int offset = (page - 1) * pageSize;
     return jdbc.query(
-        "SELECT * FROM review WHERE item_id = ? AND status = ? ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        "SELECT * FROM review WHERE item_id = ? AND status = ? AND parent_id IS NULL ORDER BY created_at DESC LIMIT ? OFFSET ?",
         ROW_MAPPER, itemId, status, pageSize, offset);
   }
 
@@ -151,13 +158,13 @@ public class ReviewRepository {
 
   public int countByItemId(Long itemId) {
     Integer count = jdbc.queryForObject(
-        "SELECT COUNT(*) FROM review WHERE item_id = ? AND status = 'APPROVED'", Integer.class, itemId);
+        "SELECT COUNT(*) FROM review WHERE item_id = ? AND status = 'APPROVED' AND parent_id IS NULL", Integer.class, itemId);
     return count != null ? count : 0;
   }
 
   public int countByItemIdAndStatus(Long itemId, String status) {
     Integer count = jdbc.queryForObject(
-        "SELECT COUNT(*) FROM review WHERE item_id = ? AND status = ?", Integer.class, itemId, status);
+        "SELECT COUNT(*) FROM review WHERE item_id = ? AND status = ? AND parent_id IS NULL", Integer.class, itemId, status);
     return count != null ? count : 0;
   }
 
@@ -251,13 +258,13 @@ public class ReviewRepository {
 
   public Double averageRatingByItemId(Long itemId) {
     Double avg = jdbc.queryForObject(
-        "SELECT AVG(rating) FROM review WHERE item_id = ? AND status = 'APPROVED'", Double.class, itemId);
+        "SELECT AVG(rating) FROM review WHERE item_id = ? AND status = 'APPROVED' AND parent_id IS NULL", Double.class, itemId);
     return avg;
   }
 
   public Map<Integer, Integer> getRatingDistribution(Long itemId) {
     List<Map<String, Object>> results = jdbc.queryForList(
-        "SELECT rating, COUNT(*) as count FROM review WHERE item_id = ? AND status = 'APPROVED' GROUP BY rating",
+        "SELECT rating, COUNT(*) as count FROM review WHERE item_id = ? AND status = 'APPROVED' AND parent_id IS NULL GROUP BY rating",
         itemId);
     Map<Integer, Integer> distribution = new HashMap<>();
     for (int i = 1; i <= 5; i++) {
@@ -267,6 +274,37 @@ public class ReviewRepository {
       distribution.put(((Number) row.get("rating")).intValue(), ((Number) row.get("count")).intValue());
     }
     return distribution;
+  }
+
+  /** 查询子回复列表 */
+  public List<Map<String, Object>> findByParentId(Long parentId) {
+    return jdbc.query(
+        "SELECT * FROM review WHERE parent_id = ? AND status = 'APPROVED' ORDER BY created_at ASC",
+        ROW_MAPPER, parentId);
+  }
+
+  /** 创建嵌套回复 */
+  public Map<String, Object> createReply(Long parentId, Long itemId, Long userId, String userName, String content) {
+    KeyHolder kh = new GeneratedKeyHolder();
+    jdbc.update(con -> {
+      var ps = con.prepareStatement(
+          "INSERT INTO review (item_id, buyer_id, parent_id, reply_to_user_id, reply_to_user_name, content, rating, status) VALUES (?, ?, ?, ?, ?, ?, 5, 'PENDING')",
+          Statement.RETURN_GENERATED_KEYS);
+      ps.setLong(1, itemId);
+      ps.setLong(2, userId);
+      if (parentId != null) {
+        ps.setLong(3, parentId);
+      } else {
+        ps.setNull(3, Types.BIGINT);
+      }
+      // reply_to_user_id 暂时设为 null，后续可以扩展
+      ps.setNull(4, Types.BIGINT);
+      ps.setString(5, userName);
+      ps.setString(6, content);
+      return ps;
+    }, kh);
+    Long id = kh.getKey().longValue();
+    return findById(id).orElseThrow();
   }
 
   public void deleteById(Long id) {

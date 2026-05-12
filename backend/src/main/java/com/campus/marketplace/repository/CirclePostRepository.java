@@ -81,6 +81,12 @@ public class CirclePostRepository {
     return jdbc.query(sql, ROW_MAPPER, userId, status, pageSize, offset);
   }
 
+  public List<Map<String, Object>> findByUserId(Long userId, int pageNo, int pageSize) {
+    String sql = "SELECT * FROM circle_post WHERE user_id = ? ORDER BY create_time DESC LIMIT ? OFFSET ?";
+    int offset = (pageNo - 1) * pageSize;
+    return jdbc.query(sql, ROW_MAPPER, userId, pageSize, offset);
+  }
+
   public List<Map<String, Object>> findByTagAndStatus(String tag, String status, int pageNo, int pageSize) {
     String sql = "SELECT * FROM circle_post WHERE status = ? AND tags LIKE ? ORDER BY create_time DESC LIMIT ? OFFSET ?";
     int offset = (pageNo - 1) * pageSize;
@@ -133,6 +139,10 @@ public class CirclePostRepository {
 
   public void incrementCommentCount(Long id) {
     jdbc.update("UPDATE circle_post SET comment_count = comment_count + 1 WHERE id = ?", id);
+  }
+
+  public void decrementCommentCount(Long id) {
+    jdbc.update("UPDATE circle_post SET comment_count = GREATEST(0, comment_count - 1) WHERE id = ?", id);
   }
 
   public List<Map<String, Object>> findAllPaged(int pageNo, int pageSize) {

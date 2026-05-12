@@ -131,6 +131,36 @@ public class CircleCommentRepository {
     return count != null ? count : 0;
   }
 
+  /**
+   * 按用户ID查询评论（我的圈子评论）
+   */
+  public List<Map<String, Object>> findByUserId(Long userId, int pageNo, int pageSize) {
+    String sql = "SELECT * FROM circle_comment WHERE user_id = ? ORDER BY create_time DESC LIMIT ? OFFSET ?";
+    int offset = (pageNo - 1) * pageSize;
+    return jdbc.query(sql, ROW_MAPPER, userId, pageSize, offset);
+  }
+
+  public int countByUserId(Long userId) {
+    Integer count = jdbc.queryForObject(
+        "SELECT COUNT(*) FROM circle_comment WHERE user_id = ?", Integer.class, userId);
+    return count != null ? count : 0;
+  }
+
+  /**
+   * 按用户ID和状态查询评论
+   */
+  public List<Map<String, Object>> findByUserIdAndStatus(Long userId, String status, int pageNo, int pageSize) {
+    String sql = "SELECT * FROM circle_comment WHERE user_id = ? AND status = ? ORDER BY create_time DESC LIMIT ? OFFSET ?";
+    int offset = (pageNo - 1) * pageSize;
+    return jdbc.query(sql, ROW_MAPPER, userId, status, pageSize, offset);
+  }
+
+  public int countByUserIdAndStatus(Long userId, String status) {
+    Integer count = jdbc.queryForObject(
+        "SELECT COUNT(*) FROM circle_comment WHERE user_id = ? AND status = ?", Integer.class, userId, status);
+    return count != null ? count : 0;
+  }
+
   public void updateStatus(Long id, String status) {
     jdbc.update("UPDATE circle_comment SET status = ? WHERE id = ?", status, id);
   }

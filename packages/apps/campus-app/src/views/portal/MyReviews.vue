@@ -10,13 +10,21 @@
         <h2 class="page-title">我的评价</h2>
       </div>
       <div class="header-right">
-        <span class="item-count">共 {{ total }} 条评价</span>
+        <span class="item-count">共 {{ total }} 条{{ activeTab === 'item' ? '评价' : '评论' }}</span>
       </div>
     </div>
 
+    <!-- Tab切换 -->
+    <div class="tab-bar">
+      <a-radio-group v-model="activeTab" type="button" @change="handleTabChange">
+        <a-radio value="item">商品评价</a-radio>
+        <a-radio value="circle">圈子评论</a-radio>
+      </a-radio-group>
+    </div>
+
     <a-spin :loading="loading" style="width: 100%">
-      <!-- 筛选栏 -->
-      <div v-if="reviews.length > 0" class="filter-bar">
+      <!-- 商品评价筛选栏 -->
+      <div v-if="activeTab === 'item' && reviews.length > 0" class="filter-bar">
         <a-radio-group v-model:value="activeStatus" type="button" @change="handleStatusChange">
           <a-radio value="">全部</a-radio>
           <a-radio value="PENDING">待审核</a-radio>
@@ -25,8 +33,8 @@
         </a-radio-group>
       </div>
 
-      <!-- 评价列表 -->
-      <div v-if="reviews.length > 0" class="review-list">
+      <!-- 商品评价列表 -->
+      <div v-if="activeTab === 'item'" class="review-list">
         <div
           v-for="(review, index) in reviews"
           :key="review.id"
@@ -41,7 +49,7 @@
                 class="item-image"
               />
               <div v-else class="item-image item-image--empty">📷</div>
-              
+
               <div class="item-detail">
                 <h4 class="item-title">{{ review.itemTitle || '未知商品' }}</h4>
                 <span class="review-date">{{ formatDate(review.createdAt) }}</span>
@@ -49,7 +57,7 @@
             </div>
 
             <div class="review-status">
-              <a-tag 
+              <a-tag
                 :color="getStatusColor(review.status)"
                 size="small"
               >
@@ -59,9 +67,9 @@
           </div>
 
           <div class="review-rating">
-            <a-rate 
-              :model-value="review.rating || 5" 
-              disabled 
+            <a-rate
+              :model-value="review.rating || 5"
+              disabled
               allow-half
             />
             <span class="rating-text">{{ review.rating }}.0 分</span>
@@ -91,18 +99,18 @@
           </div>
 
           <div class="review-actions">
-            <a-button 
+            <a-button
               v-if="review.status === 'PENDING'"
-              type="text" 
+              type="text"
               size="small"
               status="warning"
               disabled
             >
               待审核中...
             </a-button>
-            <a-button 
+            <a-button
               v-if="review.status === 'REJECTED' && review.rejectReason"
-              type="text" 
+              type="text"
               size="small"
               status="danger"
             >
@@ -114,8 +122,64 @@
         </div>
       </div>
 
-      <!-- 空状态 -->
-      <a-empty v-else-if="!loading" description="暂无评价记录">
+      <!-- 圈子评论筛选栏 -->
+      <div v-if="activeTab === 'circle' && comments.length > 0" class="filter-bar">
+        <a-radio-group v-model:value="activeCommentStatus" type="button" @change="handleCommentStatusChange">
+          <a-radio value="">全部</a-radio>
+          <a-radio value="PENDING">待审核</a-radio>
+          <a-radio value="APPROVED">已通过</a-radio>
+          <a-radio value="REJECTED">已拒绝</a-radio>
+        </a-radio-group>
+      </div>
+
+      <!-- 圈子评论列表 -->
+      <div v-if="activeTab === 'circle'" class="review-list">
+        <div
+          v-for="(comment, index) in comments"
+          :key="comment.id"
+          class="review-card"
+        >
+          <div class="review-header">
+            <div class="review-item-info">
+              <div class="item-image item-image--empty">💬</div>
+              <div class="item-detail">
+                <h4 class="item-title">{{ comment.postTitle || '帖子已删除' }}</h4>
+                <span class="review-date">{{ formatDate(comment.createTime || comment.createdAt) }}</span>
+              </div>
+            </div>
+
+            <div class="review-status">
+              <a-tag
+                :color="getCommentStatusColor(comment.status)"
+                size="small"
+              >
+                {{ getCommentStatusText(comment.status) }}
+              </a-tag>
+            </div>
+          </div>
+
+          <div class="review-content">
+            {{ comment.content || '无评论内容' }}
+          </div>
+
+          <a-divider v-if="index < comments.length - 1" />
+        </div>
+
+        <!-- 圈子评论空状态 -->
+        <a-empty v-if="comments.length === 0 && !loading" description="暂无圈子评论">
+          <template #image>
+            <icon-message size="64" color="#c9cdd4" />
+          </template>
+          <template #extra>
+            <a-button type="primary" @click="$router.push('/portal/circle')">
+              去圈子看看
+            </a-button>
+          </template>
+        </a-empty>
+      </div>
+
+      <!-- 商品评价空状态 -->
+      <a-empty v-if="activeTab === 'item' && reviews.length === 0 && !loading" description="暂无评价记录">
         <template #image>
           <icon-star-fill size="64" color="#c9cdd4" />
         </template>
@@ -166,10 +230,13 @@ import { parseFirstImageUrl } from "../../utils/image-utils";
 
 const loading = ref(false);
 const reviews = ref([]);
+const comments = ref([]);
 const currentPage = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
 const activeStatus = ref("");
+const activeCommentStatus = ref("");
+const activeTab = ref("item");
 
 const previewVisible = ref(false);
 const previewImages = ref([]);
@@ -270,27 +337,49 @@ function getStatusText(status) {
   }
 }
 
+function getCommentStatusColor(status) {
+  switch (status) {
+    case 'PENDING': return 'orange';
+    case 'APPROVED': return 'green';
+    case 'REJECTED': return 'red';
+    default: return 'gray';
+  }
+}
+
+function getCommentStatusText(status) {
+  switch (status) {
+    case 'PENDING': return '待审核';
+    case 'APPROVED': return '已通过';
+    case 'REJECTED': return '已拒绝';
+    default: return '未知';
+  }
+}
+
 async function loadReviews() {
   loading.value = true;
-  
+
   try {
     const params = {
       pageNo: currentPage.value,
       pageSize: pageSize.value,
     };
-    
+
     if (activeStatus.value) {
       params.status = activeStatus.value;
     }
-    
+
     const result = await http.get('/reviews/my', params);
-    
-    if (result.data) {
-      reviews.value = Array.isArray(result.data.records) ? result.data.records : (Array.isArray(result.data) ? result.data : []);
-      total.value = result.data.total || reviews.value.length;
+
+    // 正确解析后端返回的数据格式: {code: 200, data: [...reviews], total: n}
+    const response = result.data || result;
+    if (response) {
+      // 后端返回 {code, data, total}，data 是评价数组
+      const data = response.data || response;
+      reviews.value = Array.isArray(data) ? data : (Array.isArray(data.records) ? data.records : []);
+      total.value = response.total || reviews.value.length;
     } else {
-      reviews.value = Array.isArray(result) ? result : [];
-      total.value = reviews.value.length;
+      reviews.value = [];
+      total.value = 0;
     }
   } catch (e) {
     console.error('[MyReviews] 加载失败:', e);
@@ -307,15 +396,76 @@ function handleStatusChange(value) {
   loadReviews();
 }
 
+function handleTabChange(value) {
+  activeTab.value = value;
+  currentPage.value = 1;
+  total.value = 0;
+  if (value === 'item') {
+    reviews.value = [];
+    loadReviews();
+  } else {
+    comments.value = [];
+    loadComments();
+  }
+}
+
+async function loadComments() {
+  loading.value = true;
+
+  try {
+    const params = {
+      page: currentPage.value,
+      size: pageSize.value,
+    };
+
+    if (activeCommentStatus.value) {
+      params.status = activeCommentStatus.value;
+    }
+
+    const result = await http.get('/circle/my-comments', params);
+
+    // 解析后端返回的数据格式: {code: 200, data: {comments: [...], total: n}}
+    const response = result.data || result;
+    if (response) {
+      const data = response.data || response;
+      comments.value = Array.isArray(data.comments) ? data.comments : [];
+      total.value = data.total || comments.value.length;
+    } else {
+      comments.value = [];
+      total.value = 0;
+    }
+  } catch (e) {
+    console.error('[MyReviews] 加载圈子评论失败:', e);
+    Message.error(e.message || '加载圈子评论失败');
+    comments.value = [];
+  } finally {
+    loading.value = false;
+  }
+}
+
+function handleCommentStatusChange(value) {
+  activeCommentStatus.value = value;
+  currentPage.value = 1;
+  loadComments();
+}
+
 function handlePageChange(page) {
   currentPage.value = page;
-  loadReviews();
+  if (activeTab.value === 'item') {
+    loadReviews();
+  } else {
+    loadComments();
+  }
 }
 
 function handlePageSizeChange(size) {
   pageSize.value = size;
   currentPage.value = 1;
-  loadReviews();
+  if (activeTab.value === 'item') {
+    loadReviews();
+  } else {
+    loadComments();
+  }
 }
 
 function previewImage(imageUrl) {
@@ -373,6 +523,16 @@ onMounted(() => {
       opacity: 0.9;
     }
   }
+}
+
+.tab-bar {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 }
 
 .filter-bar {

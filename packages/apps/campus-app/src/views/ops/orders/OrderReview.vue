@@ -1,5 +1,6 @@
 <template>
   <OpsUnifiedTable
+    title="退款管理"
     :data="tableData"
     :columns="tableColumns"
     :loading="loading"
@@ -28,8 +29,10 @@
     </template>
 
     <template #extra>
-      <a-button type="primary" @click="handleSearch">查询</a-button>
-      <a-button @click="handleReset">重置</a-button>
+      <a-space>
+        <a-button type="primary" @click="handleSearch">查询</a-button>
+        <a-button @click="handleReset">重置</a-button>
+      </a-space>
     </template>
 
     <template #orderNo="{ record }">
@@ -50,14 +53,13 @@
 
     <template #operations="{ record }">
       <a-space>
-        <a-button type="text" size="small" @click="viewDetail(record)">查看详情</a-button>
-        <a-button v-if="record.status === 'REFUNDING'" type="text" size="small" status="success" @click="approveOrder(record)">通过退款</a-button>
-        <a-button v-if="record.status === 'REFUNDING'" type="text" size="small" status="danger" @click="rejectOrder(record)">拒绝退款</a-button>
+        <a-button type="text" size="small" @click="viewDetail(record)">查看</a-button>
+        <a-button v-if="record.status === 'REFUNDING'" type="text" size="small" status="success" @click="approveOrder(record)">通过</a-button>
+        <a-button v-if="record.status === 'REFUNDING'" type="text" size="small" status="danger" @click="rejectOrder(record)">拒绝</a-button>
       </a-space>
     </template>
   </OpsUnifiedTable>
 
-  <!-- 详情抽屉 -->
   <a-drawer
     v-model:visible="detailVisible"
     :title="`订单详情 - ${currentOrder?.orderNo || ''}`"
@@ -92,6 +94,26 @@
       </a-space>
     </template>
   </a-drawer>
+
+  <a-modal
+    v-model:visible="rejectModalVisible"
+    title="拒绝退款原因"
+    @ok="confirmReject"
+    @cancel="rejectModalVisible = false"
+    :ok-loading="submitLoading"
+  >
+    <a-form :model="rejectForm" layout="vertical">
+      <a-form-item label="请输入拒绝原因（必填）" field="reason" required>
+        <a-textarea
+          v-model="rejectForm.reason"
+          placeholder="请输入拒绝原因"
+          :max-length="200"
+          show-word-limit
+          :auto-size="{ minRows: 3, maxRows: 6 }"
+        />
+      </a-form-item>
+    </a-form>
+  </a-modal>
 </template>
 
 <script setup>
@@ -101,12 +123,18 @@ import OpsUnifiedTable from '../../../components/ops/OpsUnifiedTable.vue'
 import { opsHttp as http } from '../../../services/http'
 
 const loading = ref(false)
+const submitLoading = ref(false)
 const keyword = ref('')
 const activeTab = ref('REFUNDING')
 const tableData = ref([])
 const pagination = reactive({ current: 1, pageSize: 15, total: 0, showTotal: true, showPageSize: true, pageSizeOptions: [10, 15, 20, 50] })
 const detailVisible = ref(false)
+const rejectModalVisible = ref(false)
 const currentOrder = ref(null)
+
+const rejectForm = reactive({
+  reason: ''
+})
 
 const statusMap = {
   PENDING_PAYMENT: { label: '待支付', color: 'orange' },
@@ -125,7 +153,7 @@ const tableColumns = [
   { title: '金额', dataIndex: 'totalAmount', width: 100, slotName: 'totalAmount' },
   { title: '状态', dataIndex: 'status', width: 100, slotName: 'status' },
   { title: '申请时间', dataIndex: 'createdAt', width: 160, slotName: 'createdAt' },
-  { title: '操作', width: 200, fixed: 'right', slotName: 'operations' }
+  { title: '操作', width: 160, fixed: 'right', slotName: 'operations' }
 ]
 
 function getStatusLabel(status) {
@@ -182,12 +210,27 @@ async function approveOrder(record) {
 }
 
 async function rejectOrder(record) {
+  currentOrder.value = record
+  rejectForm.reason = ''
+  rejectModalVisible.value = true
+}
+
+async function confirmReject() {
+  if (!rejectForm.reason.trim()) {
+    Message.warning('请输入拒绝原因')
+    return
+  }
+  
+  submitLoading.value = true
   try {
-    await http.post(`/ops/orders/${record.id}/refund/reject`)
+    await http.post(`/ops/orders/${currentOrder.value.id}/refund/reject`, { reason: rejectForm.reason })
     Message.success('退款已拒绝')
+    rejectModalVisible.value = false
     loadData()
   } catch (e) {
     Message.error('操作失败')
+  } finally {
+    submitLoading.value = false
   }
 }
 

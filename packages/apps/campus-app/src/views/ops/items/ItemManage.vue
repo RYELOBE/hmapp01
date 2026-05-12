@@ -62,12 +62,12 @@
     <template #operations="{ record }">
       <a-space>
         <a-button type="text" size="small" @click="viewDetail(record)">查看</a-button>
-        <a-button v-if="record.reviewStatus === 'PENDING'" type="text" size="small" status="success" @click="doApprove(record)">通过</a-button>
-        <a-popconfirm v-if="record.reviewStatus === 'PENDING'" content="确定拒绝该商品吗？" @ok="doReject(record)">
+        <a-button v-if="record.reviewStatus === 'PENDING_REVIEW'" type="text" size="small" status="success" @click="doApprove(record)">通过</a-button>
+        <a-popconfirm v-if="record.reviewStatus === 'PENDING_REVIEW'" content="确定拒绝该商品吗？" @ok="doReject(record)">
           <a-button type="text" size="small" status="danger">拒绝</a-button>
         </a-popconfirm>
         <a-button v-if="record.reviewStatus === 'APPROVED'" type="text" size="small" status="warning" @click="doOffline(record)">下架</a-button>
-        <a-popconfirm v-if="record.reviewStatus !== 'PENDING'" content="确定删除该商品吗？" @ok="doDelete(record)">
+        <a-popconfirm v-if="record.reviewStatus !== 'PENDING_REVIEW'" content="确定删除该商品吗？" @ok="doDelete(record)">
           <a-button type="text" size="small" status="danger">删除</a-button>
         </a-popconfirm>
       </a-space>

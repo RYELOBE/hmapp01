@@ -55,10 +55,10 @@ public class UserRepository {
     return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
   }
 
-  public Map<String, Object> create(String username, String password, String nickname, List<String> roles) {
+  public Map<String, Object> create(String username, String password, String nickname, String phone, List<String> roles) {
     jdbc.update(
-        "INSERT INTO user_account (username, password, nickname, roles) VALUES (?, ?, ?, ?)",
-        username, password, nickname, String.join(",", roles));
+        "INSERT INTO user_account (username, password, nickname, phone, roles) VALUES (?, ?, ?, ?, ?)",
+        username, password, nickname, phone != null ? phone : "", String.join(",", roles));
     return findByUsername(username).orElseThrow();
   }
 

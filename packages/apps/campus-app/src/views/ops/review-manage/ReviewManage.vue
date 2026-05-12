@@ -55,6 +55,7 @@
         <a-tooltip :content="record.buyerName || record.userName || record.nickname || '未知'" position="top">
           <span class="ellipsis-text author-name">{{ record.buyerName || record.userName || record.nickname || '未知' }}</span>
         </a-tooltip>
+        <a-tag v-if="record.isSeller" color="arcoblue" size="small" class="seller-tag">卖家</a-tag>
       </div>
     </template>
 
@@ -80,7 +81,6 @@
     <template #operations="{ record }">
       <a-space>
         <a-button type="text" size="small" @click="viewDetail(record)">查看</a-button>
-        <a-button v-if="record.status === 'PENDING'" type="text" size="small" status="success" @click="approveReview(record)">通过</a-button>
         <a-popconfirm content="确定删除该评价吗？" @ok="deleteReview(record)">
           <a-button type="text" size="small" status="danger">删除</a-button>
         </a-popconfirm>
@@ -105,13 +105,13 @@ const pagination = reactive({ current: 1, pageSize: 10, total: 0, showTotal: tru
 // 表格列定义 (对齐圈子管理格式)
 const tableColumns = computed(() => [
   { title: '评价类型', dataIndex: 'type', width: 100, slotName: 'type', align: 'center' },
-  { title: '评价内容', dataIndex: 'content', width: 250, slotName: 'content', ellipsis: true },
+  { title: '评价内容', dataIndex: 'content', width: 280, slotName: 'content', ellipsis: true },
   { title: '评价人', dataIndex: 'buyerName', width: 140, slotName: 'buyerName' },
-  { title: '评分', dataIndex: 'rating', width: 120, slotName: 'rating', align: 'center' },
-  { title: '关联对象', dataIndex: 'targetTitle', width: 180, slotName: 'targetTitle', ellipsis: true },
+  { title: '评分', dataIndex: 'rating', width: 150, slotName: 'rating', align: 'center' },
+  { title: '关联对象', dataIndex: 'targetTitle', width: 200, slotName: 'targetTitle', ellipsis: true },
   { title: '状态', dataIndex: 'status', width: 100, slotName: 'status', align: 'center' },
   { title: '发布时间', dataIndex: 'createdAt', width: 160, slotName: 'createdAt' },
-  { title: '操作', width: 180, fixed: 'right', slotName: 'operations' }
+  { title: '操作', width: 140, fixed: 'right', slotName: 'operations' }
 ])
 
 async function loadData() {
@@ -136,7 +136,9 @@ async function loadData() {
       ...item,
       buyerName: item.buyerName || item.userName || item.buyerNickname || item.authorName || '未知',
       targetTitle: item.targetTitle || item.itemTitle || null,
-      type: item.type || 'ITEM'
+      type: item.type || 'ITEM',
+      // 判断是否是卖家（评价人ID等于商品卖家ID）
+      isSeller: item.buyerId && item.sellerId && item.buyerId === item.sellerId
     }))
     
     tableData.value = items
@@ -179,23 +181,10 @@ function viewDetail(record) {
   }
 }
 
-async function approveReview(record) {
-  try {
-    console.log('[ReviewManage] 通过评价:', record.id)
-    const res = await http.post(`/ops/reviews/${record.id}/approve`)
-    console.log('[ReviewManage] 通过成功:', res)
-    Message.success('评价已通过')
-    loadData()
-  } catch (e) {
-    console.error('[ReviewManage] 通过失败:', e)
-    Message.error('操作失败: ' + (e.message || '未知错误'))
-  }
-}
-
 async function deleteReview(record) {
   try {
     console.log('[ReviewManage] 删除评价:', record.id)
-    const res = await http.post(`/ops/reviews/${record.id}/reject`, { reason: '运营删除' })
+    const res = await http.delete(`/ops/reviews/${record.id}`)
     console.log('[ReviewManage] 删除成功:', res)
     Message.success('评价已删除')
     loadData()
@@ -254,6 +243,11 @@ onMounted(() => {
   .author-name {
     max-width: 100px;
     font-weight: 500;
+  }
+  
+  .seller-tag {
+    margin-left: 4px;
+    flex-shrink: 0;
   }
 }
 </style>

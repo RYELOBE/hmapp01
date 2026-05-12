@@ -25,25 +25,26 @@ public class NotificationServiceImpl implements NotificationService {
         int page = query.getPage() == null || query.getPage() < 1 ? 1 : query.getPage();
         int size = query.getSize() == null || query.getSize() < 1 ? 20 : query.getSize();
         Long receiverId = query.getReceiverId();
+        boolean isOps = Boolean.TRUE.equals(query.getIsOps());
 
         List<Map<String, Object>> results;
         if (receiverId != null) {
             if (Boolean.TRUE.equals(query.getUnread())) {
                 results = notificationRepository.findUnreadByReceiverId(receiverId);
             } else {
-                results = notificationRepository.findByReceiverIdPaged(receiverId, page, size);
+                results = notificationRepository.findByReceiverIdOrOpsPaged(receiverId, isOps, page, size);
             }
         } else {
             results = notificationRepository.findAllPaged(page, size);
         }
-        
+
         // 按类型筛选
         if (query.getType() != null && !query.getType().isEmpty()) {
             results = results.stream()
                 .filter(r -> query.getType().equals(r.get("type")))
                 .collect(Collectors.toList());
         }
-        
+
         return results.stream()
                 .map(this::convertMapToDTO)
                 .collect(Collectors.toList());
@@ -64,13 +65,19 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     @Override
+    public int countUnreadForUser(Long userId, boolean isOps) {
+        return notificationRepository.countUnreadByReceiverIdOrOps(userId, isOps);
+    }
+
+    @Override
     public int countNotifications(NotificationQueryDTO query) {
         Long receiverId = query.getReceiverId();
+        boolean isOps = Boolean.TRUE.equals(query.getIsOps());
         if (receiverId != null) {
             if (Boolean.TRUE.equals(query.getUnread())) {
-                return notificationRepository.countUnreadByReceiverId(receiverId);
+                return notificationRepository.countUnreadByReceiverIdOrOps(receiverId, isOps);
             }
-            return notificationRepository.countByReceiverId(receiverId);
+            return notificationRepository.countByReceiverIdOrOps(receiverId, isOps);
         }
         return notificationRepository.countAll();
     }

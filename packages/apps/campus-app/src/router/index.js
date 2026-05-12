@@ -56,9 +56,9 @@ const ProfileView = () =>
 const OpsLayout = () =>
   import(/* webpackChunkName: "ops-layout" */ "../views/ops/Layout.vue");
 const OpsDashboard = () =>
-  import(
-    /* webpackChunkName: "ops-dashboard" */ "../views/ops/dashboard/index.vue"
-  );
+  import(/* webpackChunkName: "ops-dashboard" */ "../views/ops/dashboard/index.vue");
+const OpsLogin = () =>
+  import(/* webpackChunkName: "ops-login" */ "../components/layout/Login/Login.vue");
 const OpsReview = () =>
   import(
     /* webpackChunkName: "ops-reviews" */ "../views/ops/reviews/index.vue"
@@ -108,7 +108,7 @@ const routes = [
         path: "home",
         name: "portalHome",
         component: PortalHome,
-        meta: { title: "校园二手交易平台" },
+        meta: { title: "校园闲置物品流转平台" },
       },
       {
         path: "buyer/home",
@@ -194,6 +194,12 @@ const routes = [
         meta: { title: "我的评价", roles: ["BUYER"] },
       },
       {
+        path: "messages",
+        name: "portalMessages",
+        component: () => import("../views/portal/MessageList.vue"),
+        meta: { title: "我的消息", roles: ["BUYER", "SELLER", "OPS"] },
+      },
+      {
         path: "seller/stats",
         component: () => import("../views/portal/SellerStats.vue"),
         meta: { roles: ["SELLER"] },
@@ -216,7 +222,7 @@ const routes = [
           import(
             /* webpackChunkName: "circle-home" */ "../views/portal/circle/CircleHome.vue"
           ),
-        meta: { title: "我的圈子" },
+        meta: { title: "我的圈子", roles: ["BUYER", "SELLER"] },
       },
       {
         path: "circle/publish",
@@ -224,7 +230,7 @@ const routes = [
           import(
             /* webpackChunkName: "circle-publish" */ "../views/portal/circle/CirclePublish.vue"
           ),
-        meta: { requiresAuth: true, title: "发布动态" },
+        meta: { requiresAuth: true, title: "发布动态", roles: ["BUYER", "SELLER"] },
       },
       {
         path: "circle/:id",
@@ -256,6 +262,13 @@ const routes = [
   },
 
   // ========== 运营后台路由 (独立Layout - 深色侧边栏) ==========
+  {
+    path: "/ops/login",
+    name: "opsLogin",
+    component: OpsLogin,
+    meta: { title: "运营后台登录" },
+    props: { type: "full-screen", appType: "ops" },
+  },
   {
     path: "/ops",
     name: "opsRoot",
@@ -404,7 +417,7 @@ const router = createRouter({
   routes,
 });
 
-const whiteList = ["/login", "/forbidden"];
+const whiteList = ["/login", "/ops/login", "/forbidden"];
 
 router.beforeEach(async (to) => {
   const authStore = useAuthStore();
@@ -426,9 +439,32 @@ router.beforeEach(async (to) => {
       (record) => record.meta.requiresAuth || record.meta.roles,
     );
     if (requiresAuth) {
+      // 运营后台跳转到运营登录页
+      if (to.path.startsWith('/ops')) {
+        return { name: "opsLogin", query: { redirect: to.fullPath } };
+      }
       return { name: "login", query: { redirect: to.fullPath } };
     }
     return true;
+  }
+
+  // 如果已登录且访问登录页面，重定向到对应的工作台
+  if (authStore.isLoggedIn && whiteList.includes(to.path)) {
+    if (to.path === '/ops/login' || (to.query.redirect && to.query.redirect.startsWith('/ops'))) {
+      if (authStore.isOps) {
+        return '/ops/dashboard';
+      }
+    }
+    
+    if (to.path === '/login') {
+      if (authStore.isOps) {
+        return '/ops/dashboard';
+      } else if (authStore.roles.includes('SELLER') && !authStore.roles.includes('BUYER')) {
+        return '/portal/seller/items';
+      } else {
+        return '/portal/home';
+      }
+    }
   }
 
   if (to.meta.roles && to.meta.roles.length > 0) {

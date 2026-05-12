@@ -14,7 +14,7 @@
         <a-step title="基本信息" description="填写商品标题、分类、价格">
           <template #icon><icon-apps /></template>
         </a-step>
-        <a-step title="商品图片" description="上传商品图片（最多9张）">
+        <a-step title="商品图片" description="上传商品图片">
           <template #icon><icon-image /></template>
         </a-step>
         <a-step title="详细描述" description="补充商品详情并提交审核">
@@ -117,11 +117,11 @@
       <div v-show="current === 2" class="step-content">
         <a-card title="商品图片" :bordered="false" class="step-card">
         <div class="upload-section">
-          <p class="upload-tip">支持 JPG/PNG 格式，单张不超过 5MB，最多上传 9 张图片。第一张将作为主图。</p>
+          <p class="upload-tip">支持 JPG/PNG 格式，单张不超过 5MB</p>
 
           <ImageUploader
             v-model="form.imageUrls"
-            :limit="9"
+            :limit="1"
             upload-url="/api/upload"
           />
         </div>
@@ -305,12 +305,11 @@ async function handleSaveDraft() {
     const data = { ...form, reviewStatus: "DRAFT" };
     if (editingItem.value) {
       await updateItem(editingItem.value.id, data);
-      Message.success("草稿已保存");
     } else {
       await publishItem(data);
-      Message.success("草稿已保存");
-      router.push("/portal/seller/items");
     }
+    Message.success("草稿已保存");
+    router.push("/portal/seller/items");
   } catch (e) {
     Message.error(e.message || "保存失败");
   } finally {
@@ -335,6 +334,9 @@ async function handleSubmit() {
       await publishItem(data);
       Message.success("发布成功，已进入审核队列！");
     }
+
+    // 触发通知刷新
+    window.dispatchEvent(new CustomEvent('notification-refresh'));
 
     router.push("/portal/seller/items");
   } catch (e) {

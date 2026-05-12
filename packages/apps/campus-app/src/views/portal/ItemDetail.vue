@@ -21,7 +21,29 @@
             <a-card :bordered="false" class="info-card">
               <div class="gallery-section">
                 <div class="gallery-wrapper">
-                  <ImageGallery :images="detail.imageUrls || []" />
+                  <!-- 使用 Arco Design 原生图片组件 -->
+                  <div v-if="parsedImages.length > 0" class="image-showcase">
+                    <a-image
+                      v-for="(img, idx) in parsedImages"
+                      :key="idx"
+                      :src="img"
+                      :alt="'商品图片 ' + (idx + 1)"
+                      width="100%"
+                      height="280px"
+                      object-fit="contain"
+                      :preview="parsedImages.length === 1"
+                      :style="{ borderRadius: '12px', marginBottom: idx < parsedImages.length - 1 ? '12px' : '0' }"
+                    />
+                    <!-- 多图预览按钮 -->
+                    <div v-if="parsedImages.length > 1" class="multi-image-info">
+                      <icon-image />
+                      <span>共 {{ parsedImages.length }} 张图片</span>
+                    </div>
+                  </div>
+                  <div v-else class="no-image-placeholder">
+                    <icon-image :size="80" style="color: #c9cdd4;" />
+                    <p style="color: #86909c; margin-top: 16px; font-size: 14px;">暂无商品图片</p>
+                  </div>
                 </div>
                 <div class="info-content">
                   <div class="tags-group">
@@ -94,28 +116,32 @@
                 <a-typography-title :heading="5">用户评价</a-typography-title>
                 <div class="reviews-header__actions">
                   <span class="reviews-count">{{ reviewsTotal }} 条评价</span>
-                  <a-button type="primary" size="small" @click="handleShowReviewModal">
+                  <a-button v-if="!authStore.roles.includes('OPS')" type="primary" size="small" @click="handleShowReviewModal">
                     <template #icon><icon-edit /></template>
                     写评价
                   </a-button>
                 </div>
               </div>
 
-              <!-- 评价列表 - 使用二次封装的 Comment 组件 -->
+              <!-- 评价列表 - 使用 a-comment 组件 -->
               <div v-if="reviews.length > 0" class="reviews-list">
-                <Comment
+                <a-comment
                   v-for="review in reviews"
                   :key="review.id"
-                  :comment="review"
-                  :id="review.id"
-                  :author="review.userName || '匿名用户'"
-                  :content="review.content"
-                  :datetime="review.createdAt"
-                  :show-actions="false"
-                  :show-reply="false"
-                  :show-like="false"
+                  :datetime="formatTime(review.createdAt)"
                 >
-                  <!-- 自定义 actions 插槽：显示星级评分 -->
+                  <template #avatar>
+                    <a-avatar :size="40">{{ (review.userName || '匿')[0] }}</a-avatar>
+                  </template>
+                  <template #author>
+                    <span class="author-name">{{ review.userName || '匿名用户' }}</span>
+                    <a-tag 
+                      v-if="review.buyerId === detail.sellerId" 
+                      color="arcoblue" 
+                      size="small"
+                      class="author-tag"
+                    >卖家</a-tag>
+                  </template>
                   <template #actions>
                     <a-rate
                       :model-value="review.rating"
@@ -123,12 +149,12 @@
                       size="small"
                       allow-half
                     />
+                    <span v-if="!authStore.roles.includes('OPS')" class="action" @click="openReplyInput(review)">
+                      <icon-message /> 回复
+                    </span>
                   </template>
-
-                  <!-- 自定义 content 插槽：显示评价内容 + 图片 + 卖家回复 -->
                   <template #content>
-                    <div class="review-content" v-html="review.content"></div>
-
+                    <div class="review-content">{{ review.content }}</div>
                     <!-- 评价图片 -->
                     <div
                       v-if="review.images && review.images.length > 0"
@@ -142,35 +168,7 @@
                         alt="评价图片"
                       />
                     </div>
-
-                    <!-- 卖家回复 - 嵌套评论 -->
-                    <Comment
-                      v-if="review.reply"
-                      author="卖家回复"
-                      :content="review.reply"
-                      :datetime="''"
-                      :show-actions="false"
-                      :show-reply="false"
-                      :show-like="false"
-                      avatar-size="32"
-                    >
-                      <template #content>
-                        <div class="seller-reply">{{ review.reply }}</div>
-                      </template>
-                    </Comment>
-
-                    <!-- 卖家回复按钮（仅卖家显示） -->
-                    <div v-if="isSeller && !review.reply" class="review-reply-action">
-                      <a-button
-                        type="text"
-                        size="small"
-                        @click="openReplyInput(review)"
-                      >
-                        <template #icon><icon-message /></template>
-                        回复评价
-                      </a-button>
-                    </div>
-
+                    
                     <!-- 回复输入框 -->
                     <div v-if="review.showReplyInput" class="reply-input-section">
                       <a-textarea
@@ -192,16 +190,93 @@
                         </a-button>
                       </div>
                     </div>
+                    
+                    <!-- 嵌套回复 - 递归渲染 -->
+                    <template v-if="review.replies && review.replies.length > 0">
+                      <a-comment
+                        v-for="reply in review.replies"
+                        :key="reply.id"
+                        :datetime="formatTime(reply.createdAt)"
+                      >
+                        <template #avatar>
+                          <a-avatar :size="32">{{ (reply.userName || '匿')[0] }}</a-avatar>
+                        </template>
+                        <template #author>
+                          <span class="author-name">{{ reply.userName || '匿名用户' }}</span>
+                          <a-tag 
+                            v-if="reply.buyerId === detail.sellerId" 
+                            color="arcoblue" 
+                            size="small"
+                            class="author-tag"
+                          >卖家</a-tag>
+                        </template>
+                        <template #actions>
+                          <span class="action" @click="openReplyInput(reply)">
+                            <icon-message /> 回复
+                          </span>
+                        </template>
+                        <template #content>
+                          <div class="reply-content">{{ reply.content }}</div>
+                          
+                          <!-- 子回复的回复输入框 -->
+                          <div v-if="reply.showReplyInput" class="reply-input-section">
+                            <a-textarea
+                              v-model="reply.replyContent"
+                              placeholder="请输入回复内容..."
+                              :auto-size="{ minRows: 2, maxRows: 4 }"
+                              size="small"
+                            />
+                            <div class="reply-actions">
+                              <a-button size="small" @click="cancelReply(reply)">取消</a-button>
+                              <a-button
+                                type="primary"
+                                size="small"
+                                :loading="reply.submittingReply"
+                                :disabled="!reply.replyContent?.trim()"
+                                @click="submitReply(reply)"
+                              >
+                                提交回复
+                              </a-button>
+                            </div>
+                          </div>
+                          
+                          <!-- 三级回复 -->
+                          <template v-if="reply.replies && reply.replies.length > 0">
+                            <a-comment
+                              v-for="childReply in reply.replies"
+                              :key="childReply.id"
+                              :datetime="formatTime(childReply.createdAt)"
+                            >
+                              <template #avatar>
+                                <a-avatar :size="28">{{ (childReply.userName || '匿')[0] }}</a-avatar>
+                              </template>
+                              <template #author>
+                                <span class="author-name">{{ childReply.userName || '匿名用户' }}</span>
+                                <a-tag 
+                                  v-if="childReply.buyerId === detail.sellerId" 
+                                  color="arcoblue" 
+                                  size="small"
+                                  class="author-tag"
+                                >卖家</a-tag>
+                              </template>
+                              <template #content>
+                                <div class="reply-content">{{ childReply.content }}</div>
+                              </template>
+                            </a-comment>
+                          </template>
+                        </template>
+                      </a-comment>
+                    </template>
                   </template>
-                </Comment>
-
+                </a-comment>
+                
                 <!-- 加载更多 -->
-                <div v-if="hasMoreReviews" class="load-more-wrapper">
-                  <a-button
-                    type="outline"
-                    long
-                    @click="loadMoreReviews"
+                <div v-if="hasMoreReviews" class="load-more">
+                  <a-button 
+                    type="outline" 
+                    long 
                     :loading="loadingReviews"
+                    @click="loadMoreReviews"
                   >
                     加载更多评价
                   </a-button>
@@ -301,12 +376,24 @@
 
               <!-- 操作按钮组 -->
               <div class="action-group">
+                <!-- 自己的商品提示 -->
+                <div v-if="isOwnItem" class="own-item-tip">
+                  <icon-info-circle />
+                  <span>这是您发布的商品，无法购买</span>
+                </div>
+
+                <!-- 运营人员提示 -->
+                <div v-if="authStore.roles.includes('OPS')" class="ops-tip-box">
+                  <span>运营人员仅负责审核，不参与商品交易</span>
+                </div>
+
                 <a-button
+                  v-if="!authStore.roles.includes('OPS')"
                   type="primary"
                   size="large"
                   long
                   class="buy-btn"
-                  :disabled="detail.reviewStatus !== 'APPROVED'"
+                  :disabled="detail.reviewStatus !== 'APPROVED' || isOwnItem"
                   @click="handleBuy"
                 >
                   <template #icon><icon-apps /></template>
@@ -314,11 +401,13 @@
                 </a-button>
 
                 <a-button
+                  v-if="!authStore.roles.includes('OPS')"
                   size="large"
                   long
                   :status="isInCart ? 'warning' : 'normal'"
                   :class="['cart-btn', { 'is-in-cart': isInCart }]"
                   :loading="cartLoading"
+                  :disabled="isOwnItem"
                   @click="handleAddToCart"
                 >
                   <template #icon><icon-plus /></template>
@@ -436,7 +525,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
+import { ref, reactive, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { Message } from "@arco-design/web-vue";
 import {
@@ -451,9 +540,10 @@ import {
   IconPhone,
   IconEmail,
   IconCalendar,
+  IconMessage,
+  IconImage,
 } from "@arco-design/web-vue/es/icon";
 import StatusTag from "../../components/common/StatusTag/StatusTag.vue";
-import ImageGallery from "../../components/data/ImageGallery/ImageGallery.vue";
 import ConditionTag from "../../components/data/ConditionTag.vue";
 import PageHeader from "../../components/common/PageHeader/PageHeader.vue";
 import LoginPromptModal from "../../components/common/LoginPromptModal/LoginPromptModal.vue";
@@ -469,7 +559,6 @@ import {
 } from "../../services/api";
 import http from "../../services/core/http";
 import { useAuthStore } from "../../stores/auth";
-import Comment from "../../components/comment/Comment.vue";
 
 const route = useRoute();
 const router = useRouter();
@@ -483,11 +572,23 @@ const isInCart = ref(false);
 const cartItemId = ref(null);
 const cartLoading = ref(false);
 
+// 解析后的图片URL列表
+const parsedImages = computed(() => {
+  if (!detail.value) return [];
+  return parseImageUrls(detail.value.imageUrls);
+});
+
 // 判断当前用户是否是商品卖家
 const isSeller = computed(() => {
   if (!authStore.isLoggedIn || !detail.value) return false;
   return detail.value.sellerId === authStore.user?.id ||
          authStore.roles?.includes('SELLER');
+});
+
+// 判断是否是自己的商品
+const isOwnItem = computed(() => {
+  if (!authStore.isLoggedIn || !detail.value) return false;
+  return detail.value.sellerId === authStore.user?.id;
 });
 
 const showLoginPrompt = ref(false);
@@ -500,6 +601,7 @@ const loadingReviews = ref(false);
 const showReviewModal = ref(false);
 const submittingReview = ref(false);
 
+// 使用 reactive 确保对象响应式
 const reviewForm = reactive({
   rating: 5,
   content: "",
@@ -529,6 +631,26 @@ function formatRating(rating) {
   return Number.isFinite(value) ? value.toFixed(1) : "5.0";
 }
 
+function formatTime(dateStr) {
+  if (!dateStr) return '';
+  
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diff = now - date;
+  
+  if (diff < 60000) return '刚刚';
+  if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
+  if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
+  if (diff < 604800000) return `${Math.floor(diff / 86400000)}天前`;
+  
+  return date.toLocaleDateString('zh-CN', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 function formatDate(dateStr) {
   if (!dateStr) return "未知";
   const date = new Date(dateStr);
@@ -537,6 +659,47 @@ function formatDate(dateStr) {
     month: "long",
     day: "numeric",
   });
+}
+
+function parseImageUrls(imageUrls) {
+  console.log('[ItemDetail] 原始imageUrls:', imageUrls, '类型:', typeof imageUrls);
+
+  if (!imageUrls) {
+    console.warn('[ItemDetail] imageUrls为空');
+    return [];
+  }
+
+  if (Array.isArray(imageUrls)) {
+    console.log('[ItemDetail] 解析结果(数组):', imageUrls);
+    return imageUrls;
+  }
+
+  if (typeof imageUrls === "string") {
+    // 检查是否是JSON数组格式
+    if (imageUrls.startsWith('[')) {
+      try {
+        const parsed = JSON.parse(imageUrls);
+        console.log('[ItemDetail] 解析结果(JSON字符串):', parsed);
+        return Array.isArray(parsed) ? parsed : [imageUrls];
+      } catch (e) {
+        console.error('[ItemDetail] JSON解析失败:', e);
+        return [imageUrls];
+      }
+    }
+
+    // 检查是否是Data URL或普通URL
+    if (imageUrls.startsWith('data:') || imageUrls.startsWith('http') || imageUrls.startsWith('/')) {
+      console.log('[ItemDetail] 解析结果(单个URL):', [imageUrls]);
+      return [imageUrls];
+    }
+
+    // 其他情况，尝试作为单个URL处理
+    console.log('[ItemDetail] 解析结果(其他):', [imageUrls]);
+    return [imageUrls];
+  }
+
+  console.warn('[ItemDetail] 未知的imageUrls类型');
+  return [];
 }
 
 async function checkIsFavorite() {
@@ -653,11 +816,15 @@ function normalizeReview(review) {
     }
   }
 
+  // 递归处理嵌套回复
+  const replies = (review.replies || []).map(reply => normalizeReview(reply));
+
   return {
     ...review,
     userName: review.userName || review.buyerNickname || "匿名用户",
     images: Array.isArray(images) ? images : [],
     reply: review.reply || review.replyContent || "",
+    replies: replies,
     showReplyInput: false,
     replyContent: '',
     submittingReply: false,
@@ -676,7 +843,7 @@ function cancelReply(review) {
   review.replyContent = '';
 }
 
-// 提交卖家回复
+// 提交回复
 async function submitReply(review) {
   if (!review.replyContent?.trim()) {
     Message.warning('请输入回复内容');
@@ -689,9 +856,10 @@ async function submitReply(review) {
       content: review.replyContent.trim(),
     });
     Message.success(result?.message || '回复成功');
-    review.reply = review.replyContent.trim();
     review.showReplyInput = false;
     review.replyContent = '';
+    // 重新加载评价列表以显示新回复
+    await loadReviews(true);
   } catch (e) {
     console.error('[ItemDetail] 回复失败:', e);
     Message.error(e.response?.data?.message || e.message || '回复失败');
@@ -774,10 +942,16 @@ async function submitReview() {
 
 async function loadDetail() {
   loading.value = true;
+  console.log('[ItemDetail] 开始加载商品详情, ID:', route.params.id);
   try {
-    const data = await getItemDetail(route.params.id);
+    const res = await getItemDetail(route.params.id);
+    console.log('[ItemDetail] 接口返回:', res);
+    // 处理后端返回的 {code, data} 格式
+    const data = res?.data || res;
+    console.log('[ItemDetail] 解析后的数据:', data);
     detail.value = data;
-    favoriteCount.value = data.favoriteCount || 0;
+    favoriteCount.value = data?.favoriteCount || 0;
+    console.log('[ItemDetail] detail.value:', detail.value);
     await checkIsFavorite();
     await syncCartState();
     await loadReviews(true);
@@ -789,9 +963,12 @@ async function loadDetail() {
       }, 500);
     }
   } catch (error) {
-    console.error("加载详情失败:", error);
+    console.error('[ItemDetail] 加载详情失败:', error);
+    Message.error(error?.response?.data?.message || '加载商品详情失败');
+    detail.value = null;
   } finally {
     loading.value = false;
+    console.log('[ItemDetail] 加载完成, detail:', detail.value);
   }
 }
 
@@ -850,11 +1027,60 @@ onMounted(loadDetail);
   flex-shrink: 0;
   width: 280px;
   max-width: 45%;
-  
+
   @media (max-width: 768px) {
     width: 100%;
     max-width: 100%;
   }
+}
+
+.image-showcase {
+  width: 100%;
+
+  :deep(.arco-image) {
+    background: #fafafa;
+    border: 1px solid #f0f0f0;
+    transition: all 0.3s ease;
+
+    &:hover {
+      box-shadow: 0 4px 16px rgba(22, 93, 255, 0.12);
+      transform: translateY(-2px);
+    }
+
+    .arco-image-img {
+      border-radius: 12px;
+    }
+  }
+}
+
+.multi-image-info {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 8px 16px;
+  background: linear-gradient(135deg, #f0f5ff 0%, #e8f3fe 100%);
+  border-radius: 8px;
+  color: #165DFF;
+  font-size: 13px;
+  font-weight: 500;
+
+  .arco-icon {
+    font-size: 16px;
+  }
+}
+
+.no-image-placeholder {
+  width: 100%;
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #fafbfc 0%, #f5f7fa 100%);
+  border: 2px dashed #e5e6eb;
+  border-radius: 12px;
 }
 
 .info-content {
@@ -1116,6 +1342,37 @@ onMounted(loadDetail);
   justify-content: flex-end;
 }
 
+.action {
+  display: inline-block;
+  padding: 0 4px;
+  color: var(--color-text-1);
+  line-height: 24px;
+  background: transparent;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+  margin-left: 8px;
+}
+.action:hover {
+  background: var(--color-fill-3);
+}
+
+.reply-content {
+  font-size: 14px;
+  color: #4e5969;
+  line-height: 1.6;
+}
+
+.author-name {
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.author-tag {
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
 .empty-reviews {
   text-align: center;
   padding: 32px 0;
@@ -1256,6 +1513,36 @@ onMounted(loadDetail);
   padding: 20px;
   box-shadow: 0 4px 16px rgba(22, 93, 255, 0.08);
   animation: slideUp 0.6s ease-out 0.25s both;
+
+  .own-item-tip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    background: #fff7e6;
+    border: 1px solid #ffd591;
+    border-radius: 8px;
+    color: #d46b08;
+    font-size: 14px;
+
+    .arco-icon {
+      font-size: 16px;
+    }
+  }
+
+  .ops-tip-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    background: #e8f3ff;
+    border: 1px solid #94bfff;
+    border-radius: 8px;
+    color: #165dff;
+    font-size: 14px;
+  }
 
   .buy-btn {
     height: 52px;

@@ -44,7 +44,7 @@ public class AuthController {
 
   @PostMapping("/register")
   public Map<String, Object> register(@RequestBody RegisterRequest request) {
-    return authService.register(request.username(), request.password(), request.nickname(), request.roles());
+    return authService.register(request.username(), request.password(), request.nickname(), request.phone(), request.roles());
   }
 
   @PostMapping("/ops/login")
@@ -134,6 +134,7 @@ public class AuthController {
       @NotBlank String username,
       @NotBlank String password,
       String nickname,
+      String phone,
       List<String> roles) {}
 
   public record ProfileUpdateRequest(

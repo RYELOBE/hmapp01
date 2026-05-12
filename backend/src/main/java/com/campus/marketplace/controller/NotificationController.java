@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -23,6 +25,13 @@ public class NotificationController {
     this.currentUserService = currentUserService;
   }
 
+  private boolean isOps() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    if (auth == null) return false;
+    return auth.getAuthorities().stream()
+        .anyMatch(a -> a.getAuthority().equals("ROLE_OPS"));
+  }
+
   /**
    * 获取当前用户的未读消息数量
    */
@@ -30,7 +39,8 @@ public class NotificationController {
   @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Map<String, Object>> getUnreadCount() {
     Long userId = currentUserService.userId();
-    int count = notificationService.countUnread(userId);
+    boolean ops = isOps();
+    int count = notificationService.countUnreadForUser(userId, ops);
     return ResponseEntity.ok(Map.of("code", 200, "data", Map.of("count", count), "message", "success"));
   }
 
@@ -45,17 +55,19 @@ public class NotificationController {
       @RequestParam(required = false) String type,
       @RequestParam(required = false) Boolean unread) {
     Long userId = currentUserService.userId();
-    
+    boolean ops = isOps();
+
     NotificationQueryDTO query = new NotificationQueryDTO();
     query.setPage(page);
     query.setSize(size);
     query.setType(type);
     query.setUnread(unread);
     query.setReceiverId(userId);
-    
+    query.setIsOps(ops);
+
     List<NotificationDTO> notifications = notificationService.getNotifications(query);
     int total = notificationService.countNotifications(query);
-    
+
     Map<String, Object> data = new HashMap<>();
     data.put("records", notifications);
     data.put("list", notifications);
@@ -63,7 +75,7 @@ public class NotificationController {
     data.put("totalCount", total);
     data.put("pageNo", page);
     data.put("pageSize", size);
-    
+
     return ResponseEntity.ok(buildSuccessResponse(data));
   }
 

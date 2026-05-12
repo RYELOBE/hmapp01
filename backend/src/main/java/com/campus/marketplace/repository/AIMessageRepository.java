@@ -36,4 +36,11 @@ public class AIMessageRepository {
     return jdbc.query(
         "SELECT * FROM ai_message WHERE session_id = ? ORDER BY id", ROW_MAPPER, sessionId);
   }
+
+  /**
+   * 删除会话的所有消息
+   */
+  public void deleteBySessionId(String sessionId) {
+    jdbc.update("DELETE FROM ai_message WHERE session_id = ?", sessionId);
+  }
 }

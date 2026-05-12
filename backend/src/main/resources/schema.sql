@@ -246,6 +246,9 @@ CREATE TABLE review (
   rating INT NOT NULL,
   content TEXT,
   images TEXT,
+  parent_id BIGINT NULL DEFAULT NULL,
+  reply_to_user_id BIGINT NULL DEFAULT NULL,
+  reply_to_user_name VARCHAR(64) NULL DEFAULT NULL,
   reply TEXT,
   reply_time DATETIME,
   status VARCHAR(20) NOT NULL DEFAULT 'PENDING',
@@ -255,7 +258,8 @@ CREATE TABLE review (
   INDEX idx_buyer_id (buyer_id),
   INDEX idx_seller_id (seller_id),
   INDEX idx_status (status),
-  INDEX idx_created_at (created_at)
+  INDEX idx_created_at (created_at),
+  INDEX idx_parent_id (parent_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE circle_post (

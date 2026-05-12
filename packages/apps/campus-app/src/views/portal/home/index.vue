@@ -7,7 +7,7 @@
       </div>
 
       <div class="hero-content">
-        <h1 class="hero-title">校园二手交易平台</h1>
+        <h1 class="hero-title">校园闲置物品流转平台</h1>
         <p class="hero-subtitle">闲置不浪费，校园淘好物</p>
         
 
@@ -118,7 +118,8 @@ async function loadHotItems() {
 onMounted(async () => {
   try {
     const res = await getDictOptions();
-    quickCategories.value = res?.data?.categories || [];
+    const allCategories = res?.data?.categories || [];
+    quickCategories.value = allCategories.filter(cat => cat.value && cat.label !== '全部商品');
   } catch (e) {
     console.error('[Home] 加载分类失败:', e);
   }

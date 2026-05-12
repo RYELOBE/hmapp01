@@ -6,7 +6,7 @@
         <!-- 关于我们 -->
         <div class="footer-column">
           <h3 class="column-title">关于我们</h3>
-          <p class="column-desc">校园二手市场是一个专注于校园内的二手交易平台，为大学生提供安全、便捷的二手物品交易服务。</p>
+          <p class="column-desc">校园闲置物品流转平台是一个专注于校园内的闲置物品流转平台，为大学生提供安全、便捷的闲置物品流转服务。</p>
           <div class="social-links">
             <a href="#" class="social-link" aria-label="微信">
               <icon-wechat />

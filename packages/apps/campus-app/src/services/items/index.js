@@ -20,12 +20,20 @@ export async function offShelfItem(id) {
   return await http.post(`/items/${id}/off-shelf`);
 }
 
+export async function withdrawItem(id) {
+  return await http.post(`/items/${id}/withdraw`);
+}
+
+export async function submitForReview(id) {
+  return await http.post(`/items/${id}/submit`);
+}
+
 export async function deleteItem(id) {
   return await http.delete(`/items/${id}`);
 }
 
 export async function getMyItems(params = {}) {
-  return await http.get("/items/mine", { params });
+  return await http.post("/items/list", { ...params, mine: true });
 }
 
 export async function uploadImage(file) {

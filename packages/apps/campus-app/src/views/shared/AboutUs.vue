@@ -105,7 +105,7 @@
     <section class="cta-section">
       <div class="cta-content">
         <h2 class="cta-title">加入我们</h2>
-        <p class="cta-text">立即注册，开启你的校园二手交易之旅</p>
+        <p class="cta-text">立即注册，开启你的校园闲置物品流转之旅</p>
         <a-button type="primary" size="large" @click="$router.push('/portal/home')">
           立即注册
         </a-button>

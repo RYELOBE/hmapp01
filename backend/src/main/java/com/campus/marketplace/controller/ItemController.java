@@ -48,25 +48,26 @@ public class ItemController {
         request.imageUrls(),
         request.category(),
         request.conditionLevel(),
-        null
+        null,
+        request.reviewStatus()
     );
   }
 
   @PostMapping("/list")
   public Map<String, Object> listItemsPost(@RequestBody(required = false) ItemQueryRequest request) {
     if (request == null) {
-      request = new ItemQueryRequest(null, null, null, null, null, null, null, 1, 20);
+      request = new ItemQueryRequest(null, null, null, null, null, null, null, null, 1, 20);
     }
     Long userId = null;
     try {
       userId = currentUserService.userId();
     } catch (Exception e) {
     }
-    
+
     return itemService.listItemsPaged(
         request.approvedOnly(), request.mine(), request.keyword(),
         request.category(), request.sort(), request.conditionLevel(),
-        request.campus(), request.pageNo(), request.pageSize(), userId);
+        request.campus(), request.status(), request.pageNo(), request.pageSize(), userId);
   }
 
   @GetMapping
@@ -128,13 +129,27 @@ public class ItemController {
     return Map.of("code", 200, "message", "已下架");
   }
 
+  @PostMapping("/{id}/withdraw")
+  @PreAuthorize("hasRole('SELLER')")
+  public Map<String, Object> withdrawItem(@PathVariable("id") Long id) {
+    itemService.withdrawItem(id, currentUserService.userId());
+    return Map.of("code", 200, "message", "已撤回");
+  }
+
+  @PostMapping("/{id}/submit")
+  @PreAuthorize("hasRole('SELLER')")
+  public Map<String, Object> submitForReview(@PathVariable("id") Long id) {
+    itemService.submitForReview(id, currentUserService.userId());
+    return Map.of("code", 200, "message", "已提交审核");
+  }
+
   @PutMapping("/{id}")
   @PreAuthorize("hasRole('SELLER')")
   public Map<String, Object> updateItem(@PathVariable("id") Long id, @RequestBody @Validated CreateItemRequest request) {
     return itemService.updateItem(
         id, currentUserService.userId(),
         request.title(), request.price(), request.description(),
-        request.imageUrls(), request.category(), request.conditionLevel());
+        request.imageUrls(), request.category(), request.conditionLevel(), request.reviewStatus());
   }
 
   @DeleteMapping("/{id}")
@@ -216,7 +231,8 @@ public class ItemController {
       @NotBlank String description,
       Object imageUrls,
       String category,
-      String conditionLevel) {}
+      String conditionLevel,
+      String reviewStatus) {}
 
   public record ItemQueryRequest(
       Boolean approvedOnly,
@@ -226,6 +242,7 @@ public class ItemController {
       String sort,
       String conditionLevel,
       String campus,
+      String status,
       @Min(1) Integer pageNo,
       @Min(1) Integer pageSize) {}
 

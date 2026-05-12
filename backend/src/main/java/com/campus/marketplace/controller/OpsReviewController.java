@@ -4,6 +4,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import com.campus.marketplace.service.CurrentUserService;
 import com.campus.marketplace.service.ReviewService;
 import java.util.Map;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -40,6 +41,12 @@ public class OpsReviewController {
   public Map<String, Object> reject(@PathVariable Long itemId, @RequestBody RejectRequest request) {
     reviewService.reject(itemId, currentUserService.userId(), request.reason());
     return Map.of("code", 200, "message", "已驳回");
+  }
+
+  @DeleteMapping("/{id}")
+  public Map<String, Object> delete(@PathVariable Long id) {
+    reviewService.deleteReview(id);
+    return Map.of("code", 200, "message", "评价已删除");
   }
 
   public record ReviewQueueRequest(

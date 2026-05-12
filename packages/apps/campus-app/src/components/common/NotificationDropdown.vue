@@ -1,7 +1,7 @@
 <template>
   <a-dropdown trigger="click" position="br" @select="handleSelect">
     <a-badge :count="unreadCount" :max-count="99" :dot="unreadCount > 0 && unreadCount < 10">
-      <button class="notification-btn" @click.stop>
+      <button class="notification-btn">
         <icon-notification />
       </button>
     </a-badge>
@@ -70,22 +70,22 @@ const unreadCount = ref(0);
 
 function getType(type) {
   const map = {
-    SYSTEM: 'system',
-    TRANSACTION: 'transaction',
+    ORDER: 'order',
+    ITEM: 'item',
     REVIEW: 'review',
-    INTERACTION: 'interaction',
+    CIRCLE: 'circle',
   };
-  return map[type] || 'system';
+  return map[type] || 'order';
 }
 
 function getIcon(type) {
   const map = {
-    SYSTEM: IconInfoCircle,
-    TRANSACTION: IconApps,
+    ORDER: IconApps,
+    ITEM: IconCheckCircle,
     REVIEW: IconCheckCircle,
-    INTERACTION: IconHeartFill,
+    CIRCLE: IconHeartFill,
   };
-  return map[type] || IconInfoCircle;
+  return map[type] || IconApps;
 }
 
 function formatTime(dateStr) {
@@ -117,8 +117,10 @@ async function loadNotifications() {
   loading.value = true;
   try {
     const res = await getNotifications({ page: 1, size: 5 });
-    const data = res?.data;
-    notifications.value = (Array.isArray(data) ? data : (data?.records || data?.list || [])).map(msg => ({
+    console.log('[NotificationDropdown] 响应:', res);
+    const data = res?.data?.data ?? res?.data ?? res;
+    const list = data?.records || data?.list || (Array.isArray(data) ? data : []);
+    notifications.value = list.map(msg => ({
       id: msg.id,
       type: msg.type || 'SYSTEM',
       title: msg.title || '系统通知',
@@ -129,6 +131,7 @@ async function loadNotifications() {
       businessType: msg.businessType,
       businessId: msg.businessId,
     }));
+    console.log('[NotificationDropdown] 消息数量:', notifications.value.length);
   } catch (e) {
     console.error('[NotificationDropdown] 加载失败:', e);
   } finally {
@@ -139,6 +142,7 @@ async function loadNotifications() {
 async function loadUnreadCount() {
   try {
     const res = await getUnreadCount();
+    console.log('[NotificationDropdown] 未读数响应:', res);
     unreadCount.value = res?.data?.count ?? res?.data ?? 0;
   } catch (e) {
     console.warn('[NotificationDropdown] 获取未读数失败:', e);
@@ -190,16 +194,25 @@ let refreshTimer = null;
 
 onMounted(async () => {
   await Promise.all([loadNotifications(), loadUnreadCount()]);
-  
+
   // 每30秒刷新一次未读数
   refreshTimer = setInterval(loadUnreadCount, 30000);
+
+  // 监听通知刷新事件
+  window.addEventListener('notification-refresh', handleRefresh);
 });
 
 onUnmounted(() => {
   if (refreshTimer) {
     clearInterval(refreshTimer);
   }
+  window.removeEventListener('notification-refresh', handleRefresh);
 });
+
+function handleRefresh() {
+  loadNotifications();
+  loadUnreadCount();
+}
 
 // 暴露刷新方法供外部调用
 defineExpose({

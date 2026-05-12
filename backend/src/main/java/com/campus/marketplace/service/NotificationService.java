@@ -21,7 +21,12 @@ public interface NotificationService {
      * 获取用户未读消息数量
      */
     int countUnread(Long userId);
-    
+
+    /**
+     * 获取用户未读消息数量（支持OPS）
+     */
+    int countUnreadForUser(Long userId, boolean isOps);
+
     /**
      * 统计消息数量
      */

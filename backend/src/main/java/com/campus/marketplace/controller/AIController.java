@@ -5,6 +5,7 @@ import com.campus.marketplace.service.CurrentUserService;
 import java.util.List;
 import java.util.Map;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -53,5 +54,21 @@ public class AIController {
   @GetMapping("/sessions/{sessionId}/messages")
   public Map<String, Object> sessionMessages(@PathVariable("sessionId") String sessionId) {
     return Map.of("code", 200, "data", Map.of("messages", aiService.getMessages(sessionId)));
+  }
+
+  /** 创建新会话 */
+  @PostMapping("/sessions")
+  public Map<String, Object> createSession() {
+    Long userId = currentUserService.userId();
+    String sessionId = aiService.createNewSession(userId);
+    return Map.of("code", 200, "data", Map.of("sessionId", sessionId));
+  }
+
+  /** 删除会话 */
+  @DeleteMapping("/sessions/{sessionId}")
+  public Map<String, Object> deleteSession(@PathVariable("sessionId") String sessionId) {
+    Long userId = currentUserService.userId();
+    aiService.deleteSession(sessionId, userId);
+    return Map.of("code", 200, "data", Map.of("message", "删除成功"));
   }
 }

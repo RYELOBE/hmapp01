@@ -35,6 +35,20 @@ export const useAuthStore = defineStore("auth", {
       }
       return false;
     },
+    isOps: (state) => {
+      // 优先使用JWT中的角色数据
+      if (isJWT(state.token)) {
+        const jwtRoles = getJWTRoles(state.token);
+        console.log("[Auth Store] isOps - JWT角色:", jwtRoles);
+        return jwtRoles.some(role => role.startsWith("OPS"));
+      }
+      
+      // 回退到user对象中的角色数据
+      const roles = state.user?.roles || [];
+      console.log("[Auth Store] isOps - User角色:", roles);
+      return Array.isArray(roles) ? roles.some(role => role.startsWith("OPS")) : 
+             typeof roles === "string" ? roles.startsWith("OPS") : false;
+    },
   },
   actions: {
     hydrate() {
@@ -91,6 +105,34 @@ export const useAuthStore = defineStore("auth", {
       }
 
       console.log("[Auth Store] 登录完成 - isLoggedIn:", this.isLoggedIn, "roles:", this.roles);
+      console.log("[Auth Store] isJWTToken:", this.isJWTToken, "isTokenExpired:", this.isTokenExpired);
+
+      return result;
+    },
+
+    async opsLogin(payload) {
+      const result = await opsLogin(payload);
+
+      if (result.token) {
+        this.token = result.token;
+        console.log("[Auth Store] ✅ 运营Token已设置到Store");
+
+        if (isJWT(result.token)) {
+          console.log("[Auth Store] ✅ 运营Token是有效的JWT格式");
+        } else {
+          console.warn("[Auth Store] ⚠️ 运营Token不是JWT格式");
+        }
+      }
+
+      if (result.user) {
+        this.user = result.user;
+        console.log(
+          "[Auth Store] ✅ 运营用户信息已设置到Store, 角色:",
+          result.user.roles
+        );
+      }
+
+      console.log("[Auth Store] 运营登录完成 - isLoggedIn:", this.isLoggedIn, "roles:", this.roles);
       console.log("[Auth Store] isJWTToken:", this.isJWTToken, "isTokenExpired:", this.isTokenExpired);
 
       return result;

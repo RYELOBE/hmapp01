@@ -65,13 +65,16 @@ public class StatsService {
     Map<String, Object> stats = new HashMap<>();
 
     stats.put("totalUsers", userRepository.countAll());
+    stats.put("todayUsers", countTodayUsers());
     stats.put("activeUsers", userRepository.countActiveUsers());
 
     stats.put("totalItems", itemRepository.countAll());
+    stats.put("todayItems", itemRepository.countTodayItems());
     stats.put("approvedItems", itemRepository.countByStatus("APPROVED"));
 
     stats.put("totalOrders", orderRepository.countAll());
     stats.put("todayOrders", orderRepository.countTodayOrders());
+    stats.put("todayTotalAmount", orderRepository.sumTodayTotalAmount());
 
     stats.put("totalPosts", circlePostRepository.countAll());
     stats.put("approvedPosts", circlePostRepository.countByStatus("APPROVED"));

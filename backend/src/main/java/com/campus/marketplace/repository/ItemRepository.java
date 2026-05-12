@@ -74,20 +74,28 @@ public class ItemRepository {
   public Map<String, Object> save(String title, Integer price, String description,
       Long sellerId, String sellerName, String imageUrls, String category,
       String conditionLevel, String campus) {
+    return save(title, price, description, sellerId, sellerName, imageUrls, category, conditionLevel, campus, "PENDING_REVIEW");
+  }
+
+  public Map<String, Object> save(String title, Integer price, String description,
+      Long sellerId, String sellerName, String imageUrls, String category,
+      String conditionLevel, String campus, String reviewStatus) {
     KeyHolder kh = new GeneratedKeyHolder();
+    String status = (reviewStatus != null && !reviewStatus.isEmpty()) ? reviewStatus : "PENDING_REVIEW";
     jdbc.update(con -> {
       var ps = con.prepareStatement(
-          "INSERT INTO item (title, price, description, seller_id, seller_name, review_status, image_urls, category, condition_level, campus) VALUES (?, ?, ?, ?, ?, 'PENDING_REVIEW', ?, ?, ?, ?)",
+          "INSERT INTO item (title, price, description, seller_id, seller_name, review_status, image_urls, category, condition_level, campus) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
           Statement.RETURN_GENERATED_KEYS);
       ps.setString(1, title);
       ps.setInt(2, price);
       ps.setString(3, description);
       ps.setLong(4, sellerId);
       ps.setString(5, sellerName);
-      ps.setString(6, imageUrls);
-      ps.setString(7, category);
-      ps.setString(8, conditionLevel);
-      ps.setString(9, campus);
+      ps.setString(6, status);
+      ps.setString(7, imageUrls);
+      ps.setString(8, category);
+      ps.setString(9, conditionLevel);
+      ps.setString(10, campus);
       return ps;
     }, kh);
     Long id = kh.getKey().longValue();
@@ -152,10 +160,21 @@ public class ItemRepository {
 
   public void update(Long id, String title, Integer price, String description, Object imageUrls,
       String category, String conditionLevel) {
+    update(id, title, price, description, imageUrls, category, conditionLevel, null);
+  }
+
+  public void update(Long id, String title, Integer price, String description, Object imageUrls,
+      String category, String conditionLevel, String reviewStatus) {
     String imageUrlsStr = stringifyImageUrls(imageUrls);
-    jdbc.update(
-        "UPDATE item SET title = ?, price = ?, description = ?, image_urls = ?, category = ?, condition_level = ? WHERE id = ?",
-        title, price, description, imageUrlsStr, category, conditionLevel, id);
+    if (reviewStatus != null && !reviewStatus.isEmpty()) {
+      jdbc.update(
+          "UPDATE item SET title = ?, price = ?, description = ?, image_urls = ?, category = ?, condition_level = ?, review_status = ? WHERE id = ?",
+          title, price, description, imageUrlsStr, category, conditionLevel, reviewStatus, id);
+    } else {
+      jdbc.update(
+          "UPDATE item SET title = ?, price = ?, description = ?, image_urls = ?, category = ?, condition_level = ? WHERE id = ?",
+          title, price, description, imageUrlsStr, category, conditionLevel, id);
+    }
   }
 
   public void delete(Long id) {

@@ -37,23 +37,34 @@ public class ItemService {
   public Map<String, Object> createItem(Long sellerId, String title, Integer price,
       String description, Object imageUrls, String category,
       String conditionLevel, String campus) {
+    return createItem(sellerId, title, price, description, imageUrls, category, conditionLevel, campus, "PENDING_REVIEW");
+  }
+
+  /**
+   * 创建商品（支持自定义审核状态）
+   */
+  public Map<String, Object> createItem(Long sellerId, String title, Integer price,
+      String description, Object imageUrls, String category,
+      String conditionLevel, String campus, String reviewStatus) {
     validateSeller(sellerId);
     String imageUrlsStr = parseImageUrls(imageUrls);
 
     Map<String, Object> savedItem = itemRepository.save(title, price, description, sellerId,
-        getSellerNickname(sellerId), imageUrlsStr, category, conditionLevel, campus);
-    
-    // 通知运营人员有新商品待审核
-    Long itemId = ((Number) savedItem.get("id")).longValue();
-    notificationService.sendNotification(
-        null, // null receiverId 表示发送给运营人员
-        "新商品待审核",
-        String.format("卖家 %s 发布了新商品：%s，请及时审核", getSellerNickname(sellerId), title),
-        "REVIEW",
-        String.valueOf(itemId),
-        "ITEM"
-    );
-    
+        getSellerNickname(sellerId), imageUrlsStr, category, conditionLevel, campus, reviewStatus);
+
+    // 如果是提交审核（非草稿），通知运营人员
+    if (!"DRAFT".equals(reviewStatus)) {
+      Long itemId = ((Number) savedItem.get("id")).longValue();
+      notificationService.sendNotification(
+          null,
+          "新商品待审核",
+          String.format("卖家 %s 发布了新商品：%s，请及时审核", getSellerNickname(sellerId), title),
+          "ITEM",
+          String.valueOf(itemId),
+          "ITEM"
+      );
+    }
+
     return savedItem;
   }
 
@@ -102,7 +113,7 @@ public class ItemService {
       String keyword, String category, String sort,
       int pageNo, int pageSize, Long userId) {
     return listItemsPaged(approvedOnly, mine, keyword, category, sort,
-        null, null, pageNo, pageSize, userId);
+        null, null, null, pageNo, pageSize, userId);
   }
 
   /**
@@ -110,27 +121,30 @@ public class ItemService {
    */
   public Map<String, Object> listItemsPaged(Boolean approvedOnly, Boolean mine,
       String keyword, String category, String sort,
-      String conditionLevel, String campus,
+      String conditionLevel, String campus, String status,
       int pageNo, int pageSize, Long userId) {
     validatePageParams(pageNo, pageSize);
 
     boolean showMine = Boolean.TRUE.equals(mine);
     boolean showApprovedOnly = Boolean.TRUE.equals(approvedOnly);
 
-    String status = null;
-    if (showApprovedOnly) {
-      status = "APPROVED";
+    // 如果传入了status参数，使用它；否则根据approvedOnly决定
+    String filterStatus = status;
+    if (filterStatus == null || filterStatus.isEmpty()) {
+      if (showApprovedOnly) {
+        filterStatus = "APPROVED";
+      }
     }
 
     List<Map<String, Object>> rows;
     int total;
 
     if (showMine) {
-      rows = itemRepository.findBySellerIdPaged(userId, null, pageNo, pageSize);
-      total = itemRepository.countBySellerIdWithFilter(userId, null);
+      rows = itemRepository.findBySellerIdPaged(userId, filterStatus, pageNo, pageSize);
+      total = itemRepository.countBySellerIdWithFilter(userId, filterStatus);
     } else {
-      rows = itemRepository.findByPage(status, keyword, category, conditionLevel, campus, sort, pageNo, pageSize);
-      total = itemRepository.countByFilter(status, keyword, category, conditionLevel, campus);
+      rows = itemRepository.findByPage(filterStatus, keyword, category, conditionLevel, campus, sort, pageNo, pageSize);
+      total = itemRepository.countByFilter(filterStatus, keyword, category, conditionLevel, campus);
     }
 
     return buildSuccessResponse(Map.of(
@@ -209,12 +223,12 @@ public class ItemService {
       notificationService.sendNotification(
           sellerId, "商品审核通过",
           String.format("您的商品 \"%s\" 已通过审核，现已上架", title),
-          "REVIEW", String.valueOf(id), "ITEM");
+          "ITEM", String.valueOf(id), "ITEM");
     } else if ("REJECTED".equals(status)) {
       notificationService.sendNotification(
           sellerId, "商品审核未通过",
           String.format("您的商品 \"%s\" 未通过审核，原因：%s", title, reason != null ? reason : "无"),
-          "REVIEW", String.valueOf(id), "ITEM");
+          "ITEM", String.valueOf(id), "ITEM");
     }
   }
 
@@ -238,8 +252,75 @@ public class ItemService {
     itemRepository.updateReviewStatus(itemId, "OFF_SHELF", sellerId != null ? "卖家主动下架" : "运营人员下架");
   }
 
+  /**
+   * 撤回审核中的商品
+   * @param itemId 商品ID
+   * @param sellerId 卖家ID
+   */
+  public void withdrawItem(Long itemId, Long sellerId) {
+    Map<String, Object> item = itemRepository.findById(itemId);
+    if (item == null) {
+      throw new IllegalArgumentException("商品不存在");
+    }
+    validateSeller(sellerId);
+    if (!sellerId.equals(item.get("sellerId"))) {
+      throw new IllegalArgumentException("只能撤回自己的商品");
+    }
+    String currentStatus = (String) item.get("reviewStatus");
+    if (!"PENDING_REVIEW".equals(currentStatus)) {
+      throw new IllegalArgumentException("只能撤回审核中的商品");
+    }
+    itemRepository.updateReviewStatus(itemId, "DRAFT", "卖家撤回审核");
+  }
+
+  /**
+   * 提交商品审核（草稿发布或已下架重新上架）
+   */
+  public void submitForReview(Long itemId, Long sellerId) {
+    Map<String, Object> item = itemRepository.findById(itemId);
+    if (item == null) {
+      throw new IllegalArgumentException("商品不存在");
+    }
+    validateSeller(sellerId);
+    if (!sellerId.equals(item.get("sellerId"))) {
+      throw new IllegalArgumentException("只能提交自己的商品");
+    }
+    String currentStatus = (String) item.get("reviewStatus");
+    if (!"DRAFT".equals(currentStatus) && !"OFF_SHELF".equals(currentStatus)) {
+      throw new IllegalArgumentException("只能提交草稿或已下架的商品");
+    }
+    itemRepository.updateReviewStatus(itemId, "PENDING_REVIEW", "提交审核");
+
+    String title = (String) item.get("title");
+
+    // 通知卖家已提交审核
+    notificationService.sendNotification(
+        sellerId,
+        "商品已提交审核",
+        String.format("您的商品 \"%s\" 已提交审核，请耐心等待审核结果", title),
+        "ITEM",
+        String.valueOf(itemId),
+        "ITEM"
+    );
+
+    // 通知运营人员
+    notificationService.sendNotification(
+        null,
+        "新商品待审核",
+        String.format("卖家 %s 提交了商品：%s，请及时审核", getSellerNickname(sellerId), title),
+        "ITEM",
+        String.valueOf(itemId),
+        "ITEM"
+    );
+  }
+
   public Map<String, Object> updateItem(Long itemId, Long sellerId, String title, Integer price,
       String description, Object imageUrls, String category, String conditionLevel) {
+    return updateItem(itemId, sellerId, title, price, description, imageUrls, category, conditionLevel, null);
+  }
+
+  public Map<String, Object> updateItem(Long itemId, Long sellerId, String title, Integer price,
+      String description, Object imageUrls, String category, String conditionLevel, String reviewStatus) {
     Map<String, Object> item = itemRepository.findById(itemId);
     if (item == null) {
       throw new IllegalArgumentException("商品不存在");
@@ -247,7 +328,7 @@ public class ItemService {
     if (!sellerId.equals(item.get("sellerId"))) {
       throw new IllegalArgumentException("只能编辑自己的商品");
     }
-    itemRepository.update(itemId, title, price, description, imageUrls, category, conditionLevel);
+    itemRepository.update(itemId, title, price, description, imageUrls, category, conditionLevel, reviewStatus);
     return Map.of("code", 200, "message", "商品已更新", "data", itemRepository.findById(itemId));
   }
 

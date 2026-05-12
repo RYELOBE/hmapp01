@@ -213,7 +213,7 @@ function formatTime(dateStr) {
 }
 
 function goToItem(itemId) {
-  if (itemId) router.push(`/item/${itemId}`);
+  if (itemId) router.push(`/portal/item/${itemId}`);
 }
 
 async function handleUnfavorite(item) {

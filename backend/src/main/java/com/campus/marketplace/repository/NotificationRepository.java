@@ -58,10 +58,28 @@ public class NotificationRepository {
     return jdbc.query(sql, ROW_MAPPER, receiverId, limit);
   }
 
+  public List<Map<String, Object>> findByReceiverIdOrOps(Long receiverId, boolean isOps, int limit) {
+    if (isOps) {
+      // OPS可以看到发给自己的和发给运营人员（receiverId为null）的通知
+      String sql = "SELECT * FROM notification WHERE (receiver_id = ? OR receiver_id IS NULL) AND status = 'ACTIVE' ORDER BY created_at DESC LIMIT ?";
+      return jdbc.query(sql, ROW_MAPPER, receiverId, limit);
+    }
+    return findByReceiverId(receiverId, limit);
+  }
+
   public List<Map<String, Object>> findByReceiverIdPaged(Long receiverId, int page, int size) {
     int offset = (page - 1) * size;
     String sql = "SELECT * FROM notification WHERE receiver_id = ? AND status = 'ACTIVE' ORDER BY created_at DESC LIMIT ? OFFSET ?";
     return jdbc.query(sql, ROW_MAPPER, receiverId, size, offset);
+  }
+
+  public List<Map<String, Object>> findByReceiverIdOrOpsPaged(Long receiverId, boolean isOps, int page, int size) {
+    int offset = (page - 1) * size;
+    if (isOps) {
+      String sql = "SELECT * FROM notification WHERE (receiver_id = ? OR receiver_id IS NULL) AND status = 'ACTIVE' ORDER BY created_at DESC LIMIT ? OFFSET ?";
+      return jdbc.query(sql, ROW_MAPPER, receiverId, size, offset);
+    }
+    return findByReceiverIdPaged(receiverId, page, size);
   }
 
   public List<Map<String, Object>> findAll(int limit) {
@@ -87,11 +105,31 @@ public class NotificationRepository {
     return count != null ? count : 0;
   }
 
+  public int countUnreadByReceiverIdOrOps(Long receiverId, boolean isOps) {
+    if (isOps) {
+      Integer count = jdbc.queryForObject(
+          "SELECT COUNT(*) FROM notification WHERE (receiver_id = ? OR receiver_id IS NULL) AND is_read = FALSE AND status = 'ACTIVE'",
+          Integer.class, receiverId);
+      return count != null ? count : 0;
+    }
+    return countUnreadByReceiverId(receiverId);
+  }
+
   public int countByReceiverId(Long receiverId) {
     Integer count = jdbc.queryForObject(
         "SELECT COUNT(*) FROM notification WHERE receiver_id = ? AND status = 'ACTIVE'",
         Integer.class, receiverId);
     return count != null ? count : 0;
+  }
+
+  public int countByReceiverIdOrOps(Long receiverId, boolean isOps) {
+    if (isOps) {
+      Integer count = jdbc.queryForObject(
+          "SELECT COUNT(*) FROM notification WHERE (receiver_id = ? OR receiver_id IS NULL) AND status = 'ACTIVE'",
+          Integer.class, receiverId);
+      return count != null ? count : 0;
+    }
+    return countByReceiverId(receiverId);
   }
 
   public int countAll() {
@@ -110,6 +148,18 @@ public class NotificationRepository {
 
   public void markAsRead(Long id) {
     jdbc.update("UPDATE notification SET is_read = TRUE, read_at = NOW() WHERE id = ?", id);
+  }
+
+  /**
+   * 迁移通知类型（TRANSACTION->ORDER, REVIEW->ITEM for items, INTERACTION->CIRCLE）
+   */
+  public void migrateNotificationTypes() {
+    // TRANSACTION -> ORDER
+    jdbc.update("UPDATE notification SET type = 'ORDER' WHERE type = 'TRANSACTION'");
+    // 商品审核通知 REVIEW -> ITEM
+    jdbc.update("UPDATE notification SET type = 'ITEM' WHERE type = 'REVIEW' AND business_type = 'ITEM'");
+    // 圈子互动 INTERACTION -> CIRCLE
+    jdbc.update("UPDATE notification SET type = 'CIRCLE' WHERE type = 'INTERACTION'");
   }
 
   public void markAllAsRead(Long receiverId) {

@@ -41,7 +41,25 @@ public class CircleService {
     String userName = userRepository.findById(userId)
         .map(u -> (String) u.get("nickname"))
         .orElse("");
-    return postRepository.save(userId, userName, title, content, images, tags);
+    Map<String, Object> savedPost = postRepository.save(userId, userName, title, content, images, tags);
+
+    // 发送发布成功通知给发帖人
+    try {
+      Long postId = ((Number) savedPost.get("id")).longValue();
+      notificationService.sendNotification(
+          userId,
+          "圈子发布成功",
+          String.format("您的帖子《%s》已提交审核，审核通过后将展示在圈子中", title),
+          "CIRCLE",
+          String.valueOf(postId),
+          "CIRCLE"
+      );
+      logger.info("✅ 已发送圈子发布通知给用户 {}", userId);
+    } catch (Exception e) {
+      logger.warn("发送圈子发布通知失败: {}", e.getMessage());
+    }
+
+    return savedPost;
   }
 
   public List<Map<String, Object>> getPostList(int page, int size, String tag) {
@@ -49,6 +67,10 @@ public class CircleService {
       return postRepository.findByTagAndStatus(tag, "APPROVED", page, size);
     }
     return postRepository.findByStatus("APPROVED", page, size);
+  }
+
+  public List<Map<String, Object>> getPostsByUserId(Long userId, int page, int size) {
+    return postRepository.findByUserId(userId, page, size);
   }
 
   public Map<String, Object> getPostDetail(Long postId) {
@@ -101,7 +123,7 @@ public class CircleService {
             notificationService.sendNotification(
                 postAuthorId, "收到点赞",
                 String.format("%s 赞了你的帖子《%s》", userName, postTitle),
-                "INTERACTION", String.valueOf(postId), "CIRCLE_LIKE");
+                "CIRCLE", String.valueOf(postId), "CIRCLE");
           }
         }
       } catch (Exception e) {
@@ -125,7 +147,7 @@ public class CircleService {
         .map(u -> (String) u.get("nickname"))
         .orElse("");
     Map<String, Object> comment = commentRepository.save(postId, parentId, replyToName, userId, userName, content);
-    postRepository.incrementCommentCount(postId);
+    // 评论需要审核，审核通过后才增加计数
     logger.info("用户 {} 在帖子 {} 发表评论: {}", userId, postId, content);
 
     // 发送评论通知给帖子作者
@@ -143,9 +165,9 @@ public class CircleService {
             postAuthorId,
             "新评论通知",
             notificationContent,
-            "INTERACTION",
+            "CIRCLE",
             String.valueOf(postId),
-            "CIRCLE_COMMENT"
+            "CIRCLE"
         );
         logger.info("✅ 已向用户 {} 发送评论通知", postAuthorId);
       } else {
@@ -179,6 +201,33 @@ public class CircleService {
 
   public int getCommentCount(Long postId) {
     return commentRepository.countByPostIdAndStatus(postId, "APPROVED");
+  }
+
+  /**
+   * 获取我的圈子评论
+   */
+  public Map<String, Object> getMyComments(Long userId, int page, int size, String status) {
+    List<Map<String, Object>> comments;
+    int total;
+
+    if (status != null && !status.isEmpty()) {
+      comments = commentRepository.findByUserIdAndStatus(userId, status, page, size);
+      total = commentRepository.countByUserIdAndStatus(userId, status);
+    } else {
+      comments = commentRepository.findByUserId(userId, page, size);
+      total = commentRepository.countByUserId(userId);
+    }
+
+    // 丰富评论数据，添加帖子标题
+    for (Map<String, Object> comment : comments) {
+      Long postId = ((Number) comment.get("postId")).longValue();
+      Map<String, Object> post = postRepository.findById(postId);
+      if (post != null) {
+        comment.put("postTitle", post.get("title"));
+      }
+    }
+
+    return Map.of("comments", comments, "total", total);
   }
 
   public List<Map<String, Object>> getPendingPosts(int page, int size) {
@@ -223,7 +272,7 @@ public class CircleService {
     notificationService.sendNotification(
         postAuthorId, "帖子审核通过",
         String.format("您的帖子《%s》已通过审核，现已发布", postTitle),
-        "REVIEW", String.valueOf(postId), "CIRCLE_POST");
+        "CIRCLE", String.valueOf(postId), "CIRCLE");
     
     return postRepository.findById(postId);
   }
@@ -242,7 +291,7 @@ public class CircleService {
     notificationService.sendNotification(
         postAuthorId, "帖子审核未通过",
         String.format("您的帖子《%s》未通过审核，原因：%s", postTitle, reason != null ? reason : "无"),
-        "REVIEW", String.valueOf(postId), "CIRCLE_POST");
+        "CIRCLE", String.valueOf(postId), "CIRCLE");
     
     return postRepository.findById(postId);
   }
@@ -276,7 +325,22 @@ public class CircleService {
     if (comment == null) {
       throw new RuntimeException("评论不存在");
     }
+    String oldStatus = (String) comment.get("status");
     commentRepository.updateStatus(commentId, "APPROVED");
+    // 如果之前不是 APPROVED 状态，增加评论计数
+    Long postId = ((Number) comment.get("postId")).longValue();
+    if (!"APPROVED".equals(oldStatus)) {
+      postRepository.incrementCommentCount(postId);
+    }
+    // 通知评论作者
+    Long commentAuthorId = ((Number) comment.get("userId")).longValue();
+    var post = postRepository.findById(postId);
+    String postTitle = post != null ? (String) post.get("title") : "帖子";
+    notificationService.sendNotification(
+        commentAuthorId, "评论审核通过",
+        String.format("您对《%s》的评论已通过审核", postTitle),
+        "CIRCLE", String.valueOf(commentId), "CIRCLE");
+
     logger.info("审核通过评论: {}", commentId);
   }
 
@@ -285,7 +349,22 @@ public class CircleService {
     if (comment == null) {
       throw new RuntimeException("评论不存在");
     }
+    String oldStatus = (String) comment.get("status");
     commentRepository.updateStatus(commentId, "REJECTED");
+    // 如果之前是 APPROVED 状态，减少评论计数
+    Long postId = ((Number) comment.get("postId")).longValue();
+    if ("APPROVED".equals(oldStatus)) {
+      postRepository.decrementCommentCount(postId);
+    }
+    // 通知评论作者
+    Long commentAuthorId = ((Number) comment.get("userId")).longValue();
+    var post = postRepository.findById(postId);
+    String postTitle = post != null ? (String) post.get("title") : "帖子";
+    notificationService.sendNotification(
+        commentAuthorId, "评论审核未通过",
+        String.format("您对《%s》的评论未通过审核", postTitle),
+        "CIRCLE", String.valueOf(commentId), "CIRCLE");
+
     logger.info("审核拒绝评论: {}", commentId);
   }
 

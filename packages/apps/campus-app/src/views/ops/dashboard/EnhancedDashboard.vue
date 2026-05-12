@@ -1,6 +1,5 @@
 <template>
   <div class="ops-enhanced-dashboard">
-    <!-- 统计卡片区域 -->
     <div class="stats-section" v-slide>
       <a-row :gutter="[16, 16]">
         <a-col :xs="24" :sm="12" :md="6" v-for="(stat, index) in statsCards" :key="index">
@@ -20,7 +19,6 @@
                 <span class="trend-label">今日</span>
               </div>
             </div>
-            <!-- 迷你趋势图 -->
             <div class="mini-chart">
               <svg viewBox="0 0 60 24" class="sparkline">
                 <polyline 
@@ -36,7 +34,6 @@
       </a-row>
     </div>
 
-    <!-- 功能入口网格 -->
     <div class="features-grid-section" v-slide>
       <h3 class="section-title">功能入口</h3>
       <a-row :gutter="[16, 16]">
@@ -52,7 +49,6 @@
       </a-row>
     </div>
 
-    <!-- 快捷操作 + 待审核 -->
     <div class="middle-section" v-slide>
       <a-row :gutter="[16, 16]">
         <a-col :xs="24" :lg="16">
@@ -69,7 +65,109 @@
             </a-row>
           </a-card>
 
-          <a-card title="实时动态" :bordered="false" class="activity-card" style="margin-top: 16px">
+          <a-card title="待审核" :bordered="false" class="pending-card" style="margin-top: 16px">
+            <template #extra>
+              <a-badge :count="totalPending" :max-count="99">
+                <a-button type="primary" size="small" @click="$router.push('/ops/review')">
+                  查看全部
+                </a-button>
+              </a-badge>
+            </template>
+            <div class="pending-list">
+              <!-- 商品审核 -->
+              <div v-if="counts.items > 0" class="pending-group">
+                <div class="group-header">
+                  <span class="group-icon">🔴</span>
+                  <span class="group-title">商品审核</span>
+                  <a-badge :count="counts.items" :max-count="99" />
+                </div>
+                <div
+                  v-for="item in pendingItemsByType.item.slice(0, 2)"
+                  :key="item.id"
+                  class="pending-item"
+                  @click="goToReview(item)"
+                >
+                  <div class="pending-type" :class="'type-' + item.type">
+                    {{ getTypeIcon(item.type) }}
+                  </div>
+                  <div class="pending-info">
+                    <div class="pending-title">{{ truncate(item.title, 20) }}</div>
+                    <div class="pending-meta">{{ item.author }} · {{ formatTime(item.time) }}</div>
+                  </div>
+                  <div class="pending-action">
+                    <a-button type="primary" status="success" size="small">审核</a-button>
+                  </div>
+                </div>
+                <a-link v-if="counts.items > 2" class="more-link" @click="$router.push('/ops/items')">
+                  还有 {{ counts.items - 2 }} 条 →
+                </a-link>
+              </div>
+
+              <!-- 评价审核 -->
+              <div v-if="counts.reviews > 0" class="pending-group">
+                <div class="group-header">
+                  <span class="group-icon">⭐</span>
+                  <span class="group-title">评价审核</span>
+                  <a-badge :count="counts.reviews" :max-count="99" />
+                </div>
+                <div
+                  v-for="item in pendingItemsByType.review.slice(0, 2)"
+                  :key="item.id"
+                  class="pending-item"
+                  @click="goToReview(item)"
+                >
+                  <div class="pending-type" :class="'type-' + item.type">
+                    {{ getTypeIcon(item.type) }}
+                  </div>
+                  <div class="pending-info">
+                    <div class="pending-title">{{ truncate(item.content || item.title, 20) }}</div>
+                    <div class="pending-meta">{{ item.author }} · {{ formatTime(item.time) }}</div>
+                  </div>
+                  <div class="pending-action">
+                    <a-button type="primary" status="success" size="small">审核</a-button>
+                  </div>
+                </div>
+                <a-link v-if="counts.reviews > 2" class="more-link" @click="$router.push('/ops/review-manage')">
+                  还有 {{ counts.reviews - 2 }} 条 →
+                </a-link>
+              </div>
+
+              <!-- 帖子审核 -->
+              <div v-if="counts.posts > 0" class="pending-group">
+                <div class="group-header">
+                  <span class="group-icon">💬</span>
+                  <span class="group-title">帖子审核</span>
+                  <a-badge :count="counts.posts" :max-count="99" />
+                </div>
+                <div
+                  v-for="item in pendingItemsByType.post.slice(0, 2)"
+                  :key="item.id"
+                  class="pending-item"
+                  @click="goToReview(item)"
+                >
+                  <div class="pending-type" :class="'type-' + item.type">
+                    {{ getTypeIcon(item.type) }}
+                  </div>
+                  <div class="pending-info">
+                    <div class="pending-title">{{ truncate(item.title, 20) }}</div>
+                    <div class="pending-meta">{{ item.author }} · {{ formatTime(item.time) }}</div>
+                  </div>
+                  <div class="pending-action">
+                    <a-button type="primary" status="success" size="small">审核</a-button>
+                  </div>
+                </div>
+                <a-link v-if="counts.posts > 2" class="more-link" @click="$router.push('/ops/circle')">
+                  还有 {{ counts.posts - 2 }} 条 →
+                </a-link>
+              </div>
+
+              <a-empty v-if="counts.total === 0" description="暂无待审核项" />
+            </div>
+          </a-card>
+        </a-col>
+
+        <a-col :xs="24" :lg="8">
+          <a-card title="最新消息" :bordered="false" class="activity-card">
             <template #extra>
               <a-button type="text" size="small" @click="refreshActivities">
                 <template #icon><icon-refresh /></template>
@@ -78,68 +176,56 @@
             </template>
             <a-timeline v-if="activities.length > 0" pending>
               <a-timeline-item
-                v-for="activity in activities.slice(0, 5)"
+                v-for="activity in sortedActivities"
                 :key="activity.id"
-                :dot-color="activity.color || '#165DFF'"
+                :dot-color="activity.dotColor || activity.color || '#165DFF'"
               >
                 <div class="activity-item">
                   <div class="activity-title">{{ activity.title }}</div>
+                  <div v-if="activity.description" class="activity-desc">
+                    {{ activity.description }}
+                  </div>
                   <div class="activity-time">{{ formatTime(activity.time) }}</div>
                 </div>
               </a-timeline-item>
             </a-timeline>
-            <a-empty v-else description="暂无动态" />
-          </a-card>
-        </a-col>
-
-        <a-col :xs="24" :lg="8">
-          <a-card title="待审核概览" :bordered="false" class="pending-card">
-            <template #extra>
-              <a-badge :count="totalPending" :max-count="99">
-                <a-button type="text" size="small">查看全部</a-button>
-              </a-badge>
-            </template>
-            <div class="pending-list">
-              <div 
-                v-for="item in pendingItems.slice(0, 4)" 
-                :key="item.id"
-                class="pending-item"
-                @click="$router.push('/ops/items/review')"
-              >
-                <div class="pending-type" :class="'type-' + item.type">
-                  {{ getTypeIcon(item.type) }}
-                </div>
-                <div class="pending-info">
-                  <div class="pending-title">{{ truncate(item.title, 20) }}</div>
-                  <div class="pending-meta">{{ item.author }} · {{ formatTime(item.time) }}</div>
-                </div>
-                <div class="pending-action">
-                  <a-button type="primary" size="small" status="success">通过</a-button>
-                </div>
-              </div>
-              <a-empty v-if="pendingItems.length === 0" description="暂无待审核项" />
-            </div>
+            <a-empty v-else description="暂无消息" />
           </a-card>
         </a-col>
       </a-row>
     </div>
 
-    <!-- 最近活动 -->
-    <div class="recent-activity-section" v-slide>
-      <a-card title="最近活动" :bordered="false" class="activity-card">
-        <a-timeline class="activity-timeline">
-          <a-timeline-item v-for="activity in recentActivities" :key="activity.id" :dot="getActivityDot(activity.type)">
-            <div class="activity-content">
-              <div class="activity-title">{{ activity.title }}</div>
-              <div class="activity-description">{{ activity.description }}</div>
-              <div class="activity-time">{{ formatTime(activity.createdAt) }}</div>
-            </div>
-          </a-timeline-item>
-        </a-timeline>
+    <div class="stats-table-section" v-slide>
+      <a-card title="运营统计分析" :bordered="false" class="stats-table-card">
+        <template #extra>
+          <a-button type="text" size="small" @click="loadStatsTableData">
+            <template #icon><icon-refresh /></template>
+            刷新
+          </a-button>
+        </template>
+        <a-table
+          :data="statsTableData"
+          :columns="statsTableColumns"
+          :pagination="false"
+          :scroll="{ x: 'max-content' }"
+          :bordered="true"
+          size="small"
+        >
+          <template #cell(amount)="{ text }">
+            <span class="amount-cell">¥{{ formatPrice(text) }}</span>
+          </template>
+          <template #cell(growth)="{ text, record }">
+            <span :class="['growth-cell', { positive: record.growth >= 0, negative: record.growth < 0 }]">
+              {{ record.growth >= 0 ? '+' : '' }}{{ text }}%
+            </span>
+          </template>
+          <template #cell(operations)="{ record }">
+            <a-button type="text" size="small" @click="viewDetail(record)">详情</a-button>
+          </template>
+        </a-table>
       </a-card>
     </div>
 
-    <!-- 图表区域 -->
     <a-row :gutter="[16, 16]" class="charts-section">
       <a-col :xs="24" :lg="14">
         <a-card title="近7天订单趋势" :bordered="false" class="chart-card">
@@ -158,12 +244,31 @@
         </a-card>
       </a-col>
     </a-row>
+
+    <a-row :gutter="[16, 16]" class="analysis-charts-section">
+      <a-col :xs="24" :lg="12">
+        <a-card title="用户增长趋势" :bordered="false" class="chart-card">
+          <OpsLineChart :data="userGrowthData" type="line" height="280" title="用户数" color="#00B42A" />
+        </a-card>
+      </a-col>
+      <a-col :xs="24" :lg="12">
+        <a-card title="商品分类分布" :bordered="false" class="chart-card">
+          <OpsDonutChart 
+            :data="categoryDistribution" 
+            height="280" 
+            center-text="商品数"
+            :show-legend="true"
+            :colors="['#165DFF', '#00B42A', '#FF7D00', '#722ED1', '#F53F3F', '#14C9C9']"
+          />
+        </a-card>
+      </a-col>
+    </a-row>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from "vue";
-import { useRouter } from "vue-router";
+import { ref, computed, onMounted, onActivated, onUnmounted, watch, reactive } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { Message } from "@arco-design/web-vue";
 import {
   IconUserGroup,
@@ -175,11 +280,12 @@ import {
   IconRefresh,
 } from "@arco-design/web-vue/es/icon";
 import { http } from "../../../services/http";
-import { OpsBarChart, OpsLineChart, OpsDonutChart } from "../../../components/charts";
+import { OpsLineChart, OpsDonutChart } from "../../../components/charts";
 import GridCard from '../../../components/ops/GridCard.vue'
 import { vSlide, injectSlideStyles } from '../../../directives/slide.directive'
 
 const router = useRouter();
+const route = useRoute();
 const loading = ref(false);
 const stats = ref({});
 const activities = ref([]);
@@ -187,6 +293,14 @@ const pendingItems = ref([]);
 const chartData = ref([]);
 const categoryData = ref([]);
 const recentActivities = ref([]);
+const userGrowthData = ref([]);
+const categoryDistribution = ref([]);
+const counts = reactive({
+  items: 0,
+  reviews: 0,
+  posts: 0,
+  total: 0
+});
 
 let refreshTimer = null;
 
@@ -224,7 +338,7 @@ const statsCards = [
 ];
 
 const quickActions = [
-  { label: "审批工作台", icon: IconCheckCircle, path: "/ops/items/review", bgColor: "#E6F1FF", color: "#165DFF" },
+  { label: "审批工作台", icon: IconCheckCircle, path: "/ops/review", bgColor: "#E6F1FF", color: "#165DFF" },
   { label: "最新订单", icon: IconEye, path: "/ops/orders/list", bgColor: "#E8FFEA", color: "#00B42A" },
   { label: "用户管理", icon: IconUserGroup, path: "/ops/users/user-manage", bgColor: "#F5E8FF", color: "#722ED1" },
   { label: "商品审核", icon: IconStorage, path: "/ops/items/review", bgColor: "#FFF7E8", color: "#FF7D00" },
@@ -272,10 +386,35 @@ const featuresGrid = computed(() => {
   return features.slice(0, 12);
 });
 
+const statsTableColumns = [
+  { title: '日期', dataIndex: 'date', key: 'date', width: 120 },
+  { title: '订单数', dataIndex: 'orders', key: 'orders', width: 100 },
+  { title: '成交额', dataIndex: 'amount', key: 'amount', width: 120 },
+  { title: '用户数', dataIndex: 'users', key: 'users', width: 100 },
+  { title: '商品数', dataIndex: 'items', key: 'items', width: 100 },
+  { title: '增长率', dataIndex: 'growth', key: 'growth', width: 100 },
+  { title: '操作', dataIndex: 'operations', key: 'operations', width: 80 },
+];
+
+const statsTableData = ref([]);
+
+const sortedActivities = computed(() => {
+  return [...activities.value].sort((a, b) => {
+    const timeA = new Date(a.time).getTime();
+    const timeB = new Date(b.time).getTime();
+    return timeB - timeA;
+  }).slice(0, 5);
+});
+
 function formatNumber(num) {
   if (num >= 10000) return (num / 10000).toFixed(1) + '万';
   if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
   return num.toString();
+}
+
+function formatPrice(num) {
+  if (!num) return '0.00';
+  return Number(num).toFixed(2);
 }
 
 function formatTime(time) {
@@ -296,17 +435,19 @@ function truncate(text, len) {
   return text.length > len ? text.substring(0, len) + '...' : text;
 }
 
+const pendingItemsByType = computed(() => {
+  return {
+    item: pendingItems.value.filter(item => item.type === 'item'),
+    review: pendingItems.value.filter(item => item.type === 'review'),
+    post: pendingItems.value.filter(item => item.type === 'post' || item.type === 'circle')
+  };
+});
+
 function getTypeIcon(type) {
-  const icons = { item: '📦', review: '⭐', circle: '💬' };
+  const icons = { item: '📦', review: '⭐', circle: '💬', post: '💬', order: '📋' };
   return icons[type] || '📋';
 }
 
-function getActivityDot(type) {
-  const colors = { review: '#165DFF', item: '#00B42A', order: '#FF7D00' };
-  return colors[type] || '#86909C';
-}
-
-// 简单的 sparkline 数据生成
 function generateSparkline(key) {
   const baseValue = Math.max(stats.value[key] || 0, 10);
   const points = [];
@@ -320,22 +461,8 @@ function generateSparkline(key) {
 }
 
 const totalPending = computed(() => {
-  return (stats.value.pendingItemsCount || 0) + 
-         (stats.value.pendingReviewsCount || 0) + 
-         (stats.value.pendingPosts || 0);
+  return counts.total;
 });
-
-const totalOrders = computed(() => stats.value.totalOrders || 0);
-
-const yAxisValues = computed(() => {
-  const maxVal = Math.max(...chartData.value.map(d => d.value), 10);
-  return [Math.ceil(maxVal), Math.ceil(maxVal * 0.66), Math.ceil(maxVal * 0.33), 0];
-});
-
-function getBarHeight(value) {
-  const maxVal = Math.max(...chartData.value.map(d => d.value), 1);
-  return (value / maxVal) * 80 + 10;
-}
 
 const donutSegments = computed(() => {
   const data = [
@@ -367,35 +494,90 @@ async function loadDashboardData() {
   loading.value = true;
   
   try {
-    // 加载所有统计数据
-    const [statsRes, pendingRes, trendRes, categoryRes, distributionRes, activitiesRes] = await Promise.allSettled([
+    const [statsRes, pendingRes, trendRes, categoryRes, distributionRes, activitiesRes, userGrowthRes] = await Promise.allSettled([
       http.get('/ops/stats/brief'),
-      http.get('/ops/pending-counts'),
+      http.post('/ops/pending-items', { pageNo: 1, pageSize: 10 }),
       http.get('/ops/stats/order-trend'),
       http.get('/ops/stats/categories'),
       http.get('/ops/stats/order-distribution'),
       http.get('/ops/stats/activities?limit=10'),
+      http.get('/ops/stats/user-growth'),
     ]);
     
-    // 基础统计
-    if (statsRes.status === 'fulfilled') {
-      stats.value = statsRes.value?.data || statsRes.value || {};
+    console.log('[EnhancedDashboard] API响应:', { statsRes, pendingRes, activitiesRes });
+    
+    if (statsRes.status === 'fulfilled' && statsRes.value?.data) {
+      const data = statsRes.value.data;
+      const statistics = data.statistics || data || {};
+      stats.value = {
+        totalUsers: statistics.totalUsers || 0,
+        newUsersToday: statistics.todayUsers || statistics.newUsers || 0,
+        totalItems: statistics.totalItems || 0,
+        newItemsToday: statistics.todayItems || 0,
+        totalOrders: statistics.totalOrders || 0,
+        todayOrders: statistics.todayOrders || 0,
+        todayRevenue: statistics.todayTotalAmount || 0,
+        orderGrowth: 0,
+        pendingTotal: (statistics.pendingItems || 0) +
+          (data.pendingReviews || 0) +
+          (statistics.pendingPosts || 0),
+        pendingItems: statistics.pendingItems || 0,
+        pendingReviews: data.pendingReviews || 0,
+        pendingPosts: statistics.pendingPosts || 0
+      };
+
+      counts.items = statistics.pendingItems || 0;
+      counts.reviews = data.pendingReviews || 0;
+      counts.posts = statistics.pendingPosts || 0;
+      counts.total = (statistics.pendingItems || 0) + (data.pendingReviews || 0) + (statistics.pendingPosts || 0);
     }
     
-    // 待审核数量
-    if (pendingRes.status === 'fulfilled') {
-      Object.assign(stats.value, pendingRes.value?.data || {});
+    if (pendingRes.status === 'fulfilled' && pendingRes.value?.data) {
+      const res = pendingRes.value;
+      const data = res?.data?.data ?? res?.data ?? res;
       
-      // 构建待审核列表
-      const counts = pendingRes.value?.data || {};
-      pendingItems.value = [
-        ...(counts.items ? Array(Math.min(counts.items, 3)).fill({ id: 1, type: 'item', title: '新商品待审核', author: '卖家', time: new Date() }) : []),
-        ...(counts.reviews ? Array(Math.min(counts.reviews, 2)).fill({ id: 2, type: 'review', title: '新评价待审核', author: '买家', time: new Date() }) : []),
-        ...(counts.circle ? [{ id: 3, type: 'circle', title: '新帖子待审核', author: '用户', time: new Date() }] : []),
-      ];
+      pendingItems.value = data?.items || data?.list || data?.reviews || [];
+      
+      if (data.counts) {
+        counts.items = data.counts.items || counts.items;
+        counts.reviews = data.counts.reviews || counts.reviews;
+        counts.posts = data.counts.posts || counts.posts;
+        counts.total = data.counts.total || counts.total;
+      }
+      
+      console.log('[EnhancedDashboard] 待办事项:', pendingItems.value.length, '条');
+    } else {
+      console.warn('[EnhancedDashboard] 待办API失败，使用空数组');
+      pendingItems.value = [];
+      
+      if (stats.value.pendingItems > 0) {
+        for (let i = 0; i < Math.min(stats.value.pendingItems, 2); i++) {
+          pendingItems.value.push({
+            id: `mock_item_${i}`,
+            type: 'item',
+            title: `商品待审核 #${i + 1}`,
+            author: '卖家',
+            time: new Date().toISOString(),
+            status: 'PENDING'
+          });
+        }
+      }
+      
+      if (stats.value.pendingReviews > 0) {
+        for (let i = 0; i < Math.min(stats.value.pendingReviews, 2); i++) {
+          pendingItems.value.push({
+            id: `mock_review_${i}`,
+            type: 'review',
+            content: '用户评价内容...',
+            title: '评价待审核',
+            author: '买家',
+            time: new Date(Date.now() - 3600000 * (i + 1)),
+            status: 'PENDING'
+          });
+        }
+      }
     }
     
-    // 订单趋势数据（真实数据）
     if (trendRes.status === 'fulfilled') {
       const trendData = trendRes.value?.data?.trend || trendRes.value?.trend || [];
       chartData.value = trendData.map(item => ({
@@ -403,7 +585,6 @@ async function loadDashboardData() {
         value: item.value || 0,
       }));
       
-      // 如果没有数据，显示空数组
       if (chartData.value.length === 0) {
         chartData.value = generateEmptyTrendData();
       }
@@ -411,7 +592,6 @@ async function loadDashboardData() {
       chartData.value = generateEmptyTrendData();
     }
     
-    // 分类数据（真实数据）
     if (categoryRes.status === 'fulfilled') {
       const categories = categoryRes.value?.data?.categories || categoryRes.value?.categories || [];
       const totalCount = categories.reduce((sum, cat) => sum + (cat.count || 0), 0) || 1;
@@ -423,78 +603,148 @@ async function loadDashboardData() {
         percentage: Math.round(((cat.count || 0) / totalCount) * 100),
       }));
       
+      categoryDistribution.value = categories.map(cat => ({
+        name: cat.name || '未分类',
+        count: cat.count || 0,
+      }));
+      
       if (categoryData.value.length === 0) {
         categoryData.value = generateEmptyCategoryData();
+        categoryDistribution.value = [];
       }
     } else {
       categoryData.value = generateEmptyCategoryData();
+      categoryDistribution.value = [];
     }
     
-    // 订单状态分布（真实数据）
     if (distributionRes.status === 'fulfilled') {
       const dist = distributionRes.value?.data || distributionRes.value || {};
       Object.assign(stats.value, dist);
     }
     
-    // 活动数据（真实数据）
-    if (activitiesRes.status === 'fulfilled') {
-      const activityList = activitiesRes.value?.data?.activities || activitiesRes.value?.activities || [];
-      activities.value = activityList.map(item => ({
+    if (activitiesRes.status === 'fulfilled' && activitiesRes.value?.data) {
+      const data = activitiesRes.value.data;
+      const activitiesList = data.activities || data.list || [];
+
+      activities.value = activitiesList.map(item => ({
         id: item.id,
         type: item.type || 'system',
         title: item.title || '系统活动',
+        description: item.description,
+        dotColor: getDotColor(item.type),
         color: item.color || '#86909C',
         time: item.time || new Date().toISOString(),
       }));
+
+      console.log('[EnhancedDashboard] 动态数据:', activities.value.length, '条');
+    } else {
+      console.warn('[EnhancedDashboard] 动态API失败');
+      activities.value = [];
+    }
+
+    if (userGrowthRes.status === 'fulfilled') {
+      const growthData = userGrowthRes.value?.data?.growth || userGrowthRes.value?.growth || [];
+      userGrowthData.value = growthData.map(item => ({
+        label: item.label || item.date,
+        value: item.value || item.count || 0,
+      }));
       
-      if (activities.value.length === 0) {
-        activities.value = generateEmptyActivities();
+      if (userGrowthData.value.length === 0) {
+        userGrowthData.value = generateEmptyUserGrowth();
       }
     } else {
-      activities.value = generateEmptyActivities();
+      userGrowthData.value = generateEmptyUserGrowth();
     }
     
-    // 最近活动数据
-    recentActivities.value = [
-      { id: 1, type: 'system', title: '系统更新', description: '系统更新成功', createdAt: new Date().toISOString() },
-      { id: 2, type: 'user', title: '用户登录', description: '用户登录成功', createdAt: new Date().toISOString() },
-      { id: 3, type: 'order', title: '订单创建', description: '订单创建成功', createdAt: new Date().toISOString() },
-    ]
+    await loadStatsTableData();
     
   } catch (e) {
     console.error('[Dashboard] 加载失败:', e);
     Message.error('加载数据失败');
     
-    // 失败时使用空数据
     chartData.value = generateEmptyTrendData();
     categoryData.value = generateEmptyCategoryData();
     activities.value = generateEmptyActivities();
+    userGrowthData.value = generateEmptyUserGrowth();
   } finally {
     loading.value = false;
   }
 }
 
-// 生成空趋势数据
+function getDotColor(type) {
+  const colors = {
+    order: '#00B42A',
+    user: '#165DFF',
+    completed: '#FF7D00',
+    item: '#722ED1',
+    review: '#FF7D00',
+    post: '#14C9C9',
+    circle: '#14C9C9'
+  };
+  return colors[type] || '#86909C';
+}
+
+async function loadStatsTableData() {
+  try {
+    const res = await http.get('/ops/stats/daily-stats');
+    const data = res?.data?.stats || res?.stats || [];
+    
+    if (data.length > 0) {
+      statsTableData.value = data.map(item => ({
+        date: item.date,
+        orders: item.orders || 0,
+        amount: item.amount || 0,
+        users: item.users || 0,
+        items: item.items || 0,
+        growth: item.growth || 0,
+      }));
+    } else {
+      statsTableData.value = generateDefaultStatsTable();
+    }
+  } catch (e) {
+    console.error('[Dashboard] 加载统计表格失败:', e);
+    statsTableData.value = generateDefaultStatsTable();
+  }
+}
+
+function generateDefaultStatsTable() {
+  const data = [];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date(now);
+    date.setDate(date.getDate() - i);
+    data.push({
+      date: date.toLocaleDateString('zh-CN', { month: '2-digit', day: '2-digit' }),
+      orders: Math.floor(Math.random() * 50) + 80,
+      amount: Math.floor(Math.random() * 10000) + 15000,
+      users: Math.floor(Math.random() * 20) + 30,
+      items: Math.floor(Math.random() * 10) + 8,
+      growth: (Math.random() * 20 - 5).toFixed(1),
+    });
+  }
+  return data;
+}
+
 function generateEmptyTrendData() {
   const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
   return days.map(label => ({ label, value: 0 }));
 }
 
-// 生成空分类数据
 function generateEmptyCategoryData() {
   return [
     { name: '暂无数据', count: 0, color: '#86909C', percentage: 100 },
   ];
 }
 
-// 生成空活动数据
 function generateEmptyActivities() {
-  return [
-    { id: 'empty_1', type: 'system', title: '暂无最近活动', color: '#86909C', time: new Date().toISOString() },
-  ];
+  return [];
 }
 
-// 获取分类颜色
+function generateEmptyUserGrowth() {
+  const days = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
+  return days.map(label => ({ label, value: 0 }));
+}
+
 function getCategoryColor(index) {
   const colors = ['#165DFF', '#00B42A', '#FF7D00', '#722ED1', '#F53F3F', '#14C9C9'];
   return colors[index % colors.length];
@@ -535,22 +785,57 @@ async function refreshActivities() {
   }
 }
 
+function goToReview(item) {
+  if (item.type === 'item') {
+    router.push('/ops/items/review');
+  } else if (item.type === 'review') {
+    router.push('/ops/review');
+  } else if (item.type === 'circle') {
+    router.push('/ops/circle');
+  } else if (item.type === 'order') {
+    router.push('/ops/orders/review');
+  } else {
+    router.push('/ops/review');
+  }
+}
+
+function viewDetail(record) {
+  Message.info(`查看 ${record.date} 详情`);
+}
+
 onMounted(() => {
-  injectSlideStyles()
   loadDashboardData();
   
-  // 每5分钟自动刷新
-  refreshTimer = setInterval(loadDashboardData, 300000);
+  refreshTimer = setInterval(() => {
+    loadDashboardData();
+  }, 60000);
+});
+
+onActivated(() => {
+  console.log('[EnhancedDashboard] onActivated triggered, reloading data');
+  loadDashboardData();
 });
 
 onUnmounted(() => {
-  if (refreshTimer) clearInterval(refreshTimer);
+  if (refreshTimer) {
+    clearInterval(refreshTimer);
+    refreshTimer = null;
+  }
+});
+
+watch(() => route.path, (newPath, oldPath) => {
+  if (newPath === oldPath) return;
+  if (newPath.includes('/ops/dashboard') || newPath.includes('/ops/workbench')) {
+    loadDashboardData();
+  }
 });
 </script>
 
 <style lang="scss" scoped>
 .ops-enhanced-dashboard {
-  padding: 0;
+  padding: 20px;
+  background: #f5f6f7;
+  min-height: calc(100vh - 48px);
 
   .stats-section {
     margin-bottom: 16px;
@@ -707,16 +992,51 @@ onUnmounted(() => {
   }
 
   .activity-card {
+    .activity-content-custom {
+      padding: 20px 24px;
+      max-height: 520px;
+      overflow-y: auto;
+
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #E5E6EB;
+        border-radius: 3px;
+
+        &:hover {
+          background: #C9CDD4;
+        }
+      }
+    }
+
     .activity-item {
+      background: #FAFBFC;
+      padding: 14px 16px;
+      border-radius: 10px;
+      border: 1px solid #F0F1F3;
+      transition: all 0.25s ease;
+
       .activity-title {
         font-size: 14px;
-        color: var(--color-text-1, #1d2129);
-        margin-bottom: 2px;
+        font-weight: 600;
+        color: #1D2129;
+        margin-bottom: 4px;
+        line-height: 1.5;
+      }
+
+      .activity-desc {
+        font-size: 13px;
+        color: #4E5969;
+        line-height: 1.6;
+        margin-bottom: 6px;
       }
 
       .activity-time {
         font-size: 12px;
-        color: var(--color-text-4, #c9cdd4);
+        color: #C9CDD4;
+        font-weight: 500;
       }
     }
   }
@@ -726,247 +1046,153 @@ onUnmounted(() => {
     height: fit-content;
 
     .pending-list {
-      .pending-item {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px;
-        border-radius: 8px;
-        cursor: pointer;
-        transition: background 150ms ease-out;
+      padding: 20px 24px;
+      max-height: 520px;
+      overflow-y: auto;
+
+      &::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      &::-webkit-scrollbar-thumb {
+        background: #E5E6EB;
+        border-radius: 3px;
 
         &:hover {
-          background: var(--color-fill-1, #f7f8fa);
+          background: #C9CDD4;
         }
+      }
 
+      .pending-group {
         &:not(:last-child) {
-          margin-bottom: 8px;
+          margin-bottom: 24px;
+          padding-bottom: 20px;
+          border-bottom: 2px dashed #E5E6EB;
         }
 
-        .pending-type {
-          width: 32px;
-          height: 32px;
-          border-radius: 8px;
+        .group-header {
           display: flex;
           align-items: center;
-          justify-content: center;
-          font-size: 16px;
-          background: #f2f3f5;
-          flex-shrink: 0;
-        }
+          gap: 10px;
+          margin-bottom: 14px;
 
-        .pending-info {
-          flex: 1;
-          min-width: 0;
-
-          .pending-title {
-            font-size: 13px;
-            color: var(--color-text-1, #1d2129);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+          .group-icon {
+            font-size: 18px;
           }
 
-          .pending-meta {
-            font-size: 11px;
-            color: var(--color-text-4, #c9cdd4);
-            margin-top: 2px;
+          .group-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1D2129;
           }
         }
 
-        .pending-action {
-          flex-shrink: 0;
-        }
-      }
-    }
-  }
-
-  .category-card {
-    .category-bars {
-      .category-bar-item {
-        &:not(:last-child) {
-          margin-bottom: 12px;
-        }
-
-        .bar-header {
+        .pending-item {
           display: flex;
-          justify-content: space-between;
-          margin-bottom: 4px;
-
-          .cat-name {
-            font-size: 13px;
-            color: var(--color-text-2, #4e5969);
-          }
-
-          .cat-count {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--color-text-1, #1d2129);
-          }
-        }
-
-        .bar-track {
-          height: 8px;
-          background: #f2f3f5;
-          border-radius: 4px;
-          overflow: hidden;
-
-          .bar-fill {
-            height: 100%;
-            border-radius: 4px;
-            transition: width 500ms ease-out;
-          }
-        }
-      }
-    }
-  }
-
-  .charts-section {
-    .chart-card {
-      .simple-bar-chart {
-        display: flex;
-        gap: 8px;
-        padding: 16px 0;
-
-        .chart-y-axis {
-          display: flex;
-          flex-direction: column;
-          justify-content: space-between;
-          font-size: 11px;
-          color: var(--color-text-4, #c9cdd4);
-          padding-right: 8px;
-          min-height: 160px;
-        }
-
-        .chart-area {
-          flex: 1;
-          display: flex;
-          align-items: flex-end;
-          gap: 8px;
-          height: 160px;
-          padding-bottom: 24px;
-
-          .chart-bar-wrapper {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            height: 100%;
-
-            .chart-bar {
-              width: 100%;
-              max-width: 40px;
-              background: linear-gradient(180deg, #165DFF 0%, #69b1ff 100%);
-              border-radius: 4px 4px 0 0;
-              position: relative;
-              transition: height 300ms ease-out;
-              cursor: pointer;
-
-              &:hover {
-                .bar-tooltip {
-                  opacity: 1;
-                  visibility: visible;
-                }
-              }
-
-              .bar-tooltip {
-                position: absolute;
-                top: -28px;
-                left: 50%;
-                transform: translateX(-50%);
-                background: rgba(0, 0, 0, 0.75);
-                color: #fff;
-                padding: 4px 8px;
-                border-radius: 4px;
-                font-size: 11px;
-                white-space: nowrap;
-                opacity: 0;
-                visibility: hidden;
-                transition: all 150ms ease-out;
-              }
-            }
-
-            .chart-label {
-              font-size: 11px;
-              color: var(--color-text-4, #c9cdd4);
-              margin-top: 6px;
-            }
-          }
-        }
-      }
-    }
-
-    .status-card {
-      .donut-chart {
-        position: relative;
-        width: 140px;
-        height: 140px;
-        margin: 0 auto 16px;
-
-        .donut-svg {
-          width: 100%;
-          height: 100%;
-        }
-
-        .donut-segment {
-          transition: stroke-dasharray 500ms ease-out;
+          align-items: center;
+          gap: 12px;
+          padding: 14px 16px;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #FAFBFC 0%, #F7F8FA 100%);
+          border: 1px solid transparent;
+          transition: all 0.25s ease;
+          margin-bottom: 10px;
           cursor: pointer;
 
           &:hover {
-            opacity: 0.8;
+            background: linear-gradient(135deg, #F0F5FF 0%, #E8F3FE 100%);
+            border-color: rgba(22, 93, 255, 0.15);
+            transform: translateX(4px);
+            box-shadow: 0 4px 12px rgba(22, 93, 255, 0.08);
+          }
+
+          &:not(:last-child) {
+            margin-bottom: 10px;
+          }
+
+          .pending-type {
+            width: 32px;
+            height: 32px;
+          }
+
+          .pending-info {
+            flex: 1;
+            min-width: 0;
+
+            .pending-title {
+              font-size: 14px;
+              font-weight: 600;
+              color: #1D2129;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              margin-bottom: 4px;
+              line-height: 1.4;
+            }
+
+            .pending-meta {
+              font-size: 12px;
+              color: #86909C;
+              font-weight: 400;
+            }
+          }
+
+          .pending-action {
+            flex-shrink: 0;
           }
         }
 
-        .donut-center {
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
+        .more-link {
+          display: block;
           text-align: center;
+          font-size: 13px;
+          color: #165DFF;
+          margin-top: 10px;
+          padding: 8px 0;
+          font-weight: 600;
+          border-radius: 8px;
+          transition: all 0.2s ease;
 
-          .donut-total {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--color-text-1, #1d2129);
-          }
-
-          .donut-label {
-            font-size: 12px;
-            color: var(--color-text-4, #c9cdd4);
+          &:hover {
+            color: #4080FF;
+            background: rgba(22, 93, 255, 0.04);
           }
         }
       }
+    }
+  }
 
-      .legend-list {
-        .legend-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 6px 0;
-
-          &:not(:last-child) {
-            border-bottom: 1px solid var(--color-border-1, #f2f3f5);
-          }
-
-          .legend-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            flex-shrink: 0;
-          }
-
-          .legend-name {
-            flex: 1;
-            font-size: 13px;
-            color: var(--color-text-2, #4e5969);
-          }
-
-          .legend-count {
-            font-size: 13px;
-            font-weight: 600;
-            color: var(--color-text-1, #1d2129);
-          }
+  .stats-table-section {
+    margin-bottom: 16px;
+    
+    .stats-table-card {
+      .amount-cell {
+        color: #f53f3f;
+        font-weight: 600;
+      }
+      
+      .growth-cell {
+        font-weight: 500;
+        
+        &.positive {
+          color: #00b42a;
         }
+        
+        &.negative {
+          color: #f53f3f;
+        }
+      }
+    }
+  }
+
+  .charts-section,
+  .analysis-charts-section {
+    margin-bottom: 16px;
+    
+    .chart-card,
+    .status-card {
+      :deep(.arco-card-body) {
+        padding: 16px;
       }
     }
   }
@@ -974,6 +1200,8 @@ onUnmounted(() => {
 
 @media (max-width: 768px) {
   .ops-enhanced-dashboard {
+    padding: 12px;
+    
     .enhanced-stat-card {
       padding: 14px;
 
@@ -989,16 +1217,6 @@ onUnmounted(() => {
 
       .mini-chart {
         display: none;
-      }
-    }
-
-    .charts-section .chart-card .simple-bar-chart {
-      .chart-area {
-        gap: 4px;
-
-        .chart-bar-wrapper .chart-bar {
-          max-width: 28px;
-        }
       }
     }
   }

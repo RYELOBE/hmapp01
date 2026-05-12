@@ -100,7 +100,7 @@ public class OrderService {
         sellerId,
         "新订单通知",
         String.format("您有新的订单：%s，买家：%s，请及时处理", itemTitle, buyerName),
-        "TRANSACTION",
+        "ORDER",
         String.valueOf(orderId),
         "ORDER"
     );
@@ -126,7 +126,7 @@ public class OrderService {
         sellerId,
         "订单已付款",
         String.format("订单 %s 已付款，请与买家线下交易", itemTitle),
-        "TRANSACTION",
+        "ORDER",
         String.valueOf(orderId),
         "ORDER"
     );
@@ -158,13 +158,13 @@ public class OrderService {
       notificationService.sendNotification(
           sellerId, "交易完成",
           String.format("订单 %s 已确认完成，交易成功", itemTitle),
-          "TRANSACTION", String.valueOf(orderId), "ORDER");
+          "ORDER", String.valueOf(orderId), "ORDER");
     } else {
       // 卖家确认，通知买家
       notificationService.sendNotification(
           buyerId, "交易完成",
           String.format("订单 %s 已确认完成，交易成功", itemTitle),
-          "TRANSACTION", String.valueOf(orderId), "ORDER");
+          "ORDER", String.valueOf(orderId), "ORDER");
     }
   }
 
@@ -192,13 +192,13 @@ public class OrderService {
       notificationService.sendNotification(
           sellerId, "订单取消通知",
           String.format("订单 %s 已被买家取消", itemTitle),
-          "TRANSACTION", String.valueOf(orderId), "ORDER");
+          "ORDER", String.valueOf(orderId), "ORDER");
     } else {
       // 卖家取消，通知买家
       notificationService.sendNotification(
           buyerId, "订单取消通知",
           String.format("订单 %s 已被卖家取消", itemTitle),
-          "TRANSACTION", String.valueOf(orderId), "ORDER");
+          "ORDER", String.valueOf(orderId), "ORDER");
     }
   }
 
@@ -219,7 +219,7 @@ public class OrderService {
     notificationService.sendNotification(
         sellerId, "退款申请通知",
         String.format("买家申请订单 %s 的退款，请及时处理", itemTitle),
-        "TRANSACTION", String.valueOf(orderId), "ORDER");
+        "ORDER", String.valueOf(orderId), "ORDER");
   }
 
   /**
@@ -248,7 +248,7 @@ public class OrderService {
     notificationService.sendNotification(
         buyerId, "退款成功通知",
         String.format("订单 %s 的退款申请已通过，退款已到账", itemTitle),
-        "TRANSACTION", String.valueOf(orderId), "ORDER");
+        "ORDER", String.valueOf(orderId), "ORDER");
   }
 
   /**
@@ -277,7 +277,7 @@ public class OrderService {
     notificationService.sendNotification(
         buyerId, "退款拒绝通知",
         String.format("订单 %s 的退款申请已被拒绝", itemTitle),
-        "TRANSACTION", String.valueOf(orderId), "ORDER");
+        "ORDER", String.valueOf(orderId), "ORDER");
   }
 
   /**

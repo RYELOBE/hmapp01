@@ -125,24 +125,24 @@ const tabTitle = computed(() => {
   return titles[activeTab.value] || '评价审核'
 })
 
-// 表格列定义 (对齐圈子管理格式)
+// 表格列定义 (对齐评价管理格式)
 const tableColumns = computed(() => {
   const isItem = activeTab.value.startsWith('item')
   const baseColumns = [
-    { title: isItem ? '商品图片' : '评论对象', dataIndex: 'itemImage', width: 80, slotName: 'itemImage', align: 'center' },
+    { title: isItem ? '商品图片' : '评论对象', dataIndex: 'itemImage', width: 100, slotName: 'itemImage', align: 'center' },
+    { title: '评价内容', dataIndex: 'content', width: 280, slotName: 'content', ellipsis: true },
     { title: '评价人', dataIndex: 'reviewer', width: 140, slotName: 'reviewer' },
-    { title: isItem ? '评价对象' : '所属帖子', dataIndex: 'target', width: 160, slotName: 'target' },
-    { title: '评价内容', dataIndex: 'content', slotName: 'content' },
   ]
   
   // 商品评价显示评分列
   if (isItem) {
-    baseColumns.push({ title: '评分', dataIndex: 'rating', width: 120, slotName: 'rating', align: 'center' })
+    baseColumns.push({ title: '评分', dataIndex: 'rating', width: 150, slotName: 'rating', align: 'center' })
   }
   
   baseColumns.push(
-    { title: '状态', dataIndex: 'status', width: 90, slotName: 'status', align: 'center' },
-    { title: '评价时间', dataIndex: 'createdAt', width: 150, slotName: 'createdAt' },
+    { title: isItem ? '关联对象' : '所属帖子', dataIndex: 'target', width: 200, slotName: 'target', ellipsis: true },
+    { title: '状态', dataIndex: 'status', width: 100, slotName: 'status', align: 'center' },
+    { title: '评价时间', dataIndex: 'createdAt', width: 160, slotName: 'createdAt' },
     { title: '操作', width: 180, slotName: 'operations', fixed: 'right', align: 'center' }
   )
   
@@ -182,9 +182,13 @@ function formatDate(dateStr) {
 
 function getApiEndpoint() {
   const isItem = activeTab.value.startsWith('item')
+  const isPending = activeTab.value.endsWith('pending')
   
-  // 商品评价使用 /ops/reviews，圈子评论使用 /circle/comments
+  // 商品评价使用 /ops/reviews
   if (isItem) return '/ops/reviews'
+  
+  // 圈子评论：待审核使用 /circle/comments/pending，已审核使用 /circle/comments/list
+  if (isPending) return '/circle/comments/pending'
   return '/circle/comments/list'
 }
 
@@ -228,7 +232,8 @@ async function loadData() {
         buyerName: item.userName || item.authorName || '未知',
         postTitle: item.postTitle || `帖子#${item.postId}` || null,
         itemImage: null,
-        rating: null // 圈子评论没有评分
+        rating: null, // 圈子评论没有评分
+        createdAt: item.createTime || item.createdAt // 映射时间字段
       }))
     }
     

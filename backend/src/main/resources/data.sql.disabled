@@ -6,8 +6,9 @@ INSERT IGNORE INTO ops_account (id, username, password, nickname, roles, role_le
   (2002, 'ops_super', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '超级管理员', 'OPS_ADMIN,OPS_SUPER', 'OPS_SUPER', 'ACTIVE');
 
 -- 门户用户
+-- 注意：发布过商品的用户必须包含 SELLER 角色
 INSERT IGNORE INTO user_account (id, username, password, nickname, roles, campus, phone, status, created_at) VALUES
-  (1001, 'buyer', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '小明同学', 'BUYER', '东校区', '13800138001', 'ACTIVE', '2025-04-01 09:00:00'),
+  (1001, 'buyer', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '小明同学', 'BUYER,SELLER', '东校区', '13800138001', 'ACTIVE', '2025-04-01 09:00:00'),
   (1002, 'seller', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '小红学姐', 'SELLER', '西校区', '13800138002', 'ACTIVE', '2025-04-02 10:00:00'),
   (1003, 'ops', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '运营同学', 'OPS', '主校区', '13800138003', 'ACTIVE', '2025-04-03 11:00:00'),
   (1004, 'student1', '$2a$10$N.zmdr9k7uOCQb376NoUnuTJ8iAt6Z5EHsM8lE9lBOsl7iKTVKIUi', '小李学长', 'BUYER,SELLER', '东校区', '13800138004', 'ACTIVE', '2025-04-04 12:00:00'),

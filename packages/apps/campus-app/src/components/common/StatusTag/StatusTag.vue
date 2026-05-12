@@ -19,6 +19,12 @@ const props = defineProps({
 })
 
 const statusConfig = {
+  draft: {
+    label: '草稿',
+    bgColor: '#F2F3F5',
+    textColor: '#86909C',
+    borderColor: '#D9D9D9'
+  },
   pending: {
     label: '待审核',
     bgColor: '#FFF7E8',
@@ -100,6 +106,7 @@ const statusConfig = {
 }
 
 const statusAliasMap = {
+  DRAFT: 'draft',
   PENDING_REVIEW: 'pending',
   PENDING: 'pending',
   PENDING_PAYMENT: 'pending_payment',
@@ -200,6 +207,7 @@ const tagStyle = computed(() => ({
     border-color: #B7EB8F;
   }
 
+  &--draft,
   &--cancelled,
   &--off_shelf,
   &--refunded {

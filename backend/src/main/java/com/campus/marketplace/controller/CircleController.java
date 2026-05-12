@@ -2,6 +2,8 @@ package com.campus.marketplace.controller;
 
 import com.campus.marketplace.service.CircleService;
 import com.campus.marketplace.service.CurrentUserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
@@ -13,6 +15,7 @@ import java.util.Map;
 @RequestMapping("/api/circle")
 public class CircleController {
 
+  private static final Logger logger = LoggerFactory.getLogger(CircleController.class);
   private final CircleService circleService;
   private final CurrentUserService currentUserService;
 
@@ -25,8 +28,21 @@ public class CircleController {
   public Map<String, Object> getPosts(
       @RequestParam(defaultValue = "1") int page,
       @RequestParam(defaultValue = "10") int size,
-      @RequestParam(required = false) String tag) {
-    List<Map<String, Object>> posts = circleService.getPostList(page, size, tag);
+      @RequestParam(required = false) String tag,
+      @RequestParam(required = false) Long userId) {
+    List<Map<String, Object>> posts;
+    logger.info("获取帖子列表: page={}, size={}, tag={}, userId={}", page, size, tag, userId);
+
+    if (userId != null) {
+      // 获取指定用户的帖子（我的圈子）
+      logger.info("查询用户 {} 的帖子", userId);
+      posts = circleService.getPostsByUserId(userId, page, size);
+    } else {
+      // 获取公开帖子列表
+      logger.info("查询公开帖子列表");
+      posts = circleService.getPostList(page, size, tag);
+    }
+    logger.info("返回 {} 条帖子", posts.size());
     return buildSuccessResponse(Map.of("posts", posts));
   }
 
@@ -42,6 +58,17 @@ public class CircleController {
       @RequestParam(defaultValue = "10") int size) {
     List<Map<String, Object>> comments = circleService.getComments(id, page, size);
     return buildSuccessResponse(Map.of("comments", comments));
+  }
+
+  @GetMapping("/my-comments")
+  @PreAuthorize("isAuthenticated()")
+  public Map<String, Object> getMyComments(
+      @RequestParam(defaultValue = "1") int page,
+      @RequestParam(defaultValue = "10") int size,
+      @RequestParam(required = false) String status) {
+    Long userId = currentUserService.userId();
+    Map<String, Object> result = circleService.getMyComments(userId, page, size, status);
+    return buildSuccessResponse(result);
   }
 
   @PostMapping("/posts")

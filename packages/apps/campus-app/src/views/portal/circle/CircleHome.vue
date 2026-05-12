@@ -11,7 +11,7 @@
       </div>
       <div class="header-right">
         <span class="item-count">共 {{ posts.length }} 条动态</span>
-        <a-button type="primary" shape="round" size="small" @click="$router.push('/portal/circle/publish')">
+        <a-button v-if="!authStore.roles.includes('OPS')" type="primary" shape="round" size="small" @click="$router.push('/portal/circle/publish')">
           <template #icon><icon-plus /></template>
           发布动态
         </a-button>
@@ -128,7 +128,7 @@
         <template #description>
           <span style="font-size: 14px; color: #86909c;">暂无相关动态</span>
         </template>
-        <a-button type="primary" shape="round" @click="$router.push('/portal/circle/publish')">
+        <a-button v-if="!authStore.roles.includes('OPS')" type="primary" shape="round" @click="$router.push('/portal/circle/publish')">
           发布第一条动态
         </a-button>
       </a-empty>
@@ -252,11 +252,22 @@ async function loadMyPosts() {
   loading.value = true;
   try {
     const userId = authStore.user?.id;
+    console.log('[MyCircle] 当前用户ID:', userId, '用户信息:', authStore.user);
+
+    if (!userId) {
+      console.warn('[MyCircle] 用户ID为空，无法加载我的圈子');
+      Message.warning('请先登录');
+      posts.value = [];
+      return;
+    }
+
     const params = new URLSearchParams({
       page: '1',
       size: '50',
-      userId: userId,
+      userId: String(userId),
     });
+
+    console.log('[MyCircle] 请求参数:', params.toString());
 
     const response = await fetch(`/api/circle/posts?${params}`);
     const data = await response.json();

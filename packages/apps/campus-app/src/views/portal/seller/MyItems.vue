@@ -125,7 +125,7 @@ import {
 } from "@arco-design/web-vue/es/icon";
 import StatusTag from "../../../components/common/StatusTag/StatusTag.vue";
 import ConditionTag from "../../../components/data/ConditionTag.vue";
-import { getMyItems, deleteItem as apiDeleteItem, updateItem } from "../../../services/items";
+import { getMyItems, deleteItem as apiDeleteItem, submitForReview, withdrawItem as apiWithdrawItem } from "../../../services/items";
 
 const router = useRouter();
 const loading = ref(false);
@@ -165,15 +165,19 @@ async function loadData() {
   loading.value = true;
   try {
     const params = {
-      mine: true,
       status: activeStatus.value || undefined,
       pageNo: pagination.current,
       pageSize: pagination.pageSize,
     };
+    console.log('[MyItems] 请求参数:', params);
     const res = await getMyItems(params);
-    items.value = res?.items || res?.rows || [];
-    pagination.total = res?.totalCount ?? res?.total ?? 0;
+    console.log('[MyItems] 响应:', res);
+    const data = res?.data?.data ?? res?.data ?? res;
+    items.value = data?.items || data?.rows || [];
+    pagination.total = data?.totalCount ?? data?.total ?? 0;
+    console.log('[MyItems] 商品数量:', items.value.length);
   } catch (e) {
+    console.error('[MyItems] 加载失败:', e);
     Message.error(e.message || "加载失败");
   } finally {
     loading.value = false;
@@ -202,16 +206,20 @@ function editItem(item, needReaudit = false) { router.push(`/portal/seller/publi
 
 async function publishDraft(item) {
   try {
-    await updateItem(item.id, { reviewStatus: "PENDING_REVIEW" });
+    await submitForReview(item.id);
     Message.success("已提交审核");
+    // 触发通知刷新
+    window.dispatchEvent(new CustomEvent('notification-refresh'));
     loadData();
   } catch (e) { Message.error(e.message || "操作失败"); }
 }
 
 async function onlineItem(item) {
   try {
-    await updateItem(item.id, { reviewStatus: "PENDING_REVIEW" });
+    await submitForReview(item.id);
     Message.success("已提交上架申请");
+    // 触发通知刷新
+    window.dispatchEvent(new CustomEvent('notification-refresh'));
     loadData();
   } catch (e) { Message.error(e.message || "操作失败"); }
 }
@@ -219,7 +227,7 @@ async function onlineItem(item) {
 async function withdrawItem(item) {
   Modal.confirm({ title: "确认撤回", content: "确定要撤回审核吗？", onOk: async () => {
     try {
-      await updateItem(item.id, { reviewStatus: "DRAFT" });
+      await apiWithdrawItem(item.id);
       Message.success("已撤回");
       loadData();
     } catch (e) { Message.error(e.message || "操作失败"); }

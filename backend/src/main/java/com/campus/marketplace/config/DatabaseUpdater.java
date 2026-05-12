@@ -34,7 +34,7 @@ public class DatabaseUpdater {
               id BIGINT PRIMARY KEY AUTO_INCREMENT COMMENT '消息ID',
               title VARCHAR(255) NOT NULL COMMENT '消息标题',
               content TEXT NOT NULL COMMENT '消息内容',
-              type VARCHAR(50) NOT NULL COMMENT '消息类型：SYSTEM-系统通知, REVIEW-审核通知, ORDER-订单通知, USER-用户通知, BUSINESS-业务通知',
+              type VARCHAR(50) NOT NULL COMMENT '消息类型：REVIEW-审核通知, ORDER-订单通知, ITEM-商品通知, CIRCLE-圈子通知',
               is_read BOOLEAN DEFAULT FALSE COMMENT '是否已读',
               receiver_id BIGINT COMMENT '接收用户ID，为空表示全体用户',
               sender_id BIGINT COMMENT '发送用户ID',
@@ -58,24 +58,6 @@ public class DatabaseUpdater {
       System.out.println("  ✓ 创建 notification 表");
     } catch (Exception e) {
       System.out.println("  - notification 表已存在");
-    }
-
-    // 插入示例数据（如果表为空）
-    try {
-      Integer count = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM notification", Integer.class);
-      if (count == null || count == 0) {
-        jdbcTemplate.execute("""
-            INSERT INTO notification (title, content, type, receiver_id, sender_id, sender_name, priority) VALUES
-            ('新的商品审核待处理', '您有3个商品待审核，请及时处理', 'REVIEW', NULL, 1, '系统', 'HIGH'),
-            ('用户投诉需要处理', '用户投诉商品质量问题，需要您处理', 'USER', NULL, 1, '系统', 'MEDIUM'),
-            ('系统维护通知', '系统将于今晚22:00进行维护，预计持续2小时', 'SYSTEM', NULL, 1, '系统', 'MEDIUM'),
-            ('订单退款申请', '订单#12345申请退款，请审核', 'ORDER', NULL, 1, '系统', 'HIGH'),
-            ('评价审核提醒', '有新的评价待审核', 'REVIEW', NULL, 1, '系统', 'MEDIUM')
-            """);
-        System.out.println("  ✓ 插入 notification 示例数据");
-      }
-    } catch (Exception e) {
-      System.out.println("  - notification 示例数据已存在");
     }
   }
 

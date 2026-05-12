@@ -16,7 +16,7 @@
         <div class="brand-bg"></div>
         <div class="brand-info">
           <h3 class="brand-title">{{ loginConfig.name || 'Campus Trade' }}</h3>
-          <p class="brand-subtitle">校园二手交易平台</p>
+          <p class="brand-subtitle">校园闲置物品流转平台</p>
           <div class="brand-features">
             <div class="feature-item">
               <icon-safe />
@@ -52,7 +52,7 @@
             <icon-apps />
           </div>
           <h1 class="brand-title">{{ loginConfig.name || 'Campus Trade' }}</h1>
-          <p class="brand-subtitle">校园二手交易平台</p>
+          <p class="brand-subtitle">校园闲置物品流转平台</p>
           <div class="brand-stats">
             <div class="stat-item">
               <span class="stat-number">10K+</span>
@@ -83,7 +83,7 @@
   </div>
 
   <div v-else class="login-wrap">
-    <a-card class="login-card" title="校园二手交易平台">
+    <a-card class="login-card" title="校园闲置物品流转平台">
       <LoginContent :login-config="loginConfig" :app-type="appType" @login-success="loginSuccess" />
     </a-card>
   </div>

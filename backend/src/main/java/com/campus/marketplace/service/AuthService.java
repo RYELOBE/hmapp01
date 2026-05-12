@@ -81,7 +81,7 @@ public class AuthService {
     return Map.of("code", 200, "data", safeUser);
   }
 
-  public Map<String, Object> register(String username, String password, String nickname, List<String> roles) {
+  public Map<String, Object> register(String username, String password, String nickname, String phone, List<String> roles) {
     if (username == null || username.isBlank()) {
       throw new IllegalArgumentException("用户名不能为空");
     }
@@ -105,7 +105,10 @@ public class AuthService {
       throw new IllegalArgumentException("用户名已存在");
     }
 
-    var user = userRepository.create(username, passwordEncoder.encode(password), nickname, filteredRoles);
+    // 默认昵称为用户名
+    String finalNickname = (nickname == null || nickname.isBlank()) ? username : nickname;
+
+    var user = userRepository.create(username, passwordEncoder.encode(password), finalNickname, phone, filteredRoles);
 
     Long userId = ((Number) user.get("id")).longValue();
 

@@ -35,11 +35,7 @@
         allow-clear
       />
       <a-select v-model="categoryFilter" placeholder="商品分类" style="width: 140px" allow-clear @change="handleSearch">
-        <a-option value="ELECTRONICS">电子产品</a-option>
-        <a-option value="BOOKS">书籍</a-option>
-        <a-option value="CLOTHING">服装</a-option>
-        <a-option value="DAILY">日用品</a-option>
-        <a-option value="OTHER">其他</a-option>
+        <a-option v-for="cat in categories" :key="cat.value" :value="cat.value">{{ cat.label }}</a-option>
       </a-select>
     </template>
 
@@ -57,8 +53,12 @@
       <span style="color:#f53f3f;font-weight:600">¥{{ formatPrice(record.price) }}</span>
     </template>
 
+    <template #category="{ record }">
+      <a-tag size="small" color="blue">{{ getCategoryLabel(record.category) }}</a-tag>
+    </template>
+
     <template #status="{ record }">
-      <a-tag size="small" :color="getStatusColor(record.status)">{{ getStatusLabel(record.status) }}</a-tag>
+      <a-tag size="small" :color="getStatusColor(record.reviewStatus)">{{ getStatusLabel(record.reviewStatus) }}</a-tag>
     </template>
 
     <template #createdAt="{ record }">
@@ -68,11 +68,8 @@
     <template #operations="{ record }">
       <a-space>
         <a-button type="text" size="small" @click="viewDetail(record)">查看详情</a-button>
-        <a-button v-if="activeTab === 'pending'" type="primary" size="small" status="success" @click="approveItem(record)">通过</a-button>
-        <a-button v-if="activeTab === 'pending'" type="primary" size="small" status="danger" @click="rejectItem(record)">拒绝</a-button>
-        <a-popconfirm v-if="activeTab !== 'pending'" content="确定删除该商品吗？" @ok="deleteItem(record)">
-          <a-button type="text" size="small" status="danger">删除</a-button>
-        </a-popconfirm>
+        <a-button v-if="record.reviewStatus === 'PENDING_REVIEW'" type="text" size="small" status="success" @click="approveItem(record)">通过</a-button>
+        <a-button v-if="record.reviewStatus === 'PENDING_REVIEW'" type="text" size="small" status="danger" @click="rejectItem(record)">拒绝</a-button>
       </a-space>
     </template>
   </OpsUnifiedTable>
@@ -93,7 +90,7 @@
         <a-descriptions-item label="分类">{{ getCategoryLabel(currentItem.category) }}</a-descriptions-item>
         <a-descriptions-item label="卖家">{{ currentItem.sellerName }}</a-descriptions-item>
         <a-descriptions-item label="状态">
-          <a-tag size="small" :color="getStatusColor(currentItem.status)">{{ getStatusLabel(currentItem.status) }}</a-tag>
+          <a-tag size="small" :color="getStatusColor(currentItem.reviewStatus)">{{ getStatusLabel(currentItem.reviewStatus) }}</a-tag>
         </a-descriptions-item>
         <a-descriptions-item label="发布时间">{{ formatDate(currentItem.createdAt) }}</a-descriptions-item>
         <a-descriptions-item label="商品描述" :span="2"><span style="white-space:pre-wrap">{{ currentItem.description || '-' }}</span></a-descriptions-item>
@@ -108,10 +105,12 @@ import { ref, reactive, onMounted } from 'vue'
 import { Message } from '@arco-design/web-vue'
 import OpsUnifiedTable from '../../../components/ops/OpsUnifiedTable.vue'
 import { opsHttp as http } from '../../../services/http'
+import { loadEnums } from '../../../services/enums'
 
 const loading = ref(false)
 const keyword = ref('')
 const categoryFilter = ref('')
+const categories = ref([])
 const activeTab = ref('pending')
 const tableData = ref([])
 const pagination = reactive({ current: 1, pageSize: 10, total: 0, showTotal: true, showPageSize: true, pageSizeOptions: [10, 15, 20, 50] })
@@ -124,6 +123,7 @@ const tableColumns = [
   { title: '商品名称', dataIndex: 'title', width: 200, ellipsis: true },
   { title: '卖家', dataIndex: 'sellerName', width: 120 },
   { title: '价格', dataIndex: 'price', width: 100, slotName: 'price' },
+  { title: '分类', dataIndex: 'category', width: 120, slotName: 'category' },
   { title: '状态', dataIndex: 'reviewStatus', width: 100, slotName: 'status' },
   { title: '发布时间', dataIndex: 'createdAt', width: 160, slotName: 'createdAt' },
   { title: '操作', width: 200, fixed: 'right', slotName: 'operations' }
@@ -135,14 +135,27 @@ async function loadData() {
     const params = {
       keyword: keyword.value || undefined,
       category: categoryFilter.value || undefined,
-      status: activeTab.value === 'pending' ? 'PENDING' : activeTab.value === 'approved' ? 'APPROVED' : 'REJECTED',
       pageNo: pagination.current,
       pageSize: pagination.pageSize,
     }
-    const res = await http.post('/reviews/pending', params)
+    console.log('[ItemReview] 当前Tab:', activeTab.value, '请求参数:', params)
+
+    let res
+    if (activeTab.value === 'pending') {
+      // 待审核商品调用 /ops/pending-items
+      res = await http.post('/ops/pending-items', params)
+    } else {
+      // 已通过/已拒绝调用商品列表接口，传入对应状态
+      const status = activeTab.value === 'approved' ? 'APPROVED' : 'REJECTED'
+      params.status = status
+      res = await http.post('/items/list', params)
+    }
+
+    console.log('[ItemReview] 响应:', res)
     const data = res?.data?.data ?? res?.data ?? res
     tableData.value = data?.items || data?.rows || []
     pagination.total = data?.totalCount ?? data?.total ?? 0
+    console.log('[ItemReview] 数据条数:', tableData.value.length, '状态:', tableData.value.map(i => i.reviewStatus))
   } catch (e) {
     console.error('[ItemReview] load error:', e)
     Message.error('加载商品列表失败')
@@ -164,26 +177,24 @@ function viewDetail(record) { currentItem.value = record; detailVisible.value = 
 
 async function approveItem(record) {
   try {
-    await http.post(`/reviews/${record.id}/approve`)
+    await http.post(`/ops/items/${record.id}/approve`)
     Message.success('商品已通过审核')
     loadData()
-  } catch (e) { Message.error('操作失败') }
+  } catch (e) {
+    console.error('[ItemReview] approve error:', e)
+    Message.error('操作失败')
+  }
 }
 
 async function rejectItem(record) {
   try {
-    await http.post(`/reviews/${record.id}/reject`, { reason: '不符合规范' })
+    await http.post(`/ops/items/${record.id}/reject`, { reason: '不符合规范' })
     Message.success('商品已拒绝')
     loadData()
-  } catch (e) { Message.error('操作失败') }
-}
-
-async function deleteItem(record) {
-  try {
-    await http.delete(`/reviews/${record.id}`)
-    Message.success('商品已删除')
-    loadData()
-  } catch (e) { Message.error('删除失败') }
+  } catch (e) {
+    console.error('[ItemReview] reject error:', e)
+    Message.error('操作失败')
+  }
 }
 
 function getFirstImage(record) {
@@ -208,18 +219,28 @@ function formatDate(dateStr) {
 }
 
 function getStatusColor(status) {
-  return { APPROVED: 'green', PENDING: 'orange', REJECTED: 'red' }[status] || 'gray'
+  return { APPROVED: 'green', PENDING_REVIEW: 'orange', REJECTED: 'red' }[status] || 'gray'
 }
 
 function getStatusLabel(status) {
-  return { APPROVED: '已通过', PENDING: '待审核', REJECTED: '已拒绝' }[status] || status
+  return { APPROVED: '已通过', PENDING_REVIEW: '待审核', REJECTED: '已拒绝' }[status] || status
+}
+
+async function loadDict() {
+  try {
+    const dict = await loadEnums()
+    categories.value = dict?.categories || []
+  } catch (e) {
+    console.error('[ItemReview] load dict error:', e)
+  }
 }
 
 function getCategoryLabel(category) {
-  return { ELECTRONICS: '电子产品', BOOKS: '书籍', CLOTHING: '服装', DAILY: '日用品', OTHER: '其他' }[category] || category
+  const cat = categories.value.find(c => c.value === category)
+  return cat?.label || category
 }
 
-onMounted(() => { loadData() })
+onMounted(() => { loadDict(); loadData() })
 </script>
 
 <style lang="scss" scoped>

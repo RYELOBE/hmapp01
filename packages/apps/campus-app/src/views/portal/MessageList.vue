@@ -174,10 +174,10 @@ const selectedIds = ref([]);
 
 const tabs = [
   { label: '全部', value: '' },
-  { label: '系统通知', value: 'SYSTEM' },
-  { label: '交易消息', value: 'TRANSACTION' },
-  { label: '审核消息', value: 'REVIEW' },
-  { label: '互动消息', value: 'INTERACTION' },
+  { label: '订单消息', value: 'ORDER' },
+  { label: '商品消息', value: 'ITEM' },
+  { label: '评价消息', value: 'REVIEW' },
+  { label: '圈子消息', value: 'CIRCLE' },
 ];
 
 const isAllSelected = computed(() => {
@@ -198,22 +198,22 @@ const unreadCount = ref(0);
 
 function getMessageType(type) {
   const typeMap = {
-    SYSTEM: 'system',
-    TRANSACTION: 'transaction',
+    ORDER: 'order',
+    ITEM: 'item',
     REVIEW: 'review',
-    INTERACTION: 'interaction',
+    CIRCLE: 'circle',
   };
-  return typeMap[type] || 'system';
+  return typeMap[type] || 'order';
 }
 
 function getMessageIcon(type) {
   const iconMap = {
-    SYSTEM: IconInfoCircle,
-    TRANSACTION: IconApps,
+    ORDER: IconApps,
+    ITEM: IconCheckCircle,
     REVIEW: IconCheckCircle,
-    INTERACTION: IconHeartFill,
+    CIRCLE: IconHeartFill,
   };
-  return iconMap[type] || IconInfoCircle;
+  return iconMap[type] || IconApps;
 }
 
 function formatTime(dateStr) {
@@ -243,29 +243,27 @@ async function loadMessages() {
     const response = await getNotifications(params);
     console.log('[MessageList] API响应:', response);
 
-    if (response?.data) {
-      const data = Array.isArray(response.data) ? response.data : (response.data.records || response.data.list || []);
-      console.log('[MessageList] 解析到消息数量:', data.length);
+    // 解析响应数据
+    const data = response?.data?.data ?? response?.data ?? response;
+    const list = data?.records || data?.list || (Array.isArray(data) ? data : []);
 
-      messages.value = data.map(msg => ({
-        id: msg.id,
-        type: msg.type || 'SYSTEM',
-        title: msg.title || '系统通知',
-        content: msg.content || '',
-        isRead: msg.isRead !== false,
-        createdAt: msg.createdAt || msg.created_at || new Date().toISOString(),
-        link: msg.link || '',
-      }));
-      total.value = response.data.total || messages.value.length;
+    console.log('[MessageList] 解析到消息数量:', list.length);
 
-      console.log('[MessageList] 消息列表已更新, 总数:', total.value);
+    messages.value = list.map(msg => ({
+      id: msg.id,
+      type: msg.type || 'SYSTEM',
+      title: msg.title || '系统通知',
+      content: msg.content || '',
+      isRead: msg.isRead !== false,
+      createdAt: msg.createdAt || msg.created_at || new Date().toISOString(),
+      link: msg.link || '',
+    }));
+    total.value = data?.totalCount ?? data?.total ?? messages.value.length;
 
-      // 获取未读数量
-      await loadUnreadCount();
-    } else {
-      console.error('[MessageList] 数据格式错误, response:', response);
-      throw new Error('数据格式错误');
-    }
+    console.log('[MessageList] 消息列表已更新, 总数:', total.value);
+
+    // 获取未读数量
+    await loadUnreadCount();
   } catch (e) {
     console.error('[MessageList] 加载消息失败:', e);
     Message.error('加载消息失败，请稍后重试');

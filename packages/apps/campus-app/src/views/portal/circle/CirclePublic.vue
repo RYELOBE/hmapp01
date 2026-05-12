@@ -7,7 +7,7 @@
         <div class="hero-pattern"></div>
       </div>
       <div class="hero-content">
-        <div class="hero-badge">🎓 校园二手交易平台</div>
+        <div class="hero-badge">🎓 校园闲置物品流转平台</div>
         <h1 class="hero-title">校园圈子</h1>
         <p class="hero-subtitle">分享你的校园生活 · 发现有趣的人和事</p>
       </div>

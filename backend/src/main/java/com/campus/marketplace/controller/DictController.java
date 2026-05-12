@@ -33,6 +33,7 @@ public class DictController {
 
   private List<Map<String, String>> getCategories() {
     List<Map<String, String>> list = new ArrayList<>();
+    add(list, "", "全部商品", "");
     add(list, "ELECTRONICS", "电子产品", "📱");
     add(list, "BOOKS", "图书教材", "📚");
     add(list, "CLOTHING", "服饰鞋包", "👔");
@@ -107,7 +108,7 @@ public class DictController {
     addWithColor(list, "", "全部状态", "");
     addWithColor(list, "APPROVED", "在售", "green");
     addWithColor(list, "SOLD", "已售", "arcoblue");
-    addWithColor(list, "OFFLINE", "已下架", "gray");
+    addWithColor(list, "OFF_SHELF", "已下架", "gray");
     addWithColor(list, "PENDING_REVIEW", "待审核", "orangered");
     addWithColor(list, "REJECTED", "已拒绝", "red");
     return list;

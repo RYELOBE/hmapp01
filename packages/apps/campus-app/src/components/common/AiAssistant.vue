@@ -29,6 +29,11 @@
             </div>
           </div>
           <div class="header-actions">
+            <a-tooltip content="新建对话">
+              <button class="action-btn" @click="createNewSession">
+                <icon-plus />
+              </button>
+            </a-tooltip>
             <a-tooltip content="历史会话">
               <button class="action-btn" @click="showHistory = !showHistory">
                 <icon-history />
@@ -52,18 +57,32 @@
                   <icon-close />
                 </button>
               </div>
+              <div class="history-actions">
+                <a-button type="primary" size="small" long @click="createNewSession">
+                  <template #icon><icon-plus /></template>
+                  新建对话
+                </a-button>
+              </div>
               <div class="history-list">
                 <div
-                  v-for="session in sessions"
-                  :key="session.id"
+                  v-for="(session, index) in sessions"
+                  :key="session.sessionId"
                   class="history-item"
-                  :class="{ active: currentSessionId === session.id }"
-                  @click="loadSession(session.id)"
+                  :class="{ active: String(currentSessionId) === String(session.sessionId) }"
+                  @click="loadSession(session.sessionId)"
                 >
-                  <div class="item-title">{{ session.title || "新对话" }}</div>
-                  <div class="item-time">
-                    {{ formatTime(session.updatedAt) }}
+                  <div class="item-content">
+                    <div class="item-title">
+                      <span class="item-index">{{ index + 1 }}.</span>
+                      {{ session.title || "新对话" }}
+                    </div>
+                    <div class="item-time">
+                      {{ formatTime(session.updatedAt) }}
+                    </div>
                   </div>
+                  <button class="delete-btn" @click.stop="deleteSession(session.sessionId)">
+                    <icon-delete />
+                  </button>
                 </div>
                 <div v-if="sessions.length === 0" class="empty-state">
                   <icon-empty style="font-size: 48px; color: #c9cdd4" />
@@ -180,12 +199,16 @@ import {
   IconClose,
   IconEmpty,
   IconSend,
+  IconPlus,
+  IconDelete,
 } from "@arco-design/web-vue/es/icon";
 import {
   chatWithAssistant,
   fetchRecentSessions,
   fetchSessionMessages,
   fetchAiPresets,
+  createNewSession as createNewSessionApi,
+  deleteSession as deleteSessionApi,
 } from "@/services/ai";
 
 // Props
@@ -355,14 +378,17 @@ const sendQuickMessage = (text) => {
 // 加载历史会话
 const loadSessions = async () => {
   try {
-    const data = await fetchRecentSessions(
+    const response = await fetchRecentSessions(
       {},
       {
         isHideErrorMsg: true,
         isTokenNotAuth: true,
       },
     );
-    sessions.value = data || [];
+    console.log('[AI] 原始响应:', response);
+    // 解析后端返回: {code: 200, data: {sessions: [...]}}
+    sessions.value = response?.data?.sessions || response?.sessions || [];
+    console.log('[AI] 加载会话列表:', sessions.value.length, '条');
   } catch (error) {
     console.warn("[AI] 加载会话失败:", error);
     sessions.value = [];
@@ -375,7 +401,7 @@ const loadSession = async (sessionId) => {
   showHistory.value = false;
 
   try {
-    const data = await fetchSessionMessages(
+    const response = await fetchSessionMessages(
       sessionId,
       {},
       {
@@ -383,7 +409,9 @@ const loadSession = async (sessionId) => {
         isTokenNotAuth: true,
       },
     );
-    messages.value = data?.messages || [];
+    // 解析后端返回: {code: 200, data: {messages: [...]}}
+    messages.value = response?.data?.messages || response?.messages || [];
+    console.log('[AI] 加载消息:', messages.value.length);
   } catch (error) {
     console.warn("[AI] 加载消息失败:", error);
     messages.value = [];
@@ -415,6 +443,50 @@ const loadPresets = async () => {
       "如何联系卖家？",
       "平台手续费多少？",
     ];
+  }
+};
+
+// 创建新对话
+const createNewSession = async () => {
+  try {
+    const response = await createNewSessionApi({
+      isHideErrorMsg: true,
+      isTokenNotAuth: true,
+    });
+    // 解析后端返回: {code: 200, data: {sessionId: "xxx"}}
+    const sessionId = response?.data?.sessionId || response?.sessionId;
+    console.log('[AI] 创建新会话:', sessionId);
+    currentSessionId.value = sessionId;
+    messages.value = [];
+    showHistory.value = false;
+    Message.success("已创建新对话");
+    loadSessions();
+  } catch (error) {
+    console.warn("[AI] 创建会话失败:", error);
+    Message.error("创建失败，请稍后重试");
+  }
+};
+
+// 删除会话
+const deleteSession = async (sessionId) => {
+  try {
+    await deleteSessionApi(sessionId, {
+      isHideErrorMsg: true,
+      isTokenNotAuth: true,
+    });
+
+    // 如果删除的是当前会话，清空消息
+    if (currentSessionId.value === sessionId) {
+      currentSessionId.value = null;
+      messages.value = [];
+    }
+
+    // 刷新会话列表
+    loadSessions();
+    Message.success("已删除");
+  } catch (error) {
+    console.warn("[AI] 删除会话失败:", error);
+    Message.error("删除失败，请稍后重试");
   }
 };
 
@@ -731,6 +803,11 @@ onMounted(() => {
     }
   }
 
+  .history-actions {
+    padding: 12px 16px;
+    border-bottom: 1px solid #e5e6eb;
+  }
+
   .history-list {
     flex: 1;
     overflow-y: auto;
@@ -742,6 +819,36 @@ onMounted(() => {
       cursor: pointer;
       transition: all 0.2s;
       margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      .item-content {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .item-index {
+        color: #86909c;
+        margin-right: 4px;
+        font-size: 12px;
+      }
+
+      .delete-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        border-radius: 4px;
+        color: #c9cdd4;
+        flex-shrink: 0;
+        margin-left: 8px;
+
+        &:hover {
+          background: #ffece8;
+          color: #f53f3f;
+        }
+      }
 
       &:hover {
         background: #e8f3ff;

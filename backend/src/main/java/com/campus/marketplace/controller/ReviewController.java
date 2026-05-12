@@ -119,7 +119,7 @@ public class ReviewController {
   }
 
   @PostMapping("/{id}/reply")
-  @PreAuthorize("hasAnyRole('SELLER', 'OPS')")
+  @PreAuthorize("isAuthenticated()")
   public Map<String, Object> reply(@PathVariable Long id, @RequestBody @Validated ReplyRequest request) {
     Long userId = currentUserService.userId();
     return reviewService.replyToReview(userId, id, request.content());

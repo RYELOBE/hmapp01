@@ -22,7 +22,7 @@
                 />
               </svg>
             </div>
-            <span class="logo-text">校园二手平台</span>
+            <span class="logo-text">校园闲置物品流转平台</span>
           </div>
 
           <nav class="main-nav" :class="{ 'nav-open': mobileMenuOpen }">
@@ -115,6 +115,27 @@
                   </template>
                   个人中心
                 </a-doption>
+                <!-- 我的消息 -->
+                <a-doption
+                  v-if="!authStore.roles.includes('OPS')"
+                  @click="router.push('/portal/messages')"
+                >
+                  <template #icon>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+                    </svg>
+                  </template>
+                  我的消息
+                </a-doption>
+                <!-- 运营中心：只有OPS角色显示 -->
                 <a-doption
                   v-if="authStore.roles.includes('OPS')"
                   @click="router.push('/ops/dashboard')"
@@ -136,7 +157,11 @@
                   </template>
                   运营中心
                 </a-doption>
-                <a-doption @click="router.push('/portal/orders')">
+                <!-- 我的订单：买家和卖家都能看到 -->
+                <a-doption
+                  v-if="!authStore.roles.includes('OPS')"
+                  @click="router.push('/portal/orders')"
+                >
                   <template #icon>
                     <svg
                       width="16"
@@ -155,7 +180,30 @@
                   </template>
                   我的订单
                 </a-doption>
-                <a-doption @click="router.push('/portal/my-reviews')">
+                <!-- 我的商品：卖家显示 -->
+                <a-doption
+                  v-if="authStore.roles.includes('SELLER') && !authStore.roles.includes('OPS')"
+                  @click="router.push('/portal/seller/items')"
+                >
+                  <template #icon>
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                    >
+                      <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                      <line x1="7" y1="7" x2="7.01" y2="7" />
+                    </svg>
+                  </template>
+                  我的商品
+                </a-doption>
+                <a-doption
+                  v-if="!authStore.roles.includes('OPS')"
+                  @click="router.push('/portal/my-reviews')"
+                >
                   <template #icon>
                     <svg
                       width="16"
@@ -173,7 +221,10 @@
                   </template>
                   我的评价
                 </a-doption>
-                <a-doption @click="router.push('/portal/circles')">
+                <a-doption
+                  v-if="!authStore.roles.includes('OPS')"
+                  @click="router.push('/portal/circles')"
+                >
                   <template #icon>
                     <svg
                       width="16"
@@ -189,7 +240,11 @@
                   </template>
                   我的圈子
                 </a-doption>
-                <a-doption @click="router.push('/portal/cart')">
+                <!-- 购物车：只有买家显示 -->
+                <a-doption
+                  v-if="authStore.roles.includes('BUYER') && !authStore.roles.includes('OPS')"
+                  @click="router.push('/portal/cart')"
+                >
                   <template #icon>
                     <svg
                       width="16"
@@ -211,8 +266,9 @@
                     cartCount
                   }}</span>
                 </a-doption>
+                <!-- 发布商品：只有卖家显示 -->
                 <a-doption
-                  v-if="authStore.roles.includes('SELLER')"
+                  v-if="authStore.roles.includes('SELLER') && !authStore.roles.includes('OPS')"
                   @click="router.push('/portal/seller/publish')"
                 >
                   <template #icon>

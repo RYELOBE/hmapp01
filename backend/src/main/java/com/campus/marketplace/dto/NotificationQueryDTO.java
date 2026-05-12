@@ -20,6 +20,8 @@ public class NotificationQueryDTO {
 
     private Long receiverId;
 
+    private Boolean isOps;
+
     public Integer getPage() {
         return page;
     }
@@ -90,5 +92,13 @@ public class NotificationQueryDTO {
 
     public void setReceiverId(Long receiverId) {
         this.receiverId = receiverId;
+    }
+
+    public Boolean getIsOps() {
+        return isOps;
+    }
+
+    public void setIsOps(Boolean isOps) {
+        this.isOps = isOps;
     }
 }

@@ -11,7 +11,7 @@
       </div>
     </div>
 
-    <a-spin :loading="loading" class="detail-container">
+    <div :loading="loading" class="detail-container">
       <template v-if="post">
         <a-row :gutter="[20, 20]">
           <!-- 左侧：帖子主体内容 -->
@@ -84,8 +84,8 @@
             <div class="comments-section" ref="commentsRef">
               <h3 class="section-title">评论 ({{ commentCount }})</h3>
 
-              <!-- 评论输入框 -->
-              <div v-if="authStore.token" class="comment-input-box">
+              <!-- 评论输入框：OPS角色不能评论 -->
+              <div v-if="authStore.token && !authStore.roles.includes('OPS')" class="comment-input-box">
                 <a-textarea
                   v-model="commentInput"
                   placeholder="写下你的评论..."
@@ -106,7 +106,12 @@
                   </a-button>
                 </div>
               </div>
-              
+
+              <!-- 运营人员提示 -->
+              <div v-else-if="authStore.roles.includes('OPS')" class="ops-tip">
+                <p>运营人员仅负责审核，不参与评论互动</p>
+              </div>
+
               <!-- 未登录提示 -->
               <div v-else class="login-tip">
                 <p>👋 登录后即可参与讨论</p>
@@ -205,7 +210,7 @@
           </a-button>
         </template>
       </a-result>
-    </a-spin>
+    </div>
   </div>
 </template>
 
@@ -321,7 +326,10 @@ async function loadPost() {
 
     // 设置帖子数据
     post.value = data.data;
-    
+
+    // 映射作者名称字段
+    post.value.authorName = post.value.authorName || post.value.userName;
+
     // 处理图片
     if (typeof post.value.images === 'string') {
       try {
@@ -578,7 +586,7 @@ async function submitComment() {
     if (response.ok) {
       // 清空输入框
       commentInput.value = '';
-      Message.success('评论发表成功！✍️');
+      Message.success('评论已提交，待审核后展示');
       
       // 重新加载评论（从头开始）
       await loadComments(true);
@@ -628,6 +636,8 @@ async function handleCommentSubmitReply({ parentId, replyToName, content }) {
     throw new Error(data.message || '回复失败');
   }
 
+  Message.success('回复已提交，待审核后展示');
+  
   // 刷新评论列表
   await loadComments(true);
 }
@@ -1061,6 +1071,21 @@ $text-tertiary: #86909C;
     border-radius: 22px;
     padding: 10px 24px;
     font-weight: 600;
+  }
+}
+
+.ops-tip {
+  text-align: center;
+  padding: 40px;
+  background: linear-gradient(135deg, #e8f3ff, #f0f7ff);
+  border-radius: 12px;
+  margin-bottom: 28px;
+  border: 1px solid #94bfff;
+
+  p {
+    margin: 0;
+    font-size: 15px;
+    color: #165dff;
   }
 }
 
