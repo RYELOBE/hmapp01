@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>校园闲置物品流转平台 - 前端需求图</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Microsoft YaHei', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+    }
+    .header {
+      background: linear-gradient(90deg, #1a1a2e 0%, #16213e 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+    .header h1 {
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: 8px;
+    }
+    .main-content {
+      padding: 30px;
+    }
+    .section {
+      margin-bottom: 30px;
+    }
+    .section-title {
+      background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+    }
+    .grid-container {
+      display: grid;
+      gap: 15px;
+    }
+    .grid-5 {
+      grid-template-columns: repeat(5, 1fr);
+    }
+    .grid-4 {
+      grid-template-columns: repeat(4, 1fr);
+    }
+    .grid-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    .grid-item {
+      background: linear-gradient(145deg, #f8f9fa, #e9ecef);
+      border: 2px solid #dee2e6;
+      border-radius: 10px;
+      padding: 20px 15px;
+      text-align: center;
+      transition: all 0.3s ease;
+      min-height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .grid-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+      border-color: #4facfe;
+    }
+    .grid-item-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #2c3e50;
+      line-height: 1.4;
+    }
+    .tech-stack .grid-item {
+      background: linear-gradient(145deg, #fff3cd, #ffeeba);
+      border-color: #ffc107;
+    }
+    .tech-stack .grid-item-title {
+      color: #856404;
+    }
+    .footer {
+      background: #f8f9fa;
+      padding: 20px;
+      text-align: center;
+      color: #6c757d;
+      font-size: 14px;
+    }
+    @media (max-width: 992px) {
+      .grid-5, .grid-4, .grid-3 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 576px) {
+      .grid-5, .grid-4, .grid-3 {
+        grid-template-columns: 1fr;
+      }
+      .header h1 {
+        font-size: 20px;
+        letter-spacing: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>校园闲置物品流转平台</h1>
+      <p style="margin-top: 10px; opacity: 0.8;">前端需求架构图</p>
+    </div>
+    
+    <div class="main-content">
+      <div class="section">
+        <div class="section-title">📱 界面设计</div>
+        <div class="grid-container grid-5">
+          <div class="grid-item"><div class="grid-item-title">首页界面</div></div>
+          <div class="grid-item"><div class="grid-item-title">商品列表界面</div></div>
+          <div class="grid-item"><div class="grid-item-title">商品详情界面</div></div>
+          <div class="grid-item"><div class="grid-item-title">发布商品界面</div></div>
+          <div class="grid-item"><div class="grid-item-title">购物车界面</div></div>
+          <div class="grid-item"><div class="grid-item-title">订单界面</div></div>
+          <div class="grid-item"><div class="grid-item-title">评价界面</div></div>
+          <div class="grid-item"><div class="grid-item-title">校园圈子界面</div></div>
+          <div class="grid-item"><div class="grid-item-title">消息中心界面</div></div>
+          <div class="grid-item"><div class="grid-item-title">个人中心界面</div></div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">🔧 模块设计</div>
+        <div class="grid-container grid-3">
+          <div class="grid-item"><div class="grid-item-title">认证授权模块</div></div>
+          <div class="grid-item"><div class="grid-item-title">商品管理模块</div></div>
+          <div class="grid-item"><div class="grid-item-title">订单交易模块</div></div>
+          <div class="grid-item"><div class="grid-item-title">购物车与收藏模块</div></div>
+          <div class="grid-item"><div class="grid-item-title">评价模块</div></div>
+          <div class="grid-item"><div class="grid-item-title">校园圈子模块</div></div>
+          <div class="grid-item"><div class="grid-item-title">消息通知模块</div></div>
+          <div class="grid-item"><div class="grid-item-title">AI助手模块</div></div>
+          <div class="grid-item"><div class="grid-item-title">运营后台模块</div></div>
+        </div>
+      </div>
+
+      <div class="section tech-stack">
+        <div class="section-title">💻 采用技术</div>
+        <div class="grid-container grid-4">
+          <div class="grid-item"><div class="grid-item-title">Vue 3</div></div>
+          <div class="grid-item"><div class="grid-item-title">Pinia</div></div>
+          <div class="grid-item"><div class="grid-item-title">Vue Router</div></div>
+          <div class="grid-item"><div class="grid-item-title">Axios</div></div>
+          <div class="grid-item"><div class="grid-item-title">JWT</div></div>
+          <div class="grid-item"><div class="grid-item-title">Arco Design</div></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="footer">
+      校园闲置物品流转平台 · 前端架构图
+    </div>
+  </div>
+</body>
+</html>
