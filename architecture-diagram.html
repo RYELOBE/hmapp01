@@ -11,166 +11,239 @@
       box-sizing: border-box;
     }
     body {
-      font-family: 'Microsoft YaHei', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      font-family: 'SimHei', 'Microsoft YaHei', sans-serif;
+      background: #fff;
       min-height: 100vh;
-      padding: 40px 20px;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
     .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-      overflow: hidden;
+      width: 100%;
+      max-width: 1400px;
+      border: 2px solid #000;
+      display: flex;
+      background: #fff;
     }
-    .header {
-      background: linear-gradient(90deg, #1a1a2e 0%, #16213e 100%);
-      color: white;
-      padding: 30px;
-      text-align: center;
-    }
-    .header h1 {
-      font-size: 28px;
-      font-weight: 600;
+    .vertical-title {
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+      background: #000;
+      color: #fff;
+      padding: 30px 15px;
+      font-size: 24px;
+      font-weight: bold;
       letter-spacing: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 60px;
     }
     .main-content {
-      padding: 30px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
     .section {
-      margin-bottom: 30px;
+      border-bottom: 2px solid #000;
+      padding: 15px;
     }
-    .section-title {
-      background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
-      color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 20px;
-      box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+    .section:last-child {
+      border-bottom: none;
+    }
+    .section-header {
+      font-weight: bold;
+      font-size: 16px;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #000;
+      display: inline-block;
     }
     .grid-container {
       display: grid;
-      gap: 15px;
+      gap: 10px;
     }
     .grid-5 {
       grid-template-columns: repeat(5, 1fr);
     }
-    .grid-4 {
-      grid-template-columns: repeat(4, 1fr);
-    }
     .grid-3 {
       grid-template-columns: repeat(3, 1fr);
     }
-    .grid-item {
-      background: linear-gradient(145deg, #f8f9fa, #e9ecef);
-      border: 2px solid #dee2e6;
-      border-radius: 10px;
-      padding: 20px 15px;
-      text-align: center;
-      transition: all 0.3s ease;
-      min-height: 80px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    .grid-6 {
+      grid-template-columns: repeat(6, 1fr);
     }
-    .grid-item:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-      border-color: #4facfe;
+    .grid-item {
+      border: 1px solid #000;
+      padding: 12px 8px;
+      text-align: center;
+      background: #fff;
     }
     .grid-item-title {
-      font-size: 14px;
-      font-weight: 600;
-      color: #2c3e50;
+      font-weight: bold;
+      font-size: 13px;
+      margin-bottom: 6px;
+      padding-bottom: 6px;
+      border-bottom: 1px dashed #333;
+    }
+    .grid-item-desc {
+      font-size: 11px;
       line-height: 1.4;
+      color: #333;
     }
-    .tech-stack .grid-item {
-      background: linear-gradient(145deg, #fff3cd, #ffeeba);
-      border-color: #ffc107;
+    .tech-item .grid-item-title {
+      margin-bottom: 8px;
     }
-    .tech-stack .grid-item-title {
-      color: #856404;
+    .tech-item .grid-item-desc {
+      font-size: 10px;
     }
-    .footer {
-      background: #f8f9fa;
-      padding: 20px;
-      text-align: center;
-      color: #6c757d;
-      font-size: 14px;
-    }
-    @media (max-width: 992px) {
-      .grid-5, .grid-4, .grid-3 {
+    @media (max-width: 1200px) {
+      .grid-5, .grid-3, .grid-6 {
         grid-template-columns: repeat(2, 1fr);
       }
+      .vertical-title {
+        font-size: 18px;
+        min-width: 50px;
+      }
     }
-    @media (max-width: 576px) {
-      .grid-5, .grid-4, .grid-3 {
+    @media (max-width: 600px) {
+      .grid-5, .grid-3, .grid-6 {
         grid-template-columns: 1fr;
       }
-      .header h1 {
-        font-size: 20px;
-        letter-spacing: 4px;
+      .container {
+        flex-direction: column;
+      }
+      .vertical-title {
+        writing-mode: horizontal-tb;
+        text-orientation: mixed;
+        padding: 15px;
+        min-width: auto;
       }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="header">
-      <h1>校园闲置物品流转平台</h1>
-      <p style="margin-top: 10px; opacity: 0.8;">前端需求架构图</p>
-    </div>
+    <div class="vertical-title">校园闲置物品流转平台前端需求图</div>
     
     <div class="main-content">
       <div class="section">
-        <div class="section-title">📱 界面设计</div>
+        <div class="section-header">界面设计</div>
         <div class="grid-container grid-5">
-          <div class="grid-item"><div class="grid-item-title">首页界面</div></div>
-          <div class="grid-item"><div class="grid-item-title">商品列表界面</div></div>
-          <div class="grid-item"><div class="grid-item-title">商品详情界面</div></div>
-          <div class="grid-item"><div class="grid-item-title">发布商品界面</div></div>
-          <div class="grid-item"><div class="grid-item-title">购物车界面</div></div>
-          <div class="grid-item"><div class="grid-item-title">订单界面</div></div>
-          <div class="grid-item"><div class="grid-item-title">评价界面</div></div>
-          <div class="grid-item"><div class="grid-item-title">校园圈子界面</div></div>
-          <div class="grid-item"><div class="grid-item-title">消息中心界面</div></div>
-          <div class="grid-item"><div class="grid-item-title">个人中心界面</div></div>
+          <div class="grid-item">
+            <div class="grid-item-title">首页界面</div>
+            <div class="grid-item-desc">展示热门物品、分类导航和推荐内容</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">商品列表界面</div>
+            <div class="grid-item-desc">浏览物品，支持搜索和筛选</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">商品详情界面</div>
+            <div class="grid-item-desc">查看物品完整信息、图片及评价</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">发布商品界面</div>
+            <div class="grid-item-desc">发布闲置物品信息</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">购物车界面</div>
+            <div class="grid-item-desc">查看物品，支持批量结算</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">订单界面</div>
+            <div class="grid-item-desc">查看订单列表与状态</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">评价界面</div>
+            <div class="grid-item-desc">提交与查看评价</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">校园圈子界面</div>
+            <div class="grid-item-desc">浏览帖子与互动</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">消息中心界面</div>
+            <div class="grid-item-desc">查看消息与通知</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">个人中心界面</div>
+            <div class="grid-item-desc">展示个人信息与相关功能入口</div>
+          </div>
         </div>
       </div>
 
       <div class="section">
-        <div class="section-title">🔧 模块设计</div>
+        <div class="section-header">模块设计</div>
         <div class="grid-container grid-3">
-          <div class="grid-item"><div class="grid-item-title">认证授权模块</div></div>
-          <div class="grid-item"><div class="grid-item-title">商品管理模块</div></div>
-          <div class="grid-item"><div class="grid-item-title">订单交易模块</div></div>
-          <div class="grid-item"><div class="grid-item-title">购物车与收藏模块</div></div>
-          <div class="grid-item"><div class="grid-item-title">评价模块</div></div>
-          <div class="grid-item"><div class="grid-item-title">校园圈子模块</div></div>
-          <div class="grid-item"><div class="grid-item-title">消息通知模块</div></div>
-          <div class="grid-item"><div class="grid-item-title">AI助手模块</div></div>
-          <div class="grid-item"><div class="grid-item-title">运营后台模块</div></div>
+          <div class="grid-item">
+            <div class="grid-item-title">认证授权模块</div>
+            <div class="grid-item-desc">注册、登录、角色管理，JWT无状态认证，按角色控制页面权限</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">商品管理模块</div>
+            <div class="grid-item-desc">发布物品、运营审核上架、搜索筛选、热度推荐热门角品</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">订单交易模块</div>
+            <div class="grid-item-desc">下单、支付、发货、确认收货、退款申请与订单取消、买卖双方查看订单</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">购物车与收藏模块</div>
+            <div class="grid-item-desc">加入购物车批量结算、收藏与取消收藏</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">评价模块</div>
+            <div class="grid-item-desc">提交评分与富文本评价，运营审核展示，卖家回复评价</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">校园圈子模块</div>
+            <div class="grid-item-desc">发布图文动态，运营审核展示，点赞与评论互动</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">消息通知模块</div>
+            <div class="grid-item-desc">系统、交易、审核、互动四类消息，未读数角标，支持已读与删除</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">AI助手模块</div>
+            <div class="grid-item-desc">基于GLM-4-Flash大模型智能问答，RAG技术增强回答准确性</div>
+          </div>
+          <div class="grid-item">
+            <div class="grid-item-title">运营后台模块</div>
+            <div class="grid-item-desc">数据仪表盘、审批工作台、支持用户、商品、评价、订单管理</div>
+          </div>
         </div>
       </div>
 
-      <div class="section tech-stack">
-        <div class="section-title">💻 采用技术</div>
-        <div class="grid-container grid-4">
-          <div class="grid-item"><div class="grid-item-title">Vue 3</div></div>
-          <div class="grid-item"><div class="grid-item-title">Pinia</div></div>
-          <div class="grid-item"><div class="grid-item-title">Vue Router</div></div>
-          <div class="grid-item"><div class="grid-item-title">Axios</div></div>
-          <div class="grid-item"><div class="grid-item-title">JWT</div></div>
-          <div class="grid-item"><div class="grid-item-title">Arco Design</div></div>
+      <div class="section">
+        <div class="section-header">采用技术</div>
+        <div class="grid-container grid-6">
+          <div class="grid-item tech-item">
+            <div class="grid-item-title">Vue 3</div>
+            <div class="grid-item-desc">前端框架</div>
+          </div>
+          <div class="grid-item tech-item">
+            <div class="grid-item-title">Pinia</div>
+            <div class="grid-item-desc">状态管理</div>
+          </div>
+          <div class="grid-item tech-item">
+            <div class="grid-item-title">Vue Router</div>
+            <div class="grid-item-desc">路由管理</div>
+          </div>
+          <div class="grid-item tech-item">
+            <div class="grid-item-title">Axios</div>
+            <div class="grid-item-desc">HTTP请求</div>
+          </div>
+          <div class="grid-item tech-item">
+            <div class="grid-item-title">JWT</div>
+            <div class="grid-item-desc">身份认证与授权</div>
+          </div>
+          <div class="grid-item tech-item">
+            <div class="grid-item-title">Arco Design</div>
+            <div class="grid-item-desc">UI组件库</div>
+          </div>
         </div>
       </div>
-    </div>
-    
-    <div class="footer">
-      校园闲置物品流转平台 · 前端架构图
     </div>
   </div>
 </body>
