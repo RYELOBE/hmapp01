@@ -4,6 +4,7 @@ import {
   getToken,
   logout as sdkLogout,
   login,
+  opsLogin,
   register as sdkRegister,
   getCurrentUserFromJWT,
 } from "../services/auth";

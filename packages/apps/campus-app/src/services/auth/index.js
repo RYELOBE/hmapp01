@@ -46,6 +46,44 @@ export async function login(payload) {
   return result;
 }
 
+export async function opsLogin(payload) {
+  const response = await http.post("/auth/ops/login", payload);
+
+  let result = response;
+
+  if (result.data && (result.data.token || result.data.user)) {
+    result = result.data;
+  }
+
+  console.log("[Auth] ===== 运营登录响应数据 =====");
+  console.log("[Auth] 完整响应:", JSON.stringify(result, null, 2));
+
+  if (result.token) {
+    localStorage.setItem(STORAGE_KEYS.TOKEN, result.token);
+    console.log("[Auth] ✅ 运营Token已保存");
+
+    if (isJWT(result.token)) {
+      console.log("[Auth] ✅ 检测到JWT格式Token");
+      logJWTDebugInfo(result.token);
+    } else {
+      console.log("[Auth] ⚠️ Token不是JWT格式（可能是UUID或其他格式）:", result.token.substring(0, 30));
+    }
+  }
+
+  if (result.user) {
+    localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(result.user));
+    console.log("[Auth] ✅ 运营用户信息已保存:", result.user.username || result.user.nickname);
+
+    if (isJWT(result.token)) {
+      const jwtInfo = getJWTUserInfo(result.token);
+      console.log("[Auth] 📋 JWT中的用户信息:", jwtInfo);
+      console.log("[Auth] 📋 JWT中的角色:", getJWTRoles(result.token));
+    }
+  }
+
+  return result;
+}
+
 export async function register(payload) {
   return await http.post("/auth/register", payload);
 }
