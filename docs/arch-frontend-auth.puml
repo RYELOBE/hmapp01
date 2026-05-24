@@ -43,24 +43,24 @@ package "Pinia 状态管理" {
     [角色信息状态] as rolesState
 }
 
-reqInterceptor --> tokenCache : 获取令牌
-reqInterceptor --> "请求头注入" : 添加认证信息
+reqInterceptor -right-> "请求头注入" : 添加认证信息
+reqInterceptor -down-> tokenCache : 获取令牌
 
-resInterceptor --> error401 : 捕获401
-error401 --> tokenCache : 清除令牌
-error401 --> loginPage
+resInterceptor -down-> error401 : 捕获401
+error401 -right-> tokenCache : 清除令牌
+error401 -down-> loginPage
 
-guard --> validate : 检查令牌存在性
-guard --> expireCheck : 检查令牌有效性
-guard --> permission : 校验用户角色
-permission --> homePage : 有权限
-permission --> forbiddenPage : 无权限
+storage -right-> tokenCache : 读取缓存
+tokenCache -right-> authStore : 初始化认证状态
 
-storage --> tokenCache : 读取缓存
-tokenCache --> authStore : 初始化
+guard -down-> validate : 检查令牌存在性
+guard -right-> expireCheck : 检查令牌有效性
+guard -down-> permission : 校验用户角色
+permission -right-> homePage : 有权限
+permission -down-> forbiddenPage : 无权限
 
-authStore --> tokenState
-authStore --> userState
-authStore --> rolesState
+authStore -right-> tokenState
+authStore -down-> userState
+authStore -right-> rolesState
 
 @enduml
